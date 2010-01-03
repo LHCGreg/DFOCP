@@ -1,21 +1,43 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
+using System.Runtime.InteropServices;
 
 namespace Dfo.BrowserlessDfoGui
 {
-	static class Program
+	static partial class Program
 	{
 		/// <summary>
 		/// The main entry point for the application.
 		/// </summary>
 		[STAThread]
-		static void Main()
+		static void Main( string[] args )
 		{
-			Application.EnableVisualStyles();
-			Application.SetCompatibleTextRenderingDefault( false );
-			Application.Run( new ctlMainForm() );
+			if ( args.Length == 0 ) // If no arguments, do the GUI. Otherwise, do the command-line version.
+			{
+				Application.EnableVisualStyles();
+				Application.SetCompatibleTextRenderingDefault( false );
+				Application.Run( new ctlMainForm() );
+			}
+			else
+			{
+				bool attachedToParentsConsole = AttachConsole( ATTACH_PARENT_PROCESS ); // Attach to parent's console for output
+				if ( !attachedToParentsConsole )
+				{
+					AllocConsole(); // If couldn't attach to parent's console (maybe it doesn't have one), create a new console
+				}
+
+				CommandLineEntryPoint( args );
+			}
 		}
+
+		[DllImport( "kernel32.dll" )]
+		private static extern bool AllocConsole();
+
+		[DllImport( "kernel32.dll" )]
+		static extern bool AttachConsole( int dwProcessId );
+		private const int ATTACH_PARENT_PROCESS = -1;
+
 	}
 }
 

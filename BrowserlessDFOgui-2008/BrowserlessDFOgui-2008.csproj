@@ -14,6 +14,8 @@
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkSubset>
     </TargetFrameworkSubset>
+    <StartupObject>
+    </StartupObject>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -41,6 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CommandLineEntryPoint.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -72,6 +75,8 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
     <Compile Include="UsernamePasswordPair.cs" />
+    <Compile Include="Properties\VersionInfo.cs" />
+    <None Include="Properties\VersionInfo.template.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DfoLogin\DfoLogin-2008.csproj">
@@ -87,4 +92,7 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <PropertyGroup>
+    <PreBuildEvent>"$(ProjectDir)../Tools/UpdateSvnInfo.py" "$(ProjectDir)/" "$(ProjectDir)Properties/VersionInfo.template.cs" "$(ProjectDir)Properties/VersionInfo.cs"</PreBuildEvent>
+  </PropertyGroup>
 </Project>
