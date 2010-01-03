@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual C# Express 2008
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DfoLogin-2008", "DfoLogin-2008.csproj", "{E4D06429-E4DF-486B-96F3-8279D1FAC78D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BrowserlessDFOcmd-2008", "..\BrowserlessDFO\BrowserlessDFOcmd-2008.csproj", "{C0294397-BE60-41BD-B244-287CC6DA86C8}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BrowserlessDFOgui-2008", "..\BrowserlessDFOgui-2008\BrowserlessDFOgui-2008.csproj", "{57AA5B17-E020-46CE-944D-5B154032571E}"
 EndProject
 Global
@@ -17,10 +15,6 @@ Global
 		{E4D06429-E4DF-486B-96F3-8279D1FAC78D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E4D06429-E4DF-486B-96F3-8279D1FAC78D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E4D06429-E4DF-486B-96F3-8279D1FAC78D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C0294397-BE60-41BD-B244-287CC6DA86C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C0294397-BE60-41BD-B244-287CC6DA86C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C0294397-BE60-41BD-B244-287CC6DA86C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C0294397-BE60-41BD-B244-287CC6DA86C8}.Release|Any CPU.Build.0 = Release|Any CPU
 		{57AA5B17-E020-46CE-944D-5B154032571E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{57AA5B17-E020-46CE-944D-5B154032571E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{57AA5B17-E020-46CE-944D-5B154032571E}.Release|Any CPU.ActiveCfg = Release|Any CPU
