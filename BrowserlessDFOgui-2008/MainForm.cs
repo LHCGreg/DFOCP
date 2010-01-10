@@ -13,6 +13,8 @@ namespace Dfo.BrowserlessDfoGui
 	public partial class ctlMainForm : Form
 	{
 		private List<Control> controlsToEnableDisable;
+		private DfoLauncher m_launcher = new DfoLauncher();
+
 		public ctlMainForm()
 		{
 			InitializeComponent();
@@ -65,7 +67,10 @@ namespace Dfo.BrowserlessDfoGui
 			UsernamePasswordPair userAndPass = (UsernamePasswordPair)param;
 			try
 			{
-				DfoLogin.StartDfo( userAndPass.Username, userAndPass.Password );
+				//DfoLogin.StartDfo( userAndPass.Username, userAndPass.Password );
+				m_launcher.Params.Username = userAndPass.Username;
+				m_launcher.Params.Password = userAndPass.Password;
+				m_launcher.Launch();
 				this.Invoke( (ThreadStart)( () => launchSuccessful() ) );
 			}
 			catch ( DfoLaunchException ex )
