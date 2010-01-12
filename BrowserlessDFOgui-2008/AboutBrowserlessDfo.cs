@@ -1,15 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.ComponentModel;
+using System.Drawing;
+using System.Linq;
 using System.Reflection;
+using System.Windows.Forms;
 
 namespace Dfo.BrowserlessDfoGui
 {
-	public static class VersionInfo
+	partial class AboutBrowserlessDfo : Form
 	{
-		public const string Revision = "$revision$";
+		public AboutBrowserlessDfo()
+		{
+			InitializeComponent();
+			this.Text = String.Format( "About {0}", AssemblyTitle );
+			
+			this.labelProductName.Text = AssemblyProduct;
+			this.labelVersion.Text = String.Format( "Version {0}", AssemblyVersion );
+			this.labelCopyright.Text = AssemblyCopyright;
+			this.labelCompanyName.Text = AssemblyCompany;
+			this.textBoxDescription.Text = VersionInfo.LicenseStatement;
+			//this.textBoxDescription.Text = AssemblyDescription;
+		}
 
-		public static string AssemblyTitle
+		#region Assembly Attribute Accessors
+
+		public string AssemblyTitle
 		{
 			get
 			{
@@ -26,7 +42,7 @@ namespace Dfo.BrowserlessDfoGui
 			}
 		}
 
-		public static string AssemblyVersion
+		public string AssemblyVersion
 		{
 			get
 			{
@@ -34,7 +50,7 @@ namespace Dfo.BrowserlessDfoGui
 			}
 		}
 
-		public static string AssemblyDescription
+		public string AssemblyDescription
 		{
 			get
 			{
@@ -47,7 +63,7 @@ namespace Dfo.BrowserlessDfoGui
 			}
 		}
 
-		public static string AssemblyProduct
+		public string AssemblyProduct
 		{
 			get
 			{
@@ -60,7 +76,7 @@ namespace Dfo.BrowserlessDfoGui
 			}
 		}
 
-		public static string AssemblyCopyright
+		public string AssemblyCopyright
 		{
 			get
 			{
@@ -73,7 +89,7 @@ namespace Dfo.BrowserlessDfoGui
 			}
 		}
 
-		public static string AssemblyCompany
+		public string AssemblyCompany
 		{
 			get
 			{
@@ -85,26 +101,6 @@ namespace Dfo.BrowserlessDfoGui
 				return ( (AssemblyCompanyAttribute)attributes[ 0 ] ).Company;
 			}
 		}
-
-		public static string LicenseStatement
-		{
-			get { return "The source code for this program is available under the Apache 2.0 License."; }
-		}
+		#endregion
 	}
 }
-
-/*
- Copyright 2010 Greg Najda
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/

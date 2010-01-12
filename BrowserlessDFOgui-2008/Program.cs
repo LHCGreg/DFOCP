@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
+using System.Threading;
+using NDesk.Options;
 
 namespace Dfo.BrowserlessDfoGui
 {
@@ -13,30 +15,73 @@ namespace Dfo.BrowserlessDfoGui
 		[STAThread]
 		static void Main( string[] args )
 		{
-			if ( args.Length == 0 ) // If no arguments, do the GUI. Otherwise, do the command-line version.
+			Thread.CurrentThread.Name = "Main";
+			Logging.SetUpLogging();
+
+			Logging.Log.InfoFormat( "{0} version {1} started.", VersionInfo.AssemblyTitle, VersionInfo.AssemblyVersion );
+			Logging.Log.Debug( "Parsing command-line arguments." );
+
+			CommandLineArgs parsedArgs = null;
+			try
 			{
+				parsedArgs = new CommandLineArgs( args );
+			}
+			catch ( OptionException ex )
+			{
+				EnsureConsoleExists();
+				Logging.Log.Fatal( ex.Message );
+				Logging.Log.FatalFormat( "Try {0} --help for more information.", CommandLineArgs.GetProgramName() );
+
+				Environment.Exit( 1 );
+			}
+
+			Logging.Log.DebugFormat( "Command line parsed. Argument dump:{0}{1}", Environment.NewLine, parsedArgs );
+
+			if ( parsedArgs.Gui )
+			{
+				Logging.Log.Info( "Starting GUI." );
 				Application.EnableVisualStyles();
 				Application.SetCompatibleTextRenderingDefault( false );
 				Application.Run( new ctlMainForm() );
 			}
 			else
 			{
+				EnsureConsoleExists();
+				Logging.Log.Info( "Starting command-line launcher." );
+				
+				CommandLineEntryPoint( parsedArgs );
+			}
+		}
+
+		[DllImport( "kernel32.dll", SetLastError = true )]
+		private static extern bool AllocConsole();
+
+		[DllImport( "kernel32.dll", SetLastError = true )]
+		static extern IntPtr GetConsoleWindow();
+
+		[DllImport( "kernel32.dll", SetLastError = true )]
+		static extern bool AttachConsole( int dwProcessId );
+		private const int ATTACH_PARENT_PROCESS = -1;
+
+		/// <summary>
+		/// Use the function to make a console exists if you need to output to the screen. If there is no
+		/// console yet, it tries to attach to the parent process's console. If it cannot, it creates a new
+		/// console.
+		/// </summary>
+		private static void EnsureConsoleExists()
+		{
+			IntPtr currentConsoleWinHandle = GetConsoleWindow();
+			if ( currentConsoleWinHandle == IntPtr.Zero )
+			{
 				bool attachedToParentsConsole = AttachConsole( ATTACH_PARENT_PROCESS ); // Attach to parent's console for output
 				if ( !attachedToParentsConsole )
 				{
 					AllocConsole(); // If couldn't attach to parent's console (maybe it doesn't have one), create a new console
 				}
-
-				CommandLineEntryPoint( args );
 			}
 		}
 
-		[DllImport( "kernel32.dll" )]
-		private static extern bool AllocConsole();
-
-		[DllImport( "kernel32.dll" )]
-		static extern bool AttachConsole( int dwProcessId );
-		private const int ATTACH_PARENT_PROCESS = -1;
+		
 
 	}
 }

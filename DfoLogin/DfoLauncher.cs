@@ -54,7 +54,6 @@ namespace Dfo.Login
 				lock ( m_LaunchStateChangedLock ) { m_LaunchStateChangedDelegate -= value; }
 			}
 		}
-
 		#region thread-safe event stuff
 		private object m_LaunchStateChangedLock = new object();
 		private EventHandler<EventArgs> m_LaunchStateChangedDelegate;
@@ -94,6 +93,35 @@ namespace Dfo.Login
 			lock ( m_WindowModeFailedLock )
 			{
 				currentDelegate = m_WindowModeFailedDelegate;
+			}
+			if ( currentDelegate != null )
+			{
+				currentDelegate( this, e );
+			}
+		}
+		#endregion
+
+		public event EventHandler<ErrorEventArgs> SoundpackSwitchFailed
+		{
+			add
+			{
+				lock ( m_SoundpackSwitchFailedLock ) { m_SoundpackSwitchFailedDelegate += value; }
+			}
+			remove
+			{
+				lock ( m_SoundpackSwitchFailedLock ) { m_SoundpackSwitchFailedDelegate -= value; }
+			}
+		}
+		#region thread-safe event stuff
+		private object m_SoundpackSwitchFailedLock = new object();
+		private EventHandler<ErrorEventArgs> m_SoundpackSwitchFailedDelegate;
+
+		protected virtual void OnSoundpackSwitchFailed( ErrorEventArgs e )
+		{
+			EventHandler<ErrorEventArgs> currentDelegate;
+			lock ( m_SoundpackSwitchFailedLock )
+			{
+				currentDelegate = m_SoundpackSwitchFailedDelegate;
 			}
 			if ( currentDelegate != null )
 			{
@@ -155,7 +183,7 @@ namespace Dfo.Login
 		/// Params.CustomSoundpackDir, or Params.TempSoundpackDir is null.</exception>
 		/// <exception cref="System.ArgumentOutOfRangeException">Params.LoginTimeoutInMs or
 		/// Params.PollingIntervalInMs was negative.</exception>
-		/// <exception cref="System.SecurityException">The caller does not have permission to connect to the DFO
+		/// <exception cref="System.Security.SecurityException">The caller does not have permission to connect to the DFO
 		/// URI.</exception>
 		/// <exception cref="System.Net.WebException">A timeout occurred.</exception>
 		/// <exception cref="DfoLogin.DfoAuthenticationException">Either the username/password is incorrect
@@ -222,7 +250,8 @@ namespace Dfo.Login
 			string dfoLauncherPath = ""; // assignment to shut the compiler up. I know that if Win32Exception is thrown, this has been set.
 			try
 			{
-				string dfoArg = DfoLogin.GetDfoArg( Params.Username, Params.Password, Params.LoginTimeoutInMs ); // Log in
+				//string dfoArg = DfoLogin.GetDfoArg( Params.Username, Params.Password, Params.LoginTimeoutInMs ); // Log in
+				string dfoArg = "abc"; // TODO - just for testing
 				State = LaunchState.Launching; // If we reach this line, we successfully logged in. Now we're launching.
 
 				m_monitorCancelEvent.Reset();
@@ -242,6 +271,7 @@ namespace Dfo.Login
 
 				m_dfoMonitorThread = new Thread( BackgroundThreadEntryPoint ); // Start the thread that monitors the state of DFO
 				m_dfoMonitorThread.IsBackground = true;
+				m_dfoMonitorThread.Name = "DFO monitor";
 				m_dfoMonitorThread.Start( Params.Clone() ); // Give it a copy of the launch params so the caller can change the Params property while the game is running with no effects for the next time they launch
 			}
 			catch ( System.Net.WebException ex )
@@ -464,9 +494,6 @@ namespace Dfo.Login
 				{
 					soundpacksSwitched = SwitchSoundpacks( copiedParams.SoundpackDir, copiedParams.CustomSoundpackDir, copiedParams.TempSoundpackDir );
 				}
-
-				// Game is up.
-				State = LaunchState.GameInProgress;
 			}
 
 			IntPtr dfoMainWindowHandle = IntPtr.Zero;
@@ -476,7 +503,7 @@ namespace Dfo.Login
 				Pair<IntPtr, bool> pollResults = PollUntilCanceled<IntPtr>( copiedParams.GameWindowCreatedPollingIntervalInMs,
 					() =>
 					{
-						IntPtr dfoWindowHandle = FindWindow( copiedParams.DfoWindowClassName, null );
+						IntPtr dfoWindowHandle = GetDfoWindowHandle( copiedParams );
 						if ( dfoWindowHandle != IntPtr.Zero )
 						{
 							return new Pair<IntPtr, bool>( dfoWindowHandle, true ); // Window exists, done polling
@@ -484,9 +511,9 @@ namespace Dfo.Login
 						else
 						{
 							// Check if the DFO process is running. Under normal conditions, it certainly would be
-							// by now becauseit gets started by the launcher process and the launcher process has ended.
-							// If it is not, that means the launcher ended unsuccessfully or the DFO process ended very quickly.
-							// In either case, our job is done here.
+							// by now because it gets started by the launcher process and the launcher process has ended.
+							// If it is not, that means the launcher ended unsuccessfully or the DFO process
+							// ended very quickly. In either case, our job is done here.
 
 							Process[] dfoProcesses = Process.GetProcessesByName( Path.GetFileNameWithoutExtension( copiedParams.DfoExe ) );
 							if ( dfoProcesses.Length > 0 )
@@ -501,16 +528,27 @@ namespace Dfo.Login
 					} );
 
 				canceled = pollResults.Second;
+				if ( !canceled )
+				{
+					if ( pollResults.First == IntPtr.Zero )
+					{
+						canceled = true; // Treat a premature closing of the DFO process the same as a cancel request.
+					}
+				}
 				dfoMainWindowHandle = pollResults.First; // Try not to use this handle - what if the DFO window closes and then some other window gets the same handle value?
 			}
 
 			if ( !canceled )
 			{
+				// Game is up.
+				State = LaunchState.GameInProgress;
+
 				// Wait for DFO game window to be closed or a cancel notice
 				Pair<IntPtr, bool> pollResults = PollUntilCanceled<IntPtr>( copiedParams.GameDonePollingIntervalInMs,
 					() =>
 					{
-						IntPtr dfoWindowHandle = FindWindow( copiedParams.DfoWindowClassName, null );
+						//IntPtr dfoWindowHandle = FindWindow( copiedParams.DfoWindowClassName, null );
+						IntPtr dfoWindowHandle = GetDfoWindowHandle( copiedParams );
 						if ( dfoWindowHandle == IntPtr.Zero )
 						{
 							return new Pair<IntPtr, bool>( dfoWindowHandle, true ); // Window does not exist, done polling
@@ -526,24 +564,27 @@ namespace Dfo.Login
 
 			if ( !canceled )
 			{
-				// Kill the DFO process to kill the popup.
-				Process[] dfoProcesses = Process.GetProcessesByName( Path.GetFileNameWithoutExtension( copiedParams.DfoExe ) );
-				if ( dfoProcesses.Length > 0 )
+				if ( copiedParams.ClosePopup )
 				{
-					try
+					// Kill the DFO process to kill the popup.
+					Process[] dfoProcesses = Process.GetProcessesByName( Path.GetFileNameWithoutExtension( copiedParams.DfoExe ) );
+					if ( dfoProcesses.Length > 0 )
 					{
-						dfoProcesses[ 0 ].Kill(); // What to do if there's more than one?
-					}
-					catch ( Exception ex )
-					{
-						if ( ex is System.ComponentModel.Win32Exception
-						  || ex is InvalidOperationException )
+						try
 						{
-							// Log or something
+							dfoProcesses[ 0 ].Kill(); // What to do if there's more than one?
 						}
-						else
+						catch ( Exception ex )
 						{
-							throw;
+							if ( ex is System.ComponentModel.Win32Exception
+							  || ex is InvalidOperationException )
+							{
+								// The process is already dead or dying. This is not an error condition.
+							}
+							else
+							{
+								throw;
+							}
 						}
 					}
 				}
@@ -603,18 +644,110 @@ namespace Dfo.Login
 			}
 		}
 
+		private IntPtr GetDfoWindowHandle( LaunchParams copiedParams )
+		{
+			//return FindWindow( copiedParams.DfoWindowClassName );
+			return FindWindow( null, "DFO" ); // TODO - just for testing
+		}
+
 		private bool SwitchSoundpacks( string soundpackDir, string customSoundpackDir, string tempSoundpackDir )
 		{
-			// Move soundpackDir to tempSoundpackDir
-			// Move customSoundpackDir to soundpackDir
-			return false; // TODO
+			bool firstMoveSuccessful = false;
+			try
+			{
+				// Move soundpackDir to tempSoundpackDir
+				Directory.Move( soundpackDir, tempSoundpackDir );
+				firstMoveSuccessful = true;
+
+				// Move customSoundpackDir to soundpackDir
+				Directory.Move( customSoundpackDir, soundpackDir );
+			}
+			catch ( Exception ex )
+			{
+				// If the first move was successful, we can probably move it back
+				bool undoSuccess = false;
+				Exception undoError = null;
+				if ( firstMoveSuccessful )
+				{
+					try
+					{
+						Directory.Move( tempSoundpackDir, soundpackDir );
+						undoSuccess = true;
+					}
+					catch ( Exception ex2 )
+					{
+						undoError = ex2;
+					}
+				}
+
+				ErrorEventArgs e;
+				if ( !firstMoveSuccessful )
+				{
+					e = new ErrorEventArgs( new IOException( string.Format(
+					"Could not move main soundpack directory {0} to temp soundpack directory {1}. {2}",
+					soundpackDir, tempSoundpackDir, ex.Message ), ex ) );
+				}
+				else
+				{
+					string undoMessage;
+					if ( undoSuccess )
+					{
+						undoMessage = string.Format(
+						"Main soundpack in {0} successfully moved back to {1}. Soundpack directories are in a consistent state.",
+						tempSoundpackDir, soundpackDir );
+					}
+					else
+					{
+						undoMessage = string.Format(
+						"Main soundpack in {0} could not be moved back to {1}. {2} Soundpack directories are in an inconsistent state! You must manually fix them.",
+						tempSoundpackDir, soundpackDir, undoError.Message );
+					}
+					e = new ErrorEventArgs( new IOException( string.Format(
+					"Could not move custom soundpack directory {0} to main soundpack directory {1}. {2} {3}",
+					customSoundpackDir, soundpackDir, ex.Message, undoMessage ), ex ) );
+				}
+
+				OnSoundpackSwitchFailed( e );
+
+				return false;
+			}
+
+			return true;
 		}
 
 		private bool SwitchBackSoundpacks( string soundpackDir, string customSoundpackDir, string tempSoundpackDir )
 		{
-			// Move soundpackDir to customSoundpackDir
-			// Move tempSoundpackDir to soundpackDir
-			return false; // TODO
+			bool firstMoveSuccessful = false;
+			try
+			{
+				// Move soundpackDir to customSoundpackDir
+				Directory.Move( soundpackDir, customSoundpackDir );
+				firstMoveSuccessful = true;
+
+				// Move tempSoundpackDir to soundpackDir
+				Directory.Move( tempSoundpackDir, soundpackDir );
+			}
+			catch ( Exception ex )
+			{
+				ErrorEventArgs e;
+				if ( !firstMoveSuccessful )
+				{
+					e = new ErrorEventArgs( new IOException( string.Format(
+					"Could not move back custom soundpack in {0} back to {1}. {2}",
+					soundpackDir, customSoundpackDir, ex.Message ), ex ) );
+				}
+				else
+				{
+					e = new ErrorEventArgs( new IOException( string.Format(
+					"Could not move back main soundpack in {0} back to {1}. {2}",
+					tempSoundpackDir, soundpackDir, ex.Message ), ex ) );
+				}
+
+				OnSoundpackSwitchFailed( e );
+
+				return false;
+			}
+			return true;
 		}
 
 		private void LauncherProcessExitedHandler( object sender, EventArgs e )

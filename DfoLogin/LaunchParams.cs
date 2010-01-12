@@ -22,7 +22,7 @@ namespace Dfo.Login
 		/// <summary>
 		/// Gets or sets the number of milliseconds to timeout after when waiting for a response from the
 		/// server when logging in.
-		/// Default: 15000 (15 seconds).
+		/// Default: 10000 (10 seconds)
 		/// </summary>
 		public int LoginTimeoutInMs { get; set; }
 
@@ -67,7 +67,7 @@ namespace Dfo.Login
 		/// Gets the path of the directory containing the normal soundpacks.
 		/// This will be some subdirectory of DfoDir.
 		/// </summary>
-		internal string SoundpackDir
+		public string SoundpackDir
 		{
 			get
 			{
@@ -183,7 +183,7 @@ namespace Dfo.Login
 		{
 			Username = null;
 			Password = null;
-			LoginTimeoutInMs = 15000;
+			LoginTimeoutInMs = 10000;
 			DfoDir = AppDomain.CurrentDomain.BaseDirectory;
 			SwitchSoundpacks = false;
 			CustomSoundpackDir = Path.Combine( AppDomain.CurrentDomain.BaseDirectory, "SoundPacksCustom" );
@@ -219,6 +219,28 @@ namespace Dfo.Login
 			//clone.LauncherSuccessCode = this.LauncherSuccessCode;
 
 			return clone;
+		}
+
+		public override string ToString()
+		{
+			StringBuilder builder = new StringBuilder();
+
+			builder.AppendLine( "Close popup: " + this.ClosePopup );
+			builder.AppendLine( "Custom soundpack dir: " + this.CustomSoundpackDir );
+			builder.AppendLine( "DFO dir: " + this.DfoDir );
+			builder.AppendLine( "DFO exe: " + this.DfoExe );
+			builder.AppendLine( "DFO launcher exe: " + this.DfoLauncherExe );
+			builder.AppendLine( "DFO window class name: " + this.DfoWindowClassName );
+			builder.AppendLine( "Game done polling interval: " + this.GameDonePollingIntervalInMs );
+			builder.AppendLine( "Game window created polling interval: " + this.GameWindowCreatedPollingIntervalInMs );
+			builder.AppendLine( "Launch in windowed: " + this.LaunchInWindowed );
+			builder.AppendLine( "Login timeout: " + this.LoginTimeoutInMs );
+			builder.AppendLine( "Soundpack dir: " + this.SoundpackDir );
+			builder.AppendLine( "Switch soundpacks: " + this.SwitchSoundpacks );
+			builder.Append( "Temp soundpack dir: " + this.TempSoundpackDir );
+			// DO NOT include the username or password!
+
+			return builder.ToString();
 		}
 	}
 }
