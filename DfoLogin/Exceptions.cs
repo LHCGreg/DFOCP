@@ -1,7 +1,7 @@
 ﻿using System;
 
 
-namespace Dfo.Login
+namespace Dfo.Controlling
 {
 	[Serializable]
 	public class DfoAuthenticationException : Exception

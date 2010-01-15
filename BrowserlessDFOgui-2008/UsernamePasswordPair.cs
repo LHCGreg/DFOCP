@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Dfo.BrowserlessDfoGui
+namespace Dfo.ControlPanel
 {
 	public class UsernamePasswordPair
 	{

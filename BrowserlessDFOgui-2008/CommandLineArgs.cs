@@ -5,7 +5,7 @@ using System.Text;
 using NDesk.Options;
 using System.IO;
 
-namespace Dfo.BrowserlessDfoGui
+namespace Dfo.ControlPanel
 {
 	class CommandLineArgs
 	{

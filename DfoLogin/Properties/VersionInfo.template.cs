@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Dfo.Login
+namespace Dfo.Controlling
 {
 	public static class VersionInfo
 	{

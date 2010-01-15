@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Dfo.Login;
+using Dfo.Controlling;
 
-namespace Dfo.BrowserlessDfoGui
+namespace Dfo.ControlPanel
 {
 	class StartupSettings
 	{

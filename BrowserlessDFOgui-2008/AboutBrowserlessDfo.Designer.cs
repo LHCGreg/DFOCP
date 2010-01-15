@@ -1,4 +1,4 @@
-﻿namespace Dfo.BrowserlessDfoGui
+﻿namespace Dfo.ControlPanel
 {
 	partial class AboutBrowserlessDfo
 	{
@@ -67,7 +67,7 @@
 			// logoPictureBox
 			// 
 			this.logoPictureBox.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.logoPictureBox.Image = global::Dfo.BrowserlessDfoGui.Properties.Resources.AboutLogo;
+			this.logoPictureBox.Image = global::Dfo.ControlPanel.Properties.Resources.AboutLogo;
 			this.logoPictureBox.Location = new System.Drawing.Point( 3, 3 );
 			this.logoPictureBox.Name = "logoPictureBox";
 			this.tableLayoutPanel.SetRowSpan( this.logoPictureBox, 6 );

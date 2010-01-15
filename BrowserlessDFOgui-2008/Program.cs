@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using NDesk.Options;
 
-namespace Dfo.BrowserlessDfoGui
+namespace Dfo.ControlPanel
 {
 	static class Program
 	{

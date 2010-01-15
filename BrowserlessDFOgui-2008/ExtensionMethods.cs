@@ -5,7 +5,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Threading;
 
-namespace Dfo.BrowserlessDfoGui
+namespace Dfo.ControlPanel
 {
 	static class ExtensionMethods
 	{

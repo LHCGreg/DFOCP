@@ -6,7 +6,7 @@ using System.Xml.Linq;
 using System.IO;
 using System.Xml;
 
-namespace Dfo.BrowserlessDfoGui
+namespace Dfo.ControlPanel
 {
 	static class SettingsLoader
 	{

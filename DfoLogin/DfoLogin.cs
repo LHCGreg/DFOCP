@@ -8,7 +8,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 
-namespace Dfo.Login
+namespace Dfo.Controlling
 {
 	public static class DfoLogin
 	{

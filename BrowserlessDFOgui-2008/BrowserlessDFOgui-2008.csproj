@@ -8,8 +8,8 @@
     <ProjectGuid>{57AA5B17-E020-46CE-944D-5B154032571E}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Dfo.BrowserlessDfoGui</RootNamespace>
-    <AssemblyName>BrowserlessDFOgui</AssemblyName>
+    <RootNamespace>Dfo.ControlPanel</RootNamespace>
+    <AssemblyName>DFOCP</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkSubset>
@@ -33,6 +33,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821">

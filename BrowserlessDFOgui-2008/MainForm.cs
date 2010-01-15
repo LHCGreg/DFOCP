@@ -6,10 +6,10 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using System.Threading;
-using Dfo.Login;
+using Dfo.Controlling;
 using System.IO;
 
-namespace Dfo.BrowserlessDfoGui
+namespace Dfo.ControlPanel
 {
 	public partial class ctlMainForm : Form
 	{
@@ -75,8 +75,16 @@ namespace Dfo.BrowserlessDfoGui
 		{
 			Logging.Log.Debug( "Loading main window." );
 
-			m_savedSettings = SettingsLoader.Load();
+			try
+			{
+				m_launcher.Params.AutoDetectDfoDir();
+			}
+			catch ( IOException ex )
+			{
+				Logging.Log.ErrorFormat( "Could not autodetect the DFO directory. {0}", ex.Message );
+			}
 
+			m_savedSettings = SettingsLoader.Load();
 			ApplySettingsAndArguments();
 
 			bool mainSoundpackDirExists = Directory.Exists( m_launcher.Params.SoundpackDir );
@@ -149,13 +157,13 @@ namespace Dfo.BrowserlessDfoGui
 			e.Cancel = true;
 		}
 
-		private void SoundpackFailedHandler( object sender, Dfo.Login.ErrorEventArgs e )
+		private void SoundpackFailedHandler( object sender, Dfo.Controlling.ErrorEventArgs e )
 		{
 			DisplayError( string.Format( "Switching soundpacks failed. {0}", e.Error.Message ),
 				"Soundpack Switch Error" );
 		}
 
-		private void PopupKillFailedHandler( object sender, Dfo.Login.ErrorEventArgs e )
+		private void PopupKillFailedHandler( object sender, Dfo.Controlling.ErrorEventArgs e )
 		{
 			DisplayError( string.Format( "Could not kill the popup. {0}", e.Error.Message ), "Popup Close Error" );
 		}

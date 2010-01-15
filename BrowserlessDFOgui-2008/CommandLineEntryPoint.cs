@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
-using Dfo.Login;
+using Dfo.Controlling;
 using System.Threading;
 
-namespace Dfo.BrowserlessDfoGui
+namespace Dfo.ControlPanel
 {
 	class CommandLineEntryPoint : IDisposable
 	{
@@ -56,6 +56,15 @@ namespace Dfo.BrowserlessDfoGui
 				return 1;
 			}
 
+			try
+			{
+				m_launcher.Params.AutoDetectDfoDir();
+			}
+			catch ( IOException ex )
+			{
+				Logging.Log.ErrorFormat( "Could not autodetect the DFO directory. {0}", ex.Message );
+			}
+			
 			try
 			{
 				if ( m_parsedArgs.Settings.ClosePopup != null ) m_launcher.Params.ClosePopup = m_parsedArgs.Settings.ClosePopup.Value;
@@ -132,7 +141,7 @@ namespace Dfo.BrowserlessDfoGui
 			}
 		}
 
-		private void SoundSwitchFailHandler( object sender, Dfo.Login.ErrorEventArgs e )
+		private void SoundSwitchFailHandler( object sender, Dfo.Controlling.ErrorEventArgs e )
 		{
 			Logging.Log.ErrorFormat( "Switching soundpacks failed. {0}", e.Error.Message );
 		}
@@ -143,7 +152,7 @@ namespace Dfo.BrowserlessDfoGui
 			e.Cancel = true;
 		}
 
-		private void PopupKillFailHandler( object sender, Dfo.Login.ErrorEventArgs e )
+		private void PopupKillFailHandler( object sender, Dfo.Controlling.ErrorEventArgs e )
 		{
 			Logging.Log.ErrorFormat( "Could not kill the popup. {0}", e.Error.Message );
 		}

@@ -8,19 +8,20 @@
 -warn about exiting when switching soundpacks and game in progress
 -saving/loading
 -Uncaught exception handlers
-Test soundpack switching
-Check for application's dir by using registry key
-Remove debug shortcuts and test with real DFO
-Icon
+-Test soundpack switching
+-Check for application's dir by using registry key
+-Remove debug shortcuts and test with real DFO
+-Update assembly info
+Rename stuff
+Thank Tomato
 XML doc for public things in the dll
-Update assembly info
 Tidying up GUI (tab index, anchors)
-Rename to DFO Control Panel
-Copyright notices
+Copyright notices in source files
 
 Next version:
-Resizing
 Saving to .bat file
+Resizing
+Icon?
 Minimizing to tray?
 More logging?
 Feedback

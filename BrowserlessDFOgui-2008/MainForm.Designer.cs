@@ -1,4 +1,4 @@
-﻿namespace Dfo.BrowserlessDfoGui
+﻿namespace Dfo.ControlPanel
 {
 	partial class ctlMainForm
 	{

@@ -7,7 +7,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Management;
 
-namespace Dfo.Login
+namespace Dfo.Controlling
 {
 	public enum LaunchState
 	{
@@ -286,8 +286,8 @@ namespace Dfo.Login
 
 			try
 			{
-				//string dfoArg = DfoLogin.GetDfoArg( Params.Username, Params.Password, Params.LoginTimeoutInMs ); // Log in
-				string dfoArg = "abc"; // TODO - just for testing
+				string dfoArg = DfoLogin.GetDfoArg( Params.Username, Params.Password, Params.LoginTimeoutInMs ); // Log in
+				//string dfoArg = "abc"; // DEBUG
 				State = LaunchState.Launching; // If we reach this line, we successfully logged in. Now we're launching.
 
 				m_monitorCancelEvent.Reset();
@@ -664,6 +664,25 @@ namespace Dfo.Login
 			// Switch back soundpacks if they were switched
 			if ( soundpacksSwitched )
 			{
+				// Wait for DFO process to end, otherwise the OS won't let us move the soundpack directory
+				
+				Process[] dfoProcesses;
+				do
+				{
+					dfoProcesses = Process.GetProcessesByName( Path.GetFileNameWithoutExtension( copiedParams.DfoExe ) );
+					if ( dfoProcesses.Length > 0 )
+					{
+						try
+						{
+							dfoProcesses[ 0 ].WaitForExit();
+						}
+						catch ( System.ComponentModel.Win32Exception )
+						{
+							; // Process already dead
+						}
+					}
+				} while ( dfoProcesses.Length > 0 );
+
 				bool switchbackSuccess = SwitchBackSoundpacks( copiedParams.SoundpackDir, copiedParams.CustomSoundpackDir, copiedParams.TempSoundpackDir );
 			}
 
@@ -716,8 +735,8 @@ namespace Dfo.Login
 
 		private IntPtr GetDfoWindowHandle( LaunchParams copiedParams )
 		{
-			//return FindWindow( copiedParams.DfoWindowClassName, null );
-			return FindWindow( null, "DFO" ); // TODO - just for testing
+			return FindWindow( copiedParams.DfoWindowClassName, null );
+			//return FindWindow( null, "DFO" ); // DEBUG
 		}
 
 		private bool DfoWindowIsOpen( IntPtr dfoWindowHandle )

@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using Microsoft.Win32;
 
-namespace Dfo.Login
+namespace Dfo.Controlling
 {
 	public class LaunchParams
 	{
@@ -46,8 +47,7 @@ namespace Dfo.Login
 		/// </summary>
 		/// <exception cref="System.ArgumentNullException">The value was attempted to be set to null.</exception>
 		/// <exception cref="System.ArgumentException">The value was attempted to be set to a path that contains
-		/// characters in <c>System.IO.Path.GetInvalidPathChars()</c>.
-		/// </exception>
+		/// characters in <c>System.IO.Path.GetInvalidPathChars()</c>.</exception>
 		public string DfoDir
 		{
 			get { return m_dfoDir; }
@@ -86,7 +86,7 @@ namespace Dfo.Login
 		/// </summary>
 		/// <exception cref="System.ArgumentNullException">The value was attempted to be set to null.</exception>
 		/// <exception cref="System.ArgumentException">The value was attempted to be set to a path that contains
-		/// characters in <c>System.IO.Path.GetInvalidPathChars()</c>.
+		/// characters in <c>System.IO.Path.GetInvalidPathChars()</c></exception>.
 		public string CustomSoundpackDir
 		{
 			get { return m_customSoundpackDir; }
@@ -107,7 +107,7 @@ namespace Dfo.Login
 		/// </summary>
 		/// <exception cref="System.ArgumentNullException">The value was attempted to be set to null.</exception>
 		/// <exception cref="System.ArgumentException">The value was attempted to be set to a path that contains
-		/// characters in <c>System.IO.Path.GetInvalidPathChars()</c>.
+		/// characters in <c>System.IO.Path.GetInvalidPathChars()</c>.</exception>
 		public string TempSoundpackDir
 		{
 			get { return m_tempSoundpackDir; }
@@ -168,7 +168,7 @@ namespace Dfo.Login
 
 		/// <summary>
 		/// Gets or sets the number of milliseconds to wait when polling for the main game window to be closed.
-		/// Default: 1000 (1 second)
+		/// Default: 500 (500 milliseconds)
 		/// </summary>
 		internal int GameDonePollingIntervalInMs { get; set; }
 
@@ -183,10 +183,63 @@ namespace Dfo.Login
 			TempSoundpackDir = TempSoundpackDirDefault;
 			ClosePopup = true;
 			LaunchInWindowed = null;
-
 			DfoWindowClassName = "DFO";
 			GameDonePollingIntervalInMs = 1000;
 			GameWindowCreatedPollingIntervalInMs = 100;
+		}
+
+		/// <summary>
+		/// Tries to figure out where the DFO directory is and sets DfoDir to it and changes CustomSoundpackDir
+		/// and TempSoundpackDir as well.
+		/// </summary>
+		/// <exception cref="System.IO.IOException">The DFO directory could not be detected.</exception>
+		public void AutoDetectDfoDir()
+		{
+			object dfoRoot = null;
+			string keyName = @"HKEY_LOCAL_MACHINE\SOFTWARE\Nexon\DFO";
+			string valueName = "RootPath";
+
+			try
+			{
+				dfoRoot = Registry.GetValue( keyName, valueName, null );
+			}
+			catch ( System.Security.SecurityException ex )
+			{
+				ThrowAutoDetectException( keyName, valueName, ex );
+			}
+			catch ( IOException ex )
+			{
+				ThrowAutoDetectException( keyName, valueName, ex );
+			}
+
+			if ( dfoRoot == null )
+			{
+				ThrowAutoDetectException( keyName, valueName, "The registry value does not exist" );
+			}
+
+			string dfoRootDir = dfoRoot.ToString();
+			if ( PathIsValid( dfoRootDir ) )
+			{
+				DfoDir = dfoRootDir;
+				CustomSoundpackDir = CustomSoundpackDirDefault;
+				TempSoundpackDir = TempSoundpackDirDefault;
+			}
+			else
+			{
+				throw new IOException( string.Format( "Registry value {0} in {1} is not a valid path." ) );
+			}
+		}
+
+		private void ThrowAutoDetectException( string keyname, string valueName, Exception ex )
+		{
+			throw new IOException( string.Format( "Could not read registry value {0} in {1}. {2}",
+				valueName, keyname, ex.Message ), ex );
+		}
+
+		private void ThrowAutoDetectException( string keyname, string valueName, string message )
+		{
+			throw new IOException( string.Format( "Could not read registry value {0} in {1}. {2}",
+				valueName, keyname, message ) );
 		}
 
 		public LaunchParams Clone()

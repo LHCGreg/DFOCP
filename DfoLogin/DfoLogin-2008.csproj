@@ -8,8 +8,8 @@
     <ProjectGuid>{E4D06429-E4DF-486B-96F3-8279D1FAC78D}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Dfo.Login</RootNamespace>
-    <AssemblyName>Dfo.Login</AssemblyName>
+    <RootNamespace>Dfo.Controlling</RootNamespace>
+    <AssemblyName>Dfo.Controlling</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkSubset>
