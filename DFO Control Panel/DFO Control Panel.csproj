@@ -109,7 +109,7 @@
     <None Include="Properties\VersionInfo.template.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DfoLogin\DfoLogin-2008.csproj">
+    <ProjectReference Include="..\DfoControlling\DfoControlling.csproj">
       <Project>{E4D06429-E4DF-486B-96F3-8279D1FAC78D}</Project>
       <Name>DfoLogin-2008</Name>
     </ProjectReference>
