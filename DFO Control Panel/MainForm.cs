@@ -347,7 +347,7 @@ namespace Dfo.ControlPanel
 
 		private void aboutToolStripMenuItem_Click( object sender, EventArgs e )
 		{
-			using ( AboutBrowserlessDfo aboutBox = new AboutBrowserlessDfo() )
+			using ( About aboutBox = new About() )
 			{
 				aboutBox.ShowDialog();
 			}

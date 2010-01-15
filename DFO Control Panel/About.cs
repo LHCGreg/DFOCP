@@ -8,9 +8,9 @@ using System.Windows.Forms;
 
 namespace Dfo.ControlPanel
 {
-	partial class AboutBrowserlessDfo : Form
+	partial class About : Form
 	{
-		public AboutBrowserlessDfo()
+		public About()
 		{
 			InitializeComponent();
 			this.Text = String.Format( "About {0}", AssemblyTitle );
