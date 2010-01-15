@@ -51,9 +51,7 @@ namespace Dfo.BrowserlessDfoGui
 			log4net.Appender.FileAppender fileAppender = new log4net.Appender.FileAppender();
 			fileAppender.AppendToFile = false;
 			fileAppender.Encoding = Encoding.UTF8;
-			fileAppender.File = Path.Combine(
-				Path.Combine( Environment.GetFolderPath( Environment.SpecialFolder.ApplicationData ), "BrowserlessDFO" ),
-				"BrowserlessDFO.log" );
+			fileAppender.File = Paths.LogPath;
 			fileAppender.ImmediateFlush = true;
 			fileAppender.Layout = layout;
 			fileAppender.LockingModel = new log4net.Appender.FileAppender.ExclusiveLock();

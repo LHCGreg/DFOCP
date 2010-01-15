@@ -19,12 +19,25 @@ namespace Dfo.Login
 		/// </summary>
 		public string Password { get; set; }
 
+		private int m_loginTimeoutInMs;
 		/// <summary>
 		/// Gets or sets the number of milliseconds to timeout after when waiting for a response from the
 		/// server when logging in.
 		/// Default: 10000 (10 seconds)
 		/// </summary>
-		public int LoginTimeoutInMs { get; set; }
+		/// <exception cref="System.ArgumentException">The value was attempted to be set to a negative number.</exception>
+		public int LoginTimeoutInMs
+		{
+			get { return m_loginTimeoutInMs; }
+			set
+			{
+				if ( value < 0 )
+				{
+					throw new ArgumentException( "Login timeout cannot be negative." );
+				}
+				m_loginTimeoutInMs = value;
+			}
+		}
 
 		private string m_dfoDir;
 		/// <summary>
@@ -37,25 +50,15 @@ namespace Dfo.Login
 		/// </exception>
 		public string DfoDir
 		{
-			get
-			{
-				return m_dfoDir;
-			}
+			get { return m_dfoDir; }
 			set
 			{
-				if ( value == null )
-				{
-					throw new ArgumentNullException( "DfoDir" );
-				}
-				char[] invalidChars = Path.GetInvalidPathChars();
-				if ( value.IndexOfAny( invalidChars ) != -1 )
-				{
-					throw new ArgumentException( "DfoDir cannot contains characters that are invalid in a path." );
-				}
-
+				ValidatePath( value, "DfoDir" );
 				m_dfoDir = value;
 			}
 		}
+
+		public string DfoDirDefault { get { return AppDomain.CurrentDomain.BaseDirectory; } }
 
 		/// <summary>
 		/// Gets or sets whether to switch soundpacks to use different sounds in the game.
@@ -71,32 +74,51 @@ namespace Dfo.Login
 		{
 			get
 			{
-				//if ( DfoDir != null )
-				//{
-				//    return Path.Combine( DfoDir, "SoundPacks" );
-				//}
-				//else
-				//{
-				//    return null;
-				//}
-				//return "SoundPacks";
 				return Path.Combine( DfoDir, "SoundPacks" );
 			}
 		}
 
+		private string m_customSoundpackDir;
 		/// <summary>
 		/// Gets or sets the directory containing the soundpacks to switch to. If <c>SwitchSoundpacks</c> is
 		/// false, this setting is not used.
-		/// Default: (The directory containing currently executing program)/SoundPacksCustom
+		/// Default: DfoDir/SoundPacksCustom
 		/// </summary>
-		public string CustomSoundpackDir { get; set; }
+		/// <exception cref="System.ArgumentNullException">The value was attempted to be set to null.</exception>
+		/// <exception cref="System.ArgumentException">The value was attempted to be set to a path that contains
+		/// characters in <c>System.IO.Path.GetInvalidPathChars()</c>.
+		public string CustomSoundpackDir
+		{
+			get { return m_customSoundpackDir; }
+			set
+			{
+				ValidatePath( value, "CustomSoundpackDir" );
+				m_customSoundpackDir = value;
+			}
+		}
 
+		public string CustomSoundpackDirDefault { get { return Path.Combine( DfoDir, "SoundPacksCustom" ); } }
+
+		private string m_tempSoundpackDir;
 		/// <summary>
 		/// Gets or sets the directory to put the original soundpacks in while the game is running. If
 		/// <c>SwitchSoundpacks</c> is false, this setting is not used.
-		/// Default: (The directory containing currently executing program)/SoundPacksOriginal
+		/// Default: DfoDir/SoundPacksOriginal
 		/// </summary>
-		public string TempSoundpackDir { get; set; }
+		/// <exception cref="System.ArgumentNullException">The value was attempted to be set to null.</exception>
+		/// <exception cref="System.ArgumentException">The value was attempted to be set to a path that contains
+		/// characters in <c>System.IO.Path.GetInvalidPathChars()</c>.
+		public string TempSoundpackDir
+		{
+			get { return m_tempSoundpackDir; }
+			set
+			{
+				ValidatePath( value, "TempSoundpackDir" );
+				m_tempSoundpackDir = value;
+			}
+		}
+
+		public string TempSoundpackDirDefault { get { return Path.Combine( DfoDir, "SoundPacksOriginal" ); } }
 
 		/// <summary>
 		/// Gets or sets whether to kill the popup at the end of the game.
@@ -123,18 +145,10 @@ namespace Dfo.Login
 		{
 			get
 			{
-				//if ( DfoDir != null )
-				//{
-				//    return Path.Combine( DfoDir, "DFOLauncher.exe" );
-				//}
-				//else
-				//{
-				//    return null;
-				//}
 				return Path.Combine( DfoDir, "DFOLauncher.exe" );
 			}
 		}
-		
+
 		/// <summary>
 		/// Gets the path to the DFO executable. This will be in DfoDir.
 		/// </summary>
@@ -142,24 +156,9 @@ namespace Dfo.Login
 		{
 			get
 			{
-				//if ( DfoDir != null )
-				//{
-				//    return Path.Combine( DfoDir, "DFO.exe" );
-				//}
-				//else
-				//{
-				//    return null;
-				//}
 				return Path.Combine( DfoDir, "DFO.exe" );
 			}
 		}
-
-		///// <summary>
-		///// Gets or sets the number of milliseconds to wait when polling for something to happen, like the main
-		///// DFO window to be closed.
-		///// Default: 200 (200 milliseconds)
-		///// </summary>
-		//internal int PollingIntervalInMs { get; set; }
 
 		/// <summary>
 		/// Gets or sets the number of milliseconds to wait when polling for the main game window to be created.
@@ -173,32 +172,24 @@ namespace Dfo.Login
 		/// </summary>
 		internal int GameDonePollingIntervalInMs { get; set; }
 
-		///// <summary>
-		///// Gets or sets the return code of the launcher program that indicates success.
-		///// Default: 0
-		///// </summary>
-		//internal int LauncherSuccessCode { get; set; }
-
-		internal LaunchParams()
+		public LaunchParams()
 		{
 			Username = null;
 			Password = null;
 			LoginTimeoutInMs = 10000;
-			DfoDir = AppDomain.CurrentDomain.BaseDirectory;
+			DfoDir = DfoDirDefault;
 			SwitchSoundpacks = false;
-			CustomSoundpackDir = Path.Combine( AppDomain.CurrentDomain.BaseDirectory, "SoundPacksCustom" );
-			TempSoundpackDir = Path.Combine( AppDomain.CurrentDomain.BaseDirectory, "SoundPacksOriginal" );
+			CustomSoundpackDir = CustomSoundpackDirDefault;
+			TempSoundpackDir = TempSoundpackDirDefault;
 			ClosePopup = true;
 			LaunchInWindowed = null;
 
 			DfoWindowClassName = "DFO";
-			//PollingIntervalInMs = 200;
 			GameDonePollingIntervalInMs = 1000;
 			GameWindowCreatedPollingIntervalInMs = 100;
-			//LauncherSuccessCode = 0; // ?
 		}
 
-		internal LaunchParams Clone()
+		public LaunchParams Clone()
 		{
 			LaunchParams clone = new LaunchParams();
 
@@ -213,10 +204,8 @@ namespace Dfo.Login
 			clone.LaunchInWindowed = this.LaunchInWindowed;
 
 			clone.DfoWindowClassName = this.DfoWindowClassName;
-			//clone.PollingIntervalInMs = this.PollingIntervalInMs;
 			clone.GameDonePollingIntervalInMs = this.GameDonePollingIntervalInMs;
 			clone.GameWindowCreatedPollingIntervalInMs = this.GameWindowCreatedPollingIntervalInMs;
-			//clone.LauncherSuccessCode = this.LauncherSuccessCode;
 
 			return clone;
 		}
@@ -225,22 +214,55 @@ namespace Dfo.Login
 		{
 			StringBuilder builder = new StringBuilder();
 
-			builder.AppendLine( "Close popup: " + this.ClosePopup );
-			builder.AppendLine( "Custom soundpack dir: " + this.CustomSoundpackDir );
-			builder.AppendLine( "DFO dir: " + this.DfoDir );
-			builder.AppendLine( "DFO exe: " + this.DfoExe );
-			builder.AppendLine( "DFO launcher exe: " + this.DfoLauncherExe );
-			builder.AppendLine( "DFO window class name: " + this.DfoWindowClassName );
-			builder.AppendLine( "Game done polling interval: " + this.GameDonePollingIntervalInMs );
-			builder.AppendLine( "Game window created polling interval: " + this.GameWindowCreatedPollingIntervalInMs );
-			builder.AppendLine( "Launch in windowed: " + this.LaunchInWindowed );
-			builder.AppendLine( "Login timeout: " + this.LoginTimeoutInMs );
-			builder.AppendLine( "Soundpack dir: " + this.SoundpackDir );
-			builder.AppendLine( "Switch soundpacks: " + this.SwitchSoundpacks );
-			builder.Append( "Temp soundpack dir: " + this.TempSoundpackDir );
+			builder.AppendLine( string.Format( "Close popup: {0}", ClosePopup ) );
+			builder.AppendLine( string.Format( "Custom soundpack dir: {0}", CustomSoundpackDir ) );
+			builder.AppendLine( string.Format( "DFO dir: {0}", DfoDir ) );
+			builder.AppendLine( string.Format( "DFO exe: {0}", DfoExe ) );
+			builder.AppendLine( string.Format( "DFO launcher exe: {0}", DfoLauncherExe ) );
+			builder.AppendLine( string.Format( "DFO window class name: {0}", DfoWindowClassName ) );
+			builder.AppendLine( string.Format( "Game done polling interval: {0}", GameDonePollingIntervalInMs ) );
+			builder.AppendLine( string.Format( "Game window created polling interval: {0}", GameWindowCreatedPollingIntervalInMs ) );
+			builder.AppendLine( string.Format( "Launch in windowed: {0}", LaunchInWindowed ) );
+			builder.AppendLine( string.Format( "Login timeout: {0}", LoginTimeoutInMs ) );
+			builder.AppendLine( string.Format( "Soundpack dir: {0}", SoundpackDir ) );
+			builder.AppendLine( string.Format( "Switch soundpacks: {0}", SwitchSoundpacks ) );
+			builder.AppendLine( string.Format( "Temp soundpack dir: {0}", TempSoundpackDir ) );
+			builder.AppendLine( string.Format( "Username present: {0}", Username != null ) );
+			builder.Append( string.Format( "Password present: {0}", Password != null ) );
 			// DO NOT include the username or password!
 
 			return builder.ToString();
+		}
+
+		private static void ValidatePath( string path, string propertyName )
+		{
+			if ( path == null )
+			{
+				throw new ArgumentNullException( propertyName );
+			}
+			char[] invalidChars = Path.GetInvalidPathChars();
+			if ( path.IndexOfAny( invalidChars ) != -1 )
+			{
+				throw new ArgumentException( string.Format(
+					"{0} contains characters that are invalid in a path.", path ) );
+			}
+		}
+
+		public static bool PathIsValid( string path )
+		{
+			if ( path == null )
+			{
+				return false;
+			}
+			char[] invalidChars = Path.GetInvalidPathChars();
+			if ( path.IndexOfAny( invalidChars ) != -1 )
+			{
+				return false;
+			}
+			else
+			{
+				return true;
+			}
 		}
 	}
 }

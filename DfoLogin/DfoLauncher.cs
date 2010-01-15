@@ -5,6 +5,7 @@ using System.IO;
 using System.Threading;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Management;
 
 namespace Dfo.Login
 {
@@ -36,7 +37,7 @@ namespace Dfo.Login
 		/// Gets the parameters to use when launching the game. You may change the parameters, but the changes
 		/// will only take effect when launching the game. Changes will not effect an existing launch.
 		/// </summary>
-		public LaunchParams Params { get; private set; }
+		public LaunchParams Params { get; set; }
 
 		/// <summary>
 		/// Raised when the State property changes. The event may be raised inside a method called by the caller or
@@ -130,6 +131,35 @@ namespace Dfo.Login
 		}
 		#endregion
 
+		public event EventHandler<ErrorEventArgs> PopupKillFailed
+		{
+			add
+			{
+				lock ( m_PopupKillFailedLock ) { m_PopupKillFailedDelegate += value; }
+			}
+			remove
+			{
+				lock ( m_PopupKillFailedLock ) { m_PopupKillFailedDelegate -= value; }
+			}
+		}
+		#region thread-safe event stuff
+		private object m_PopupKillFailedLock = new object();
+		private EventHandler<ErrorEventArgs> m_PopupKillFailedDelegate;
+
+		protected virtual void OnPopupKillFailed( ErrorEventArgs e )
+		{
+			EventHandler<ErrorEventArgs> currentDelegate;
+			lock ( m_PopupKillFailedLock )
+			{
+				currentDelegate = m_PopupKillFailedDelegate;
+			}
+			if ( currentDelegate != null )
+			{
+				currentDelegate( this, e );
+			}
+		}
+		#endregion
+
 		// If state is None, the monitor thread either does not exist or is on its way out.
 		private LaunchState m_state = LaunchState.None;
 
@@ -213,9 +243,8 @@ namespace Dfo.Login
 		/// <summary>
 		/// Launches DFO.
 		/// </summary>
-		/// <exception cref="System.ArgumentNullException">Username, password, or DfoDir was null.</exception>
-		/// <exception cref="System.ArgumentOutOfRangeException">Params.LoginTimeoutInMs or
-		/// Params.PollingIntervalInMs was negative.</exception>
+		/// <exception cref="System.ArgumentNullException">Username, Password, or Params was null.</exception>
+		/// <exception cref="System.ArgumentOutOfRangeException">Params.LoginTimeoutInMs was negative.</exception>
 		/// <exception cref="System.SecurityException">The caller does not have permission to connect to the DFO
 		/// URI.</exception>
 		/// <exception cref="System.Net.WebException">A timeout occurred.</exception>
@@ -230,14 +259,22 @@ namespace Dfo.Login
 			{
 				throw new ObjectDisposedException( "DfoLauncher" );
 			}
-			if ( Params.DfoDir == null )
+			if ( Params.LoginTimeoutInMs < 0 )
 			{
-				throw new ArgumentNullException( "DfoDir cannot be null." );
+				throw new ArgumentOutOfRangeException( "LoginTimeoutInMs cannot be negative." );
 			}
-			//if ( Params.PollingIntervalInMs < 0 )
-			//{
-			//    throw new ArgumentOutOfRangeException( "PollingIntervalInMs cannot be negative." );
-			//}
+			if ( Params == null )
+			{
+				throw new ArgumentNullException( "Params" );
+			}
+			if ( Params.Username == null )
+			{
+				throw new ArgumentNullException( "Params.Username" );
+			}
+			if ( Params.Password == null )
+			{
+				throw new ArgumentNullException( "Params.Password" );
+			}
 
 			bool ok = EnforceWindowedSetting();
 			if ( !ok )
@@ -247,7 +284,6 @@ namespace Dfo.Login
 
 			State = LaunchState.Login; // We are now logging in
 
-			string dfoLauncherPath = ""; // assignment to shut the compiler up. I know that if Win32Exception is thrown, this has been set.
 			try
 			{
 				//string dfoArg = DfoLogin.GetDfoArg( Params.Username, Params.Password, Params.LoginTimeoutInMs ); // Log in
@@ -274,6 +310,11 @@ namespace Dfo.Login
 				m_dfoMonitorThread.Name = "DFO monitor";
 				m_dfoMonitorThread.Start( Params.Clone() ); // Give it a copy of the launch params so the caller can change the Params property while the game is running with no effects for the next time they launch
 			}
+			catch ( System.Security.SecurityException ex )
+			{
+				throw new System.Security.SecurityException( string.Format(
+					"This program does not have the permssions needed to log in to the game. {0}", ex.Message ), ex );
+			}
 			catch ( System.Net.WebException ex )
 			{
 				throw new System.Net.WebException( string.Format(
@@ -287,8 +328,8 @@ namespace Dfo.Login
 			catch ( System.ComponentModel.Win32Exception ex )
 			{
 				throw new DfoLaunchException( string.Format(
-					"Error while starting DFO using {0}: {1} (Did you forget to put this program in the DFO directory?)",
-					dfoLauncherPath, ex.Message ), ex );
+					"Error while starting DFO using {0}: {1}",
+					Params.DfoLauncherExe, ex.Message ), ex );
 			}
 		}
 
@@ -388,7 +429,6 @@ namespace Dfo.Login
 			}
 
 			// Send cancel signal to monitor thread if it's running and wait for it to finish terminating
-			//if ( State != LaunchState.None )
 			if ( MonitorThreadIsRunning() )
 			{
 				m_monitorCancelEvent.Set();
@@ -406,7 +446,6 @@ namespace Dfo.Login
 			lock ( m_syncHandle )
 			{
 				// Need to set m_launcherProcess to null if there was an exception while launching.
-				// Dispose for good measure, but if it needs to get Disposed, that means the monitor thread was started.
 				if ( m_launcherProcess != null )
 				{
 					m_launcherProcess.Dispose();
@@ -448,6 +487,10 @@ namespace Dfo.Login
 		[DllImport( "user32.dll", SetLastError = true )]
 		static extern IntPtr FindWindow( string lpClassName, string lpWindowName );
 
+		[DllImport( "user32.dll" )]
+		[return: MarshalAs( UnmanagedType.Bool )]
+		static extern bool IsWindowVisible( IntPtr hWnd );
+
 		private void BackgroundThreadEntryPoint( LaunchParams copiedParams )
 		{
 			// Once this thread is created, it has full control over the State property. No other thread can
@@ -461,29 +504,16 @@ namespace Dfo.Login
 			// We have a process handle to the launcher process and if we get an async notification that it completed,
 			// m_launcherDoneEvent is set. Better than polling. :)
 			int setHandleIndex = WaitHandle.WaitAny( new WaitHandle[] { m_launcherDoneEvent, m_monitorCancelEvent } );
-			if ( setHandleIndex == 0 )
-			{
-				lock ( m_syncHandle )
-				{
-					//// The launcher failed so the game will never come up.
-					//if ( m_launcherProcess.ExitCode != copiedParams.LauncherSuccessCode )
-					//{
-					//    canceled = true;
-					//}
 
-					m_launcherProcess.Dispose();
-					m_launcherProcess = null;
-				}
+			lock ( m_syncHandle )
+			{
+				m_launcherProcess.Dispose();
+				m_launcherProcess = null;
 			}
-			else if ( setHandleIndex == 1 )
+
+			if ( setHandleIndex == 1 ) // canceled
 			{
 				canceled = true;
-
-				lock ( m_syncHandle )
-				{
-					m_launcherProcess.Dispose();
-					m_launcherProcess = null;
-				}
 			}
 
 			bool soundpacksSwitched = false;
@@ -499,14 +529,21 @@ namespace Dfo.Login
 			IntPtr dfoMainWindowHandle = IntPtr.Zero;
 			if ( !canceled )
 			{
-				// Wait for DFO window to be created, the DFO process to not exist, or a cancel notice.
+				// Wait for DFO window to be created AND be visible, the DFO process to not exist, or a cancel notice.
 				Pair<IntPtr, bool> pollResults = PollUntilCanceled<IntPtr>( copiedParams.GameWindowCreatedPollingIntervalInMs,
 					() =>
 					{
 						IntPtr dfoWindowHandle = GetDfoWindowHandle( copiedParams );
 						if ( dfoWindowHandle != IntPtr.Zero )
 						{
-							return new Pair<IntPtr, bool>( dfoWindowHandle, true ); // Window exists, done polling
+							if ( DfoWindowIsOpen( dfoWindowHandle ) )
+							{
+								return new Pair<IntPtr, bool>( dfoWindowHandle, true ); // Window exists nd is visible, done polling
+							}
+							else
+							{
+								return new Pair<IntPtr, bool>( dfoWindowHandle, false ); // Window exists but is not visible yet, keep polling
+							}
 						}
 						else
 						{
@@ -544,10 +581,11 @@ namespace Dfo.Login
 				State = LaunchState.GameInProgress;
 
 				// Wait for DFO game window to be closed or a cancel notice
+				// Note that there is a distinction between a window existing and a window being visible.
+				// When the popup is displayed, the DFO window still "exists", but it is hidden
 				Pair<IntPtr, bool> pollResults = PollUntilCanceled<IntPtr>( copiedParams.GameDonePollingIntervalInMs,
 					() =>
 					{
-						//IntPtr dfoWindowHandle = FindWindow( copiedParams.DfoWindowClassName, null );
 						IntPtr dfoWindowHandle = GetDfoWindowHandle( copiedParams );
 						if ( dfoWindowHandle == IntPtr.Zero )
 						{
@@ -555,7 +593,14 @@ namespace Dfo.Login
 						}
 						else
 						{
-							return new Pair<IntPtr, bool>( dfoWindowHandle, false ); // Window exists, keep polling
+							if ( !DfoWindowIsOpen( dfoWindowHandle ) )
+							{
+								return new Pair<IntPtr, bool>( dfoWindowHandle, true ); // Window "exists" but is not visible, done polling
+							}
+							else
+							{
+								return new Pair<IntPtr, bool>( dfoWindowHandle, false ); // Window still open, keep polling
+							}
 						}
 					} );
 
@@ -567,25 +612,50 @@ namespace Dfo.Login
 				if ( copiedParams.ClosePopup )
 				{
 					// Kill the DFO process to kill the popup.
-					Process[] dfoProcesses = Process.GetProcessesByName( Path.GetFileNameWithoutExtension( copiedParams.DfoExe ) );
-					if ( dfoProcesses.Length > 0 )
+
+					// A normal Process.kill gets a Win32Exception with "Access is denied", possibly because
+					// of HackShield.
+					// This WMI stuff works, although I don't know why.
+					// Thanks to Tomato (author of DFOAssist) for his help with this!
+					try
 					{
-						try
+						ConnectionOptions options = new ConnectionOptions();
+						options.Impersonation = ImpersonationLevel.Impersonate;
+						ManagementScope scope = new ManagementScope( @"\\.\root\cimv2", options );
+						scope.Connect();
+						ObjectQuery dfoProcessQuery = new ObjectQuery(
+							string.Format( "Select * from Win32_Process Where Name = '{0}'", Path.GetFileName( copiedParams.DfoExe ) ) );
+						using ( ManagementObjectSearcher dfoProcessSearcher = new ManagementObjectSearcher( scope, dfoProcessQuery ) )
+						using ( ManagementObjectCollection dfoProcessCollection = dfoProcessSearcher.Get() )
 						{
-							dfoProcesses[ 0 ].Kill(); // What to do if there's more than one?
-						}
-						catch ( Exception ex )
-						{
-							if ( ex is System.ComponentModel.Win32Exception
-							  || ex is InvalidOperationException )
+							if ( dfoProcessCollection.Count == 0 )
 							{
-								// The process is already dead or dying. This is not an error condition.
+								OnPopupKillFailed( new ErrorEventArgs( new ManagementException( "No DFO processes found." ) ) );
 							}
 							else
 							{
-								throw;
+								foreach ( ManagementObject dfoProcess in dfoProcessCollection )
+								{
+									try
+									{
+										using ( dfoProcess )
+										{
+											object ret = dfoProcess.InvokeMethod( "Terminate", new object[] { } );
+										}
+									}
+									catch ( ManagementException ex )
+									{
+										OnPopupKillFailed( new ErrorEventArgs( new ManagementException( string.Format(
+											"Could not kill {0}: {1}", Path.GetFileName( copiedParams.DfoExe ), ex.Message ), ex ) ) );
+									}
+								}
 							}
 						}
+					}
+					catch ( ManagementException ex )
+					{
+						OnPopupKillFailed( new ErrorEventArgs( new ManagementException( string.Format(
+							"Error while doing WMI stuff: {0}", ex.Message ), ex ) ) );
 					}
 				}
 			}
@@ -646,8 +716,13 @@ namespace Dfo.Login
 
 		private IntPtr GetDfoWindowHandle( LaunchParams copiedParams )
 		{
-			//return FindWindow( copiedParams.DfoWindowClassName );
+			//return FindWindow( copiedParams.DfoWindowClassName, null );
 			return FindWindow( null, "DFO" ); // TODO - just for testing
+		}
+
+		private bool DfoWindowIsOpen( IntPtr dfoWindowHandle )
+		{
+			return IsWindowVisible( dfoWindowHandle );
 		}
 
 		private bool SwitchSoundpacks( string soundpackDir, string customSoundpackDir, string tempSoundpackDir )
@@ -761,10 +836,10 @@ namespace Dfo.Login
 			}
 		}
 
-		public void ResizeDfoWindow( int x, int y )
-		{
-			// TODO
-		}
+		//public void ResizeDfoWindow( int x, int y )
+		//{
+		//    // TODO
+		//}
 
 		public void Dispose()
 		{

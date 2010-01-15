@@ -32,7 +32,7 @@ namespace Dfo.Login
 		/// 
 		/// <exception cref="System.ArgumentNullException">username or password is null</exception>
 		/// <exception cref="System.ArgumentOutOfRangeException"><paramref name="timeoutInMs"/> is negative.</exception>
-		/// <exception cref="System.SecurityException">The caller does not have permission to connect to the DFO
+		/// <exception cref="System.Security.SecurityException">The caller does not have permission to connect to the DFO
 		/// URI or a URI that the request is redirected to.</exception>
 		/// <exception cref="System.Net.WebException">A timeout occurred.</exception>
 		/// <exception cref="DfoLogin.DfoAuthenticationException">Either the username/password is incorrect

@@ -2,20 +2,27 @@
 -Switching soundpacks
 -menu bar
 -logging
-command line args
-command line version
-warn about exiting when switching soundpacks and game in progress
-Check for application's dir, c:\program files\DFO, c:\Nexon\DFO?
-saving/loading
-Fix exception messages
-Minimizing to tray?
+-command line args
+-command line version
+-Fix exception messages
+-warn about exiting when switching soundpacks and game in progress
+-saving/loading
+-Uncaught exception handlers
+Test soundpack switching
+Check for application's dir by using registry key
+Remove debug shortcuts and test with real DFO
 Icon
+XML doc for public things in the dll
 Update assembly info
 Tidying up GUI (tab index, anchors)
 Rename to DFO Control Panel
+Copyright notices
 
 Next version:
 Resizing
+Saving to .bat file
+Minimizing to tray?
+More logging?
 Feedback
 
 Next next version:

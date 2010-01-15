@@ -217,7 +217,7 @@
 			// exitToolStripMenuItem
 			// 
 			this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-			this.exitToolStripMenuItem.Size = new System.Drawing.Size( 152, 22 );
+			this.exitToolStripMenuItem.Size = new System.Drawing.Size( 103, 22 );
 			this.exitToolStripMenuItem.Text = "E&xit";
 			this.exitToolStripMenuItem.Click += new System.EventHandler( this.exitToolStripMenuItem_Click );
 			// 
@@ -232,7 +232,7 @@
 			// aboutToolStripMenuItem
 			// 
 			this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-			this.aboutToolStripMenuItem.Size = new System.Drawing.Size( 152, 22 );
+			this.aboutToolStripMenuItem.Size = new System.Drawing.Size( 126, 22 );
 			this.aboutToolStripMenuItem.Text = "&About...";
 			this.aboutToolStripMenuItem.Click += new System.EventHandler( this.aboutToolStripMenuItem_Click );
 			// 
@@ -250,6 +250,7 @@
 			this.MainMenuStrip = this.ctlMenuStrip;
 			this.Name = "ctlMainForm";
 			this.Text = "Browserless DFO Launcher";
+			this.Load += new System.EventHandler( this.ctlMainForm_Load );
 			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler( this.ctlMainForm_FormClosing );
 			this.ctlLoginInfoBox.ResumeLayout( false );
 			this.ctlLoginInfoBox.PerformLayout();

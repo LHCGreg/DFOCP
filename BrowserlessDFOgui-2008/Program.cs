@@ -7,7 +7,7 @@ using NDesk.Options;
 
 namespace Dfo.BrowserlessDfoGui
 {
-	static partial class Program
+	static class Program
 	{
 		/// <summary>
 		/// The main entry point for the application.
@@ -17,6 +17,18 @@ namespace Dfo.BrowserlessDfoGui
 		{
 			Thread.CurrentThread.Name = "Main";
 			Logging.SetUpLogging();
+
+			AppDomain.CurrentDomain.UnhandledException += ( object sender, UnhandledExceptionEventArgs e ) =>
+				{
+					if ( e.ExceptionObject is Exception )
+					{
+						Logging.Log.Fatal( "FATAL UNCAUGHT EXCEPTION.", (Exception)e.ExceptionObject );
+					}
+					else
+					{
+						Logging.Log.Fatal( "FATAL UNCAUGHT EXCEPTION." );
+					}
+				};
 
 			Logging.Log.InfoFormat( "{0} version {1} started.", VersionInfo.AssemblyTitle, VersionInfo.AssemblyVersion );
 			Logging.Log.Debug( "Parsing command-line arguments." );
@@ -42,14 +54,17 @@ namespace Dfo.BrowserlessDfoGui
 				Logging.Log.Info( "Starting GUI." );
 				Application.EnableVisualStyles();
 				Application.SetCompatibleTextRenderingDefault( false );
-				Application.Run( new ctlMainForm() );
+				Application.Run( new ctlMainForm( parsedArgs ) );
 			}
 			else
 			{
 				EnsureConsoleExists();
 				Logging.Log.Info( "Starting command-line launcher." );
-				
-				CommandLineEntryPoint( parsedArgs );
+
+				using ( CommandLineEntryPoint cmd = new CommandLineEntryPoint( parsedArgs ) )
+				{
+					Environment.ExitCode = cmd.Run();
+				}
 			}
 		}
 
