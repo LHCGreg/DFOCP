@@ -17,7 +17,8 @@ templateFile.close()
 
 versionProgram = 'svnversion'
 try:
-    svnversion = subprocess.Popen(versionProgram + ' ' + localCopyDir + ' -c', stdout=subprocess.PIPE)
+    svnversionArgs = [versionProgram, localCopyDir, '-c']
+    svnversion = subprocess.Popen(svnversionArgs, stdout=subprocess.PIPE)
     revisionString = svnversion.communicate()[0]
     print 'revision string = ' + revisionString
 
