@@ -13,14 +13,6 @@ namespace Dfo.ControlPanel
 		public bool ShowVersion { get; private set; }
 		public bool Gui { get; private set; }
 
-		//public string Username { get; private set; }
-		//public string Password { get; private set; }
-		//public bool? ClosePopup { get; private set; }
-		//public bool? LaunchWindowed { get; private set; }
-		//public bool? SwitchSoundpacks { get; private set; }
-		//public string DfoDir { get; private set; }
-		//public string CustomSoundpackDir { get; private set; }
-		//public string TempSoundpackDir { get; private set; }
 		private StartupSettings m_settings = new StartupSettings();
 		public StartupSettings Settings { get { return m_settings; } }
 
@@ -40,7 +32,7 @@ namespace Dfo.ControlPanel
 				{ "full", "Don't launch the game in windowed mode. This is the default.", argExistence => Settings.LaunchWindowed = !(argExistence != null) },
 				{ "soundswitch", "Switch soundpacks.", argExistence => Settings.SwitchSoundpacks = (argExistence != null) },
 				{ "nosoundswitch", "Don't switch soundpacks. This is the default.", argExistence => Settings.SwitchSoundpacks = !(argExistence != null) },
-				{ "dfodir=", "Directory where DFO is. Defaults to the directory this program is in.", argValue => Settings.DfoDir = argValue },
+				{ "dfodir=", "Directory where DFO is. Defaults to the autodetected DFO directory.", argValue => Settings.DfoDir = argValue },
 				{ "customsounddir=", "Directory where custom soundpacks are if switching soundpacks. Defaults to dfodir/SoundPacksCustom.", argValue => Settings.CustomSoundpackDir = argValue },
 				{ "tempsounddir=", "Directory to rename the normal soundpack directory while the game is running if switching soundpacks. Defaults to dfodir/SoundPacksOriginal.", argValue => Settings.TempSoundpackDir = argValue },
 
@@ -67,24 +59,10 @@ namespace Dfo.ControlPanel
 
 			ShowHelp = false;
 			ShowVersion = false;
-			//ClosePopup = true;
-			//LaunchWindowed = false;
-			//SwitchSoundpacks = false;
-			//DfoDir = AppDomain.CurrentDomain.BaseDirectory;
 
 			OptionSet optionSet = GetOptionSet();
 
 			optionSet.Parse( args );
-
-			//if ( CustomSoundpackDir == null )
-			//{
-			//    CustomSoundpackDir = Path.Combine( DfoDir, "SoundPacksCustom" );
-			//}
-
-			//if ( TempSoundpackDir == null )
-			//{
-			//    TempSoundpackDir = Path.Combine( DfoDir, "SoundPacksOriginal" );
-			//}
 		}
 
 		public override string ToString()

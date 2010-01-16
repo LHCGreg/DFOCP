@@ -9,6 +9,7 @@ namespace Dfo.ControlPanel
 {
 	static class ExtensionMethods
 	{
+		// Because casting a lambda expression to a delegate type like ThreadStart every time is annoying.
 		public static IAsyncResult BeginInvoke( this Control control, ThreadStart func )
 		{
 			return control.BeginInvoke( func );

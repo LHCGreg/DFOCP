@@ -10,16 +10,23 @@ using System.Text.RegularExpressions;
 
 namespace Dfo.Controlling
 {
+	/// <summary>
+	/// A class containing methods for authenticating to the DFO server.
+	/// </summary>
 	public static class DfoLogin
 	{
-		public static string DefaultLoginUrl { get { return "http://passport.nexon.net/Login.aspx?nexonTheme=DungeonFighter"; } }
-		public static string DefaultIni { get { return "http://download2.nexon.net/Game/DFO/ngm/DFOLauncher/version.ini"; } }
-		public static string DefaultUserAgent { get { return "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.3) Gecko/20090824 Firefox/3.5.3 (.NET CLR 3.5.30729)"; } }
-		public static int DefaultTimeoutInMillis { get { return 20000; } } // 20 seconds
-		public static string DefaultUsernameField { get { return "txtId"; } }
-		public static string DefaultPasswordField { get { return "txtPassword"; } }
-		public static string DefaultButtonField { get { return "btnLogin"; } }
-		public static string FallbackViewstate { get { return "/wEPDwUKMTY2MTY3MjU1M2Rk"; } }
+		private static string DefaultLoginUrl { get { return "http://passport.nexon.net/Login.aspx?nexonTheme=DungeonFighter"; } }
+		private static string DefaultIni { get { return "http://download2.nexon.net/Game/DFO/ngm/DFOLauncher/version.ini"; } }
+		private static string DefaultUserAgent { get { return "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.3) Gecko/20090824 Firefox/3.5.3 (.NET CLR 3.5.30729)"; } }
+		
+		/// <summary>
+		/// The default timeout in milliseonds when waiting for a server response.
+		/// </summary>
+		public static int DefaultTimeoutInMillis { get { return 10000; } } // 10 seconds
+		private static string DefaultUsernameField { get { return "txtId"; } }
+		private static string DefaultPasswordField { get { return "txtPassword"; } }
+		private static string DefaultButtonField { get { return "btnLogin"; } }
+		private static string FallbackViewstate { get { return "/wEPDwUKMTY2MTY3MjU1M2Rk"; } }
 
 		/// <summary>
 		/// Returns a command-line argument you can pass to DFOLauncher.exe to start the game using the given
@@ -29,13 +36,14 @@ namespace Dfo.Controlling
 		/// 
 		/// <param name="username">Username to log in as</param>
 		/// <param name="password">Password to log in with</param>
+		/// <param name="timeoutInMs">Timeout in milliseconds to wait for a server response.</param>
 		/// 
 		/// <exception cref="System.ArgumentNullException">username or password is null</exception>
 		/// <exception cref="System.ArgumentOutOfRangeException"><paramref name="timeoutInMs"/> is negative.</exception>
 		/// <exception cref="System.Security.SecurityException">The caller does not have permission to connect to the DFO
 		/// URI or a URI that the request is redirected to.</exception>
 		/// <exception cref="System.Net.WebException">A timeout occurred.</exception>
-		/// <exception cref="DfoLogin.DfoAuthenticationException">Either the username/password is incorrect
+		/// <exception cref="Dfo.Controlling.DfoAuthenticationException">Either the username/password is incorrect
 		/// or a change was made to the way the authentication token is given to the browser, in which case
 		/// this function will not work.</exception>
 		/// 
@@ -69,7 +77,7 @@ namespace Dfo.Controlling
 		/// <exception cref="System.NotSupportedException">The request scheme specified in loginUrl is not http.</exception>
 		/// <exception cref="System.ArgumentOutOfRangeException"><paramref name="timeoutInMs"/> is negative.</exception>
 		/// <exception cref="System.Net.WebException">A timeout occurred.</exception>
-		/// <exception cref="DfoLogin.DfoAuthenticationException">Either the username/password is incorrect
+		/// <exception cref="Dfo.Controlling.DfoAuthenticationException">Either the username/password is incorrect
 		/// or a change was made to the way the authentication token is given to the browser, in which case
 		/// this function will not work.</exception>
 		/// 
@@ -99,7 +107,7 @@ namespace Dfo.Controlling
 		/// <exception cref="System.ArgumentNullException">username or password is null.</exception>
 		/// <exception cref="System.ArgumentOutOfRangeException"><paramref name="timeoutInMs"/> is negative.</exception>
 		/// <exception cref="System.Net.WebException">A timeout occurred.</exception>
-		/// <exception cref="DfoLogin.DfoAuthenticationException">Either the username/password is incorrect
+		/// <exception cref="Dfo.Controlling.DfoAuthenticationException">Either the username/password is incorrect
 		/// or a change was made to the way the authentication token is given to the browser, in which case
 		/// this function will not work.</exception>
 		/// 
@@ -127,7 +135,7 @@ namespace Dfo.Controlling
 		/// <exception cref="System.NotSupportedException">The request scheme specified in loginUrl is not http.</exception>
 		/// <exception cref="System.ArgumentOutOfRangeException"><paramref name="timeoutInMs"/> is negative.</exception>
 		/// <exception cref="System.Net.WebException">A timeout occurred.</exception>
-		/// <exception cref="DfoLogin.DfoAuthenticationException">Either the username/password is incorrect
+		/// <exception cref="Dfo.Controlling.DfoAuthenticationException">Either the username/password is incorrect
 		/// or a change was made to the way the authentication token is given to the browser, in which case
 		/// this function will not work.</exception>
 		/// 
@@ -276,7 +284,7 @@ namespace Dfo.Controlling
 		/// <param name="username">Username to log in as</param>
 		/// <param name="password">Password to log in with</param>
 		/// 
-		/// <exception cref="DfoLogin.DfoLaunchException">There was an error while attempting to authenticate
+		/// <exception cref="Dfo.Controlling.DfoLaunchException">There was an error while attempting to authenticate
 		/// or start DFO. The Message property contains an already user-friendly error message.</exception>
 		/// <exception cref="System.ArgumentNullException">username or password is null.</exception>
 		public static void StartDfo( string username, string password )

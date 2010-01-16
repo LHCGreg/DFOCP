@@ -9,11 +9,29 @@ using System.Management;
 
 namespace Dfo.Controlling
 {
+	/// <summary>
+	/// Represents a state of DFO.
+	/// </summary>
 	public enum LaunchState
 	{
+		/// <summary>
+		/// The game has not been started.
+		/// </summary>
 		None,
+
+		/// <summary>
+		/// The user is being logged in.
+		/// </summary>
 		Login,
+
+		/// <summary>
+		/// The game is in the process of starting.
+		/// </summary>
 		Launching,
+
+		/// <summary>
+		/// The main game window has been created.
+		/// </summary>
 		GameInProgress
 	}
 
@@ -26,7 +44,7 @@ namespace Dfo.Controlling
 
 		private Thread m_dfoMonitorThread = null; // Not needed? Maybe hold onto it in case we ever want it
 		private AutoResetEvent m_monitorCancelEvent = new AutoResetEvent( false ); // tied to m_cancelMonitorThread
-		private AutoResetEvent m_monitorFinishedEvent = new AutoResetEvent( false );
+		private AutoResetEvent m_monitorFinishedEvent = new AutoResetEvent( false ); // I guess it would have been easier to do a Join on the thread, but oh well, this is done and works
 		private AutoResetEvent m_launcherDoneEvent = new AutoResetEvent( false ); // Set when the launcher process that checks for patches terminates
 
 		private Process m_launcherProcess = null;
@@ -34,15 +52,16 @@ namespace Dfo.Controlling
 		private bool m_disposed = false;
 
 		/// <summary>
-		/// Gets the parameters to use when launching the game. You may change the parameters, but the changes
-		/// will only take effect when launching the game. Changes will not effect an existing launch.
+		/// Gets or sets the parameters to use when launching the game. Changes will not effect an existing launch.
 		/// </summary>
 		public LaunchParams Params { get; set; }
 
 		/// <summary>
 		/// Raised when the State property changes. The event may be raised inside a method called by the caller or
-		/// from a background thread. Only the State property may be safely accessed in the event handler.
+		/// from another thread. Only the State property may be safely accessed in the event handler.
 		/// No other properties or methods may be called without synchronizing access to this object.
+		/// 
+		/// Only a caller-initiated launch can take the state out of <c>LaunchStateNone</c>.
 		/// </summary>
 		public event EventHandler<EventArgs> LaunchStateChanged
 		{
@@ -59,6 +78,10 @@ namespace Dfo.Controlling
 		private object m_LaunchStateChangedLock = new object();
 		private EventHandler<EventArgs> m_LaunchStateChangedDelegate;
 
+		/// <summary>
+		/// Raises the <c>LaunchStateChanged</c> event.
+		/// </summary>
+		/// <param name="e">An <c>EventArgs</c> that contains the event data.</param>
 		protected virtual void OnLaunchStateChanged( EventArgs e )
 		{
 			EventHandler<EventArgs> currentDelegate;
@@ -73,6 +96,10 @@ namespace Dfo.Controlling
 		}
 		#endregion
 
+		/// <summary>
+		/// Raised when the window mode setting could not be used. If the <c>Cancel</c> property of the event args
+		/// is set to true, the launch is cancelled.
+		/// </summary>
 		public event EventHandler<CancelErrorEventArgs> WindowModeFailed
 		{
 			add
@@ -88,6 +115,10 @@ namespace Dfo.Controlling
 		private object m_WindowModeFailedLock = new object();
 		private EventHandler<CancelErrorEventArgs> m_WindowModeFailedDelegate;
 
+		/// <summary>
+		/// Raises the <c>WindowModeFailed</c> event.
+		/// </summary>
+		/// <param name="e">A <c>CancelErrorEventArgs</c> that contains the event data.</param>
 		protected virtual void OnWindowModeFailed( CancelErrorEventArgs e )
 		{
 			EventHandler<CancelErrorEventArgs> currentDelegate;
@@ -102,6 +133,9 @@ namespace Dfo.Controlling
 		}
 		#endregion
 
+		/// <summary>
+		/// Raised when the soundpacks could not be switched or switched back.
+		/// </summary>
 		public event EventHandler<ErrorEventArgs> SoundpackSwitchFailed
 		{
 			add
@@ -117,6 +151,10 @@ namespace Dfo.Controlling
 		private object m_SoundpackSwitchFailedLock = new object();
 		private EventHandler<ErrorEventArgs> m_SoundpackSwitchFailedDelegate;
 
+		/// <summary>
+		/// Raises the <c>SoundpackSwitchFailed</c> event.
+		/// </summary>
+		/// <param name="e">An <c>ErrorEventArgs</c> that contains the event data.</param>
 		protected virtual void OnSoundpackSwitchFailed( ErrorEventArgs e )
 		{
 			EventHandler<ErrorEventArgs> currentDelegate;
@@ -131,6 +169,9 @@ namespace Dfo.Controlling
 		}
 		#endregion
 
+		/// <summary>
+		/// Raised when there is an error while trying to automatically close the popup at the end of the game.
+		/// </summary>
 		public event EventHandler<ErrorEventArgs> PopupKillFailed
 		{
 			add
@@ -146,6 +187,10 @@ namespace Dfo.Controlling
 		private object m_PopupKillFailedLock = new object();
 		private EventHandler<ErrorEventArgs> m_PopupKillFailedDelegate;
 
+		/// <summary>
+		/// Raises the <c>PopupKillFailed</c> event.
+		/// </summary>
+		/// <param name="e">An <c>ErrorEventArgs</c> that contains the event data.</param>
 		protected virtual void OnPopupKillFailed( ErrorEventArgs e )
 		{
 			EventHandler<ErrorEventArgs> currentDelegate;
@@ -197,6 +242,9 @@ namespace Dfo.Controlling
 			}
 		}
 
+		/// <summary>
+		/// Constructs a new <c>DfoLauncher</c> with default parameters.
+		/// </summary>
 		public DfoLauncher()
 		{
 			// Set defaults for properties
@@ -211,15 +259,14 @@ namespace Dfo.Controlling
 		/// <exception cref="System.ArgumentNullException">Params.Username, Params.Password, or
 		/// Params.DfoDir is null, or Params.SwitchSoundpacks is true and Params.SoundpackDir,
 		/// Params.CustomSoundpackDir, or Params.TempSoundpackDir is null.</exception>
-		/// <exception cref="System.ArgumentOutOfRangeException">Params.LoginTimeoutInMs or
-		/// Params.PollingIntervalInMs was negative.</exception>
+		/// <exception cref="System.ArgumentOutOfRangeException">Params.LoginTimeoutInMs or was negative.</exception>
 		/// <exception cref="System.Security.SecurityException">The caller does not have permission to connect to the DFO
 		/// URI.</exception>
 		/// <exception cref="System.Net.WebException">A timeout occurred.</exception>
-		/// <exception cref="DfoLogin.DfoAuthenticationException">Either the username/password is incorrect
+		/// <exception cref="Dfo.Controlling.DfoAuthenticationException">Either the username/password is incorrect
 		/// or a change was made to the way the authentication token is given to the browser, in which case
 		/// this function will not work.</exception>
-		/// <exception cref="DfoLogin.DfoLaunchException">The game could not be launched.</exception>
+		/// <exception cref="Dfo.Controlling.DfoLaunchException">The game could not be launched.</exception>
 		/// <exception cref="System.ObjectDisposedException">This object has been Disposed of.</exception>
 		public void Launch()
 		{
@@ -245,13 +292,13 @@ namespace Dfo.Controlling
 		/// </summary>
 		/// <exception cref="System.ArgumentNullException">Username, Password, or Params was null.</exception>
 		/// <exception cref="System.ArgumentOutOfRangeException">Params.LoginTimeoutInMs was negative.</exception>
-		/// <exception cref="System.SecurityException">The caller does not have permission to connect to the DFO
+		/// <exception cref="System.Security.SecurityException">The caller does not have permission to connect to the DFO
 		/// URI.</exception>
 		/// <exception cref="System.Net.WebException">A timeout occurred.</exception>
-		/// <exception cref="DfoLogin.DfoAuthenticationException">Either the username/password is incorrect
+		/// <exception cref="Dfo.Controlling.DfoAuthenticationException">Either the username/password is incorrect
 		/// or a change was made to the way the authentication token is given to the browser, in which case
 		/// this function will not work.</exception>
-		/// <exception cref="DfoLogin.DfoLaunchException">The game could not be launched.</exception>
+		/// <exception cref="Dfo.Controlling.DfoLaunchException">The game could not be launched.</exception>
 		/// <exception cref="System.ObjectDisposedException">This object has been Disposed of.</exception>
 		private void StartDfo()
 		{
@@ -613,9 +660,15 @@ namespace Dfo.Controlling
 				{
 					// Kill the DFO process to kill the popup.
 
-					// A normal Process.kill gets a Win32Exception with "Access is denied", possibly because
+					// A normal Process.Kill gets a Win32Exception with "Access is denied", possibly because
 					// of HackShield.
-					// This WMI stuff works, although I don't know why.
+					// This WMI stuff works, although I'm not entirely sure why.
+					//
+					// http://stackoverflow.com/questions/2069157/what-is-the-difference-between-these-two-methods-of-killing-a-process
+					// - "WMI calls are not performed within the security context of your process. They are
+					// handled in another process (I'm guessing the Winmgmt service). This service runs under
+					// the SYSTEM account, and HackShield may be allowing the termination continue due to this."
+					//
 					// Thanks to Tomato (author of DFOAssist) for his help with this!
 					try
 					{
@@ -696,9 +749,11 @@ namespace Dfo.Controlling
 		}
 
 		/// <summary>
-		/// For use by the monitor thread only.
+		/// For use by the monitor thread only. Poll for some value until the value is acceptable or we are
+		/// canceled.
 		/// </summary>
 		/// <typeparam name="TReturn"></typeparam>
+		/// <param name="pollingIntervalInMs"></param>
 		/// <param name="pollingFunction"></param>
 		/// <returns>A Pair&lt;<typeparamref name="TReturn"/>, bool&gt; containing the acceptable polled value or
 		/// the default value of the type if the thread is canceled in the first value of the pair and a boolean
@@ -860,6 +915,9 @@ namespace Dfo.Controlling
 		//    // TODO
 		//}
 
+		/// <summary>
+		/// Frees unmanaged resources. This function may block.
+		/// </summary>
 		public void Dispose()
 		{
 			if ( !m_disposed )

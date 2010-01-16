@@ -58,35 +58,12 @@ namespace Dfo.ControlPanel
 			fileAppender.Name = "File appender";
 			fileAppender.Threshold = log4net.Core.Level.Debug;
 
-			fileAppender.ErrorHandler = new LoggingErrorHandler();
-
 			fileAppender.ActivateOptions();
 
 			// A slight bit of hackery in order to programatically set more than one appender (which isn't supported by BasicConfigurator)
 			log4net.Repository.Hierarchy.Logger root = ( (log4net.Repository.Hierarchy.Hierarchy)log4net.LogManager.GetRepository() ).Root;
 			root.AddAppender( fileAppender );
 			root.Repository.Configured = true;
-		}
-	}
-
-	class LoggingErrorHandler : log4net.Core.IErrorHandler
-	{
-		public void Error( string message )
-		{
-			System.Diagnostics.Debug.WriteLine( message );
-		}
-
-		public void Error( string message, Exception e )
-		{
-			System.Diagnostics.Debug.WriteLine( message );
-			System.Diagnostics.Debug.WriteLine( e );
-		}
-
-		public void Error( string message, Exception e, log4net.Core.ErrorCode errorCode )
-		{
-			System.Diagnostics.Debug.WriteLine( message );
-			System.Diagnostics.Debug.WriteLine( e );
-			System.Diagnostics.Debug.WriteLine( errorCode );
 		}
 	}
 }

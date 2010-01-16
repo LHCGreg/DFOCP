@@ -6,6 +6,9 @@ using Microsoft.Win32;
 
 namespace Dfo.Controlling
 {
+	/// <summary>
+	/// Represents parameters controlling how the game is launched and controlled.
+	/// </summary>
 	public class LaunchParams
 	{
 		/// <summary>
@@ -58,6 +61,9 @@ namespace Dfo.Controlling
 			}
 		}
 
+		/// <summary>
+		/// Gets the default DFO root directory.
+		/// </summary>
 		public string DfoDirDefault { get { return AppDomain.CurrentDomain.BaseDirectory; } }
 
 		/// <summary>
@@ -97,6 +103,9 @@ namespace Dfo.Controlling
 			}
 		}
 
+		/// <summary>
+		/// Gets the default custom soundpack directory as a subdirectory of DfoDir.
+		/// </summary>
 		public string CustomSoundpackDirDefault { get { return Path.Combine( DfoDir, "SoundPacksCustom" ); } }
 
 		private string m_tempSoundpackDir;
@@ -118,6 +127,9 @@ namespace Dfo.Controlling
 			}
 		}
 
+		/// <summary>
+		/// Gets the default temporary soundpack directory as a subdirectory of DfoDir.
+		/// </summary>
 		public string TempSoundpackDirDefault { get { return Path.Combine( DfoDir, "SoundPacksOriginal" ); } }
 
 		/// <summary>
@@ -172,6 +184,9 @@ namespace Dfo.Controlling
 		/// </summary>
 		internal int GameDonePollingIntervalInMs { get; set; }
 
+		/// <summary>
+		/// Creates a new <c>LaunchParams</c> object with default values.
+		/// </summary>
 		public LaunchParams()
 		{
 			Username = null;
@@ -184,7 +199,7 @@ namespace Dfo.Controlling
 			ClosePopup = true;
 			LaunchInWindowed = null;
 			DfoWindowClassName = "DFO";
-			GameDonePollingIntervalInMs = 1000;
+			GameDonePollingIntervalInMs = 500;
 			GameWindowCreatedPollingIntervalInMs = 100;
 		}
 
@@ -242,6 +257,10 @@ namespace Dfo.Controlling
 				valueName, keyname, message ) );
 		}
 
+		/// <summary>
+		/// Makes a copy of this object.
+		/// </summary>
+		/// <returns>A copy of this object with the same property values.</returns>
 		public LaunchParams Clone()
 		{
 			LaunchParams clone = new LaunchParams();
@@ -263,6 +282,11 @@ namespace Dfo.Controlling
 			return clone;
 		}
 
+		/// <summary>
+		/// Creates a string representation of this object for debugging.
+		/// </summary>
+		/// <returns>A dump of all properties, including internal properties. <c>Username</c> and <c>Password</c>
+		/// are not shown for security purposes, but it does say if they are set or not.</returns>
 		public override string ToString()
 		{
 			StringBuilder builder = new StringBuilder();
@@ -301,6 +325,11 @@ namespace Dfo.Controlling
 			}
 		}
 
+		/// <summary>
+		/// Determines if a string is a valid path.
+		/// </summary>
+		/// <param name="path">A path.</param>
+		/// <returns>True if <paramref name="path"/> is not null and has no invalid characters.</returns>
 		public static bool PathIsValid( string path )
 		{
 			if ( path == null )

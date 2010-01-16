@@ -3,8 +3,11 @@
 
 namespace Dfo.Controlling
 {
+	/// <summary>
+	/// An exception throw if there is an error authenticating when logging in.
+	/// </summary>
 	[Serializable]
-	public class DfoAuthenticationException : Exception
+	public class DfoAuthenticationException : DfoLaunchException
 	{
 		public DfoAuthenticationException() { }
 		public DfoAuthenticationException( string message ) : base( message ) { }
@@ -15,6 +18,9 @@ namespace Dfo.Controlling
 			: base( info, context ) { }
 	}
 
+	/// <summary>
+	/// An exception thrown if there is an error when starting the game.
+	/// </summary>
 	[Serializable]
 	public class DfoLaunchException : Exception
 	{

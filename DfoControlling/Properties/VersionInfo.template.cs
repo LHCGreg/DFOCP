@@ -4,8 +4,14 @@ using System.Text;
 
 namespace Dfo.Controlling
 {
+	/// <summary>
+	/// Contains information about the version of this assembly.
+	/// </summary>
 	public static class VersionInfo
 	{
+		/// <summary>
+		/// The SVN revision number.
+		/// </summary>
 		public const string Revision = "$revision$";
 	}
 }

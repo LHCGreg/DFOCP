@@ -5,16 +5,31 @@ using System.Text;
 
 namespace Dfo.Controlling
 {
+	/// <summary>
+	/// Notifies an event listener of an error and allows the listener to cancel an operation.
+	/// </summary>
 	public class CancelErrorEventArgs : ErrorEventArgs
 	{
+		/// <summary>
+		/// Gets or sets whether to cancel the operation.
+		/// </summary>
 		public bool Cancel { get; set; }
 
+		/// <summary>
+		/// Constructs a new <c>CancelErrorEventArgs</c> instance.
+		/// </summary>
+		/// <param name="error">The exception that caused the error.</param>
 		public CancelErrorEventArgs( Exception error )
 			: base( error )
 		{
 			Cancel = false;
 		}
 
+		/// <summary>
+		/// Constructs a new <c>CancelErrorEventArgs</c> instance.
+		/// </summary>
+		/// <param name="error">The exception that caused the error.</param>
+		/// <param name="cancel">The default value of the <c>Cancel</c> property.</param>
 		public CancelErrorEventArgs( Exception error, bool cancel )
 			: base( error )
 		{
