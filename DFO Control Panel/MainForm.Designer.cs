@@ -59,6 +59,8 @@
 			// 
 			// ctlUsername
 			// 
+			this.ctlUsername.Anchor = ( (System.Windows.Forms.AnchorStyles)( ( ( System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left )
+						| System.Windows.Forms.AnchorStyles.Right ) ) );
 			this.ctlUsername.Location = new System.Drawing.Point( 94, 19 );
 			this.ctlUsername.Name = "ctlUsername";
 			this.ctlUsername.Size = new System.Drawing.Size( 198, 20 );
@@ -66,6 +68,8 @@
 			// 
 			// ctlPassword
 			// 
+			this.ctlPassword.Anchor = ( (System.Windows.Forms.AnchorStyles)( ( ( System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left )
+						| System.Windows.Forms.AnchorStyles.Right ) ) );
 			this.ctlPassword.Location = new System.Drawing.Point( 94, 45 );
 			this.ctlPassword.Name = "ctlPassword";
 			this.ctlPassword.Size = new System.Drawing.Size( 198, 20 );
@@ -74,6 +78,8 @@
 			// 
 			// lblUsername
 			// 
+			this.lblUsername.Anchor = ( (System.Windows.Forms.AnchorStyles)( ( ( System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left )
+						| System.Windows.Forms.AnchorStyles.Right ) ) );
 			this.lblUsername.AutoSize = true;
 			this.lblUsername.Location = new System.Drawing.Point( 11, 22 );
 			this.lblUsername.Name = "lblUsername";
@@ -83,6 +89,8 @@
 			// 
 			// lblPassword
 			// 
+			this.lblPassword.Anchor = ( (System.Windows.Forms.AnchorStyles)( ( ( System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left )
+						| System.Windows.Forms.AnchorStyles.Right ) ) );
 			this.lblPassword.AutoSize = true;
 			this.lblPassword.Location = new System.Drawing.Point( 11, 48 );
 			this.lblPassword.Name = "lblPassword";
@@ -93,7 +101,7 @@
 			// ctlLaunch
 			// 
 			this.ctlLaunch.Anchor = System.Windows.Forms.AnchorStyles.Top;
-			this.ctlLaunch.Location = new System.Drawing.Point( 109, 188 );
+			this.ctlLaunch.Location = new System.Drawing.Point( 126, 188 );
 			this.ctlLaunch.Name = "ctlLaunch";
 			this.ctlLaunch.Size = new System.Drawing.Size( 240, 55 );
 			this.ctlLaunch.TabIndex = 4;
@@ -103,48 +111,58 @@
 			// 
 			// ctlClosePopup
 			// 
+			this.ctlClosePopup.Anchor = ( (System.Windows.Forms.AnchorStyles)( ( ( System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left )
+						| System.Windows.Forms.AnchorStyles.Right ) ) );
 			this.ctlClosePopup.AutoSize = true;
 			this.ctlClosePopup.Checked = true;
 			this.ctlClosePopup.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.ctlClosePopup.Location = new System.Drawing.Point( 6, 19 );
 			this.ctlClosePopup.Name = "ctlClosePopup";
 			this.ctlClosePopup.Size = new System.Drawing.Size( 91, 17 );
-			this.ctlClosePopup.TabIndex = 5;
+			this.ctlClosePopup.TabIndex = 3;
 			this.ctlClosePopup.Text = "Close popup?";
 			this.ctlClosePopup.UseVisualStyleBackColor = true;
 			// 
 			// ctlLaunchWindowed
 			// 
+			this.ctlLaunchWindowed.Anchor = ( (System.Windows.Forms.AnchorStyles)( ( ( System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left )
+						| System.Windows.Forms.AnchorStyles.Right ) ) );
 			this.ctlLaunchWindowed.AutoSize = true;
 			this.ctlLaunchWindowed.Location = new System.Drawing.Point( 6, 42 );
 			this.ctlLaunchWindowed.Name = "ctlLaunchWindowed";
 			this.ctlLaunchWindowed.Size = new System.Drawing.Size( 105, 17 );
-			this.ctlLaunchWindowed.TabIndex = 6;
+			this.ctlLaunchWindowed.TabIndex = 4;
 			this.ctlLaunchWindowed.Text = "Start windowed?";
 			this.ctlLaunchWindowed.UseVisualStyleBackColor = true;
 			// 
 			// ctlSwitchSoundpacks
 			// 
+			this.ctlSwitchSoundpacks.Anchor = ( (System.Windows.Forms.AnchorStyles)( ( ( System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left )
+						| System.Windows.Forms.AnchorStyles.Right ) ) );
 			this.ctlSwitchSoundpacks.AutoSize = true;
 			this.ctlSwitchSoundpacks.Location = new System.Drawing.Point( 6, 65 );
 			this.ctlSwitchSoundpacks.Name = "ctlSwitchSoundpacks";
 			this.ctlSwitchSoundpacks.Size = new System.Drawing.Size( 125, 17 );
-			this.ctlSwitchSoundpacks.TabIndex = 7;
+			this.ctlSwitchSoundpacks.TabIndex = 5;
 			this.ctlSwitchSoundpacks.Text = "Switch soundpacks?";
 			this.ctlSwitchSoundpacks.UseVisualStyleBackColor = true;
 			// 
 			// ctlRememberMe
 			// 
+			this.ctlRememberMe.Anchor = ( (System.Windows.Forms.AnchorStyles)( ( ( System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left )
+						| System.Windows.Forms.AnchorStyles.Right ) ) );
 			this.ctlRememberMe.AutoSize = true;
 			this.ctlRememberMe.Location = new System.Drawing.Point( 14, 71 );
 			this.ctlRememberMe.Name = "ctlRememberMe";
 			this.ctlRememberMe.Size = new System.Drawing.Size( 142, 17 );
-			this.ctlRememberMe.TabIndex = 9;
+			this.ctlRememberMe.TabIndex = 2;
 			this.ctlRememberMe.Text = "Remember my username";
 			this.ctlRememberMe.UseVisualStyleBackColor = true;
 			// 
 			// ctlLoginInfoBox
 			// 
+			this.ctlLoginInfoBox.Anchor = ( (System.Windows.Forms.AnchorStyles)( ( ( System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left )
+						| System.Windows.Forms.AnchorStyles.Right ) ) );
 			this.ctlLoginInfoBox.Controls.Add( this.ctlUsername );
 			this.ctlLoginInfoBox.Controls.Add( this.ctlRememberMe );
 			this.ctlLoginInfoBox.Controls.Add( this.lblUsername );
@@ -159,6 +177,7 @@
 			// 
 			// ctlOptionsBox
 			// 
+			this.ctlOptionsBox.Anchor = ( (System.Windows.Forms.AnchorStyles)( ( System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right ) ) );
 			this.ctlOptionsBox.Controls.Add( this.ctlClosePopup );
 			this.ctlOptionsBox.Controls.Add( this.ctlSwitchSoundpacks );
 			this.ctlOptionsBox.Controls.Add( this.ctlLaunchWindowed );

@@ -101,6 +101,7 @@ namespace Dfo.ControlPanel
 				ctlSwitchSoundpacks.Enabled = false;
 			}
 
+			ctlUsername.Select();
 			Logging.Log.Debug( "Main window loaded." );
 		}
 

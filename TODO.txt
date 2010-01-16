@@ -1,32 +1,10 @@
-﻿TODO:
--Switching soundpacks
--menu bar
--logging
--command line args
--command line version
--Fix exception messages
--warn about exiting when switching soundpacks and game in progress
--saving/loading
--Uncaught exception handlers
--Test soundpack switching
--Check for application's dir by using registry key
--Remove debug shortcuts and test with real DFO
--Update assembly info
--Rename stuff
--Copyright notices in source files
--Thank Tomato
--XML doc for public things in the dll, remove unnecessary comments
-Tidying up GUI (tab index, anchors)
--Readme, .bat, etc
-Final test
-
-Next version:
+﻿Next version:
 Saving to .bat file
-Resizing
-Icon?
-Minimizing to tray?
+Resizing DFO window
+Icon? Spiffier GUI?
+Minimizing to tray while game in progress?
 More logging?
 Feedback
 
 Next next version:
-Other versions?
+DnF, Arad Senki support
