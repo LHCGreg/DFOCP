@@ -249,7 +249,7 @@
 			this.Controls.Add( this.ctlLaunch );
 			this.MainMenuStrip = this.ctlMenuStrip;
 			this.Name = "ctlMainForm";
-			this.Text = "Browserless DFO Launcher";
+			this.Text = "DFO Control Panel";
 			this.Load += new System.EventHandler( this.ctlMainForm_Load );
 			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler( this.ctlMainForm_FormClosing );
 			this.ctlLoginInfoBox.ResumeLayout( false );

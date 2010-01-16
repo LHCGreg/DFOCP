@@ -88,7 +88,7 @@ namespace Dfo.ControlPanel
 
 		public static string LicenseStatement
 		{
-			get { return "The source code for this program is available under the Apache 2.0 License."; }
+			get { return "The source code for this program is available under the Apache 2.0 License. Many ideas were taken from Tomato's DFOAssist script. Thanks Tomato!"; }
 		}
 	}
 }

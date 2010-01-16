@@ -20,7 +20,6 @@ namespace Dfo.ControlPanel
 			this.labelCopyright.Text = AssemblyCopyright;
 			this.labelCompanyName.Text = AssemblyCompany;
 			this.textBoxDescription.Text = VersionInfo.LicenseStatement;
-			//this.textBoxDescription.Text = AssemblyDescription;
 		}
 
 		#region Assembly Attribute Accessors
