@@ -1,0 +1,5 @@
+DFO Control Panel and Dfo.Controlling copyright 2010 Greg Najda, licensed under the Apache License 2.0 (LICENSE).
+
+DFO Control Panel uses the NDesk.Options library for command-line argument parsing. NDesk.Options is copyright NDesk.org and is licensed under the MIT/X11 license (NDesk_LICENSE).
+
+DFO Control Panel uses the log4net library for logging. log4net is copyright The Apache Software Foundation (http://www.apache.org/) and is licensed under the Apache License 2.0 (LICENSE).
