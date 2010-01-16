@@ -17,7 +17,7 @@
 -Thank Tomato
 -XML doc for public things in the dll, remove unnecessary comments
 Tidying up GUI (tab index, anchors)
-Readme, .bat, etc
+-Readme, .bat, etc
 Final test
 
 Next version:
