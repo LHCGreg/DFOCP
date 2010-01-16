@@ -1,0 +1,10 @@
+﻿Next version:
+Saving to .bat file
+Resizing DFO window
+Icon? Spiffier GUI?
+Minimizing to tray while game in progress?
+More logging?
+Feedback
+
+Next next version:
+DnF, Arad Senki support

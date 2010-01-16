@@ -1,12 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
-namespace Dfo.BrowserlessDfoGui
+namespace Dfo.Controlling
 {
-	public static class VersionInfo
+	/// <summary>
+	/// Notifies an event listener of an error.
+	/// </summary>
+	public class ErrorEventArgs : EventArgs
 	{
-		public const string Revision = "5";
+		/// <summary>
+		/// Gets the exception that caused the error.
+		/// </summary>
+		public Exception Error { get; private set; }
+
+		/// <summary>
+		/// Constructs a new <c>ErrorEventArgs</c> instance.
+		/// </summary>
+		/// <param name="error">The exception that caused the error.</param>
+		public ErrorEventArgs( Exception error )
+		{
+			Error = error;
+		}
 	}
 }
 

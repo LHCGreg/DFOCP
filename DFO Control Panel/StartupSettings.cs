@@ -1,12 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using Dfo.Controlling;
 
-namespace Dfo.Login
+namespace Dfo.ControlPanel
 {
-	public static class VersionInfo
+	class StartupSettings
 	{
-		public const string Revision = "$revision$";
+		public string Username { get; set; }
+		public string Password { get; set; }
+		public bool? RememberUsername { get; set; }
+		public bool? ClosePopup { get; set; }
+		public bool? LaunchWindowed { get; set; }
+		public bool? SwitchSoundpacks { get; set; }
+		public string DfoDir { get; set; }
+		public string CustomSoundpackDir { get; set; }
+		public string TempSoundpackDir { get; set; }
+
+		public StartupSettings()
+		{
+			;
+		}
 	}
 }
 

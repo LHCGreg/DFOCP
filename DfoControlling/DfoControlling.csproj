@@ -8,9 +8,9 @@
     <ProjectGuid>{E4D06429-E4DF-486B-96F3-8279D1FAC78D}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Dfo.Login</RootNamespace>
-    <AssemblyName>Dfo.Login</AssemblyName>
-    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <RootNamespace>Dfo.Controlling</RootNamespace>
+    <AssemblyName>Dfo.Controlling</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkSubset>
     </TargetFrameworkSubset>
@@ -31,16 +31,26 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Release\Dfo.Controlling.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Management" />
     <Reference Include="System.Web" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CancelErrorEventArgs.cs" />
+    <Compile Include="DfoLauncher.cs" />
     <Compile Include="DfoLogin.cs" />
+    <Compile Include="ErrorEventArgs.cs" />
     <Compile Include="Exceptions.cs" />
+    <Compile Include="LaunchParams.cs" />
+    <Compile Include="Pair.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\VersionInfo.cs" />
     <None Include="Properties\VersionInfo.template.cs" />

@@ -2,25 +2,22 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Dfo.BrowserlessDfoGui
+namespace Dfo.Controlling
 {
-	public class UsernamePasswordPair
+	/// <summary>
+	/// Contains information about the version of this assembly.
+	/// </summary>
+	public static class VersionInfo
 	{
-		private readonly string m_username;
-		public string Username { get { return m_username; } }
-		private readonly string m_password;
-		public string Password { get { return m_password; } }
-
-		public UsernamePasswordPair( string username, string password )
-		{
-			m_username = username;
-			m_password = password;
-		}
+		/// <summary>
+		/// The SVN revision number.
+		/// </summary>
+		public const string Revision = "$revision$";
 	}
 }
 
 /*
- Copyright 2009 Greg Najda
+ Copyright 2010 Greg Najda
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.

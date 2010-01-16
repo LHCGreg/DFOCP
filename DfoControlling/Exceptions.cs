@@ -1,10 +1,13 @@
 ﻿using System;
 
 
-namespace Dfo.Login
+namespace Dfo.Controlling
 {
+	/// <summary>
+	/// An exception throw if there is an error authenticating when logging in.
+	/// </summary>
 	[Serializable]
-	public class DfoAuthenticationException : Exception
+	public class DfoAuthenticationException : DfoLaunchException
 	{
 		public DfoAuthenticationException() { }
 		public DfoAuthenticationException( string message ) : base( message ) { }
@@ -15,6 +18,9 @@ namespace Dfo.Login
 			: base( info, context ) { }
 	}
 
+	/// <summary>
+	/// An exception thrown if there is an error when starting the game.
+	/// </summary>
 	[Serializable]
 	public class DfoLaunchException : Exception
 	{
@@ -29,7 +35,7 @@ namespace Dfo.Login
 }
 
 /*
- Copyright 2009 Greg Najda
+ Copyright 2010 Greg Najda
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.

@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle( "Browserless DFO GUI Launcher" )]
-[assembly: AssemblyDescription( "GUI browserless launcher for DFO" )]
+[assembly: AssemblyTitle( "DFO Control Panel" )]
+[assembly: AssemblyDescription( "Control panel for launching, monitoring, and controlling DFO" )]
 [assembly: AssemblyConfiguration( "" )]
 [assembly: AssemblyCompany( "Lord High Captain Studios" )]
-[assembly: AssemblyProduct( "Browserless DFO Launcher" )]
-[assembly: AssemblyCopyright( "Copyright © Greg Najda 2009" )]
+[assembly: AssemblyProduct( "DFO Control Panel" )]
+[assembly: AssemblyCopyright( "Copyright © Greg Najda 2010" )]
 [assembly: AssemblyTrademark( "" )]
 [assembly: AssemblyCulture( "" )]
 
@@ -32,5 +32,21 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion( "1.2." + Dfo.BrowserlessDfoGui.VersionInfo.Revision + ".*" )]
-[assembly: AssemblyFileVersion( "1.2." + Dfo.BrowserlessDfoGui.VersionInfo.Revision + ".0" )]
+[assembly: AssemblyVersion( "2.0.0." + Dfo.ControlPanel.VersionInfo.Revision )]
+[assembly: AssemblyFileVersion( "2.0.0." + Dfo.ControlPanel.VersionInfo.Revision )]
+
+/*
+ Copyright 2010 Greg Najda
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/

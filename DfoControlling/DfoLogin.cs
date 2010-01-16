@@ -8,18 +8,25 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 
-namespace Dfo.Login
+namespace Dfo.Controlling
 {
+	/// <summary>
+	/// A class containing methods for authenticating to the DFO server.
+	/// </summary>
 	public static class DfoLogin
 	{
-		public static string DefaultLoginUrl { get { return "http://passport.nexon.net/Login.aspx?nexonTheme=DungeonFighter"; } }
-		public static string DefaultIni { get { return "http://download2.nexon.net/Game/DFO/ngm/DFOLauncher/version.ini"; } }
-		public static string DefaultUserAgent { get { return "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.3) Gecko/20090824 Firefox/3.5.3 (.NET CLR 3.5.30729)"; } }
-		public static int DefaultTimeoutInMillis { get { return 20000; } } // 20 seconds
-		public static string DefaultUsernameField { get { return "txtId"; } }
-		public static string DefaultPasswordField { get { return "txtPassword"; } }
-		public static string DefaultButtonField { get { return "btnLogin"; } }
-		public static string FallbackViewstate { get { return "/wEPDwUKMTY2MTY3MjU1M2Rk"; } }
+		private static string DefaultLoginUrl { get { return "http://passport.nexon.net/Login.aspx?nexonTheme=DungeonFighter"; } }
+		private static string DefaultIni { get { return "http://download2.nexon.net/Game/DFO/ngm/DFOLauncher/version.ini"; } }
+		private static string DefaultUserAgent { get { return "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.3) Gecko/20090824 Firefox/3.5.3 (.NET CLR 3.5.30729)"; } }
+		
+		/// <summary>
+		/// The default timeout in milliseonds when waiting for a server response.
+		/// </summary>
+		public static int DefaultTimeoutInMillis { get { return 10000; } } // 10 seconds
+		private static string DefaultUsernameField { get { return "txtId"; } }
+		private static string DefaultPasswordField { get { return "txtPassword"; } }
+		private static string DefaultButtonField { get { return "btnLogin"; } }
+		private static string FallbackViewstate { get { return "/wEPDwUKMTY2MTY3MjU1M2Rk"; } }
 
 		/// <summary>
 		/// Returns a command-line argument you can pass to DFOLauncher.exe to start the game using the given
@@ -29,19 +36,21 @@ namespace Dfo.Login
 		/// 
 		/// <param name="username">Username to log in as</param>
 		/// <param name="password">Password to log in with</param>
+		/// <param name="timeoutInMs">Timeout in milliseconds to wait for a server response.</param>
 		/// 
 		/// <exception cref="System.ArgumentNullException">username or password is null</exception>
-		/// <exception cref="System.SecurityException">The caller does not have permission to connect to the DFO
+		/// <exception cref="System.ArgumentOutOfRangeException"><paramref name="timeoutInMs"/> is negative.</exception>
+		/// <exception cref="System.Security.SecurityException">The caller does not have permission to connect to the DFO
 		/// URI or a URI that the request is redirected to.</exception>
 		/// <exception cref="System.Net.WebException">A timeout occurred.</exception>
-		/// <exception cref="DfoLogin.DfoAuthenticationException">Either the username/password is incorrect
+		/// <exception cref="Dfo.Controlling.DfoAuthenticationException">Either the username/password is incorrect
 		/// or a change was made to the way the authentication token is given to the browser, in which case
 		/// this function will not work.</exception>
 		/// 
 		/// <returns>A command-line argument you can pass to DFOLauncher.exe to start the game as the given user</returns>
-		public static string GetDfoArg( string username, string password )
+		public static string GetDfoArg( string username, string password, int timeoutInMs )
 		{
-			return GetDfoArg( username, password, DefaultLoginUrl, DefaultTimeoutInMillis, DefaultIni );
+			return GetDfoArg( username, password, DefaultLoginUrl, timeoutInMs, DefaultIni );
 		}
 
 		/// <summary>
@@ -57,7 +66,7 @@ namespace Dfo.Login
 		/// <param name="username">Username to log in as</param>
 		/// <param name="password">Password to log in with</param>
 		/// <param name="loginUrl">The DFO login URL</param>
-		/// <param name="timeoutInMillis">Timeout in milliseconds. If this time expires while waiting for a
+		/// <param name="timeoutInMs">Timeout in milliseconds. If this time expires while waiting for a
 		/// response from the server, a System.Net.WebException will be thrown.</param>
 		/// <param name="ini">Name of the ini URL to use in forming the command-line argument, see summary.</param>
 		/// 
@@ -66,20 +75,20 @@ namespace Dfo.Login
 		/// connect to the requested URI or a URI that the request is redirected to.</exception>
 		/// <exception cref="System.ArgumentNullException">loginUrl, username, password, or ini is null.</exception>
 		/// <exception cref="System.NotSupportedException">The request scheme specified in loginUrl is not http.</exception>
-		/// <exception cref="System.ArgumentOutOfRangeException">timeout is negative.</exception>
+		/// <exception cref="System.ArgumentOutOfRangeException"><paramref name="timeoutInMs"/> is negative.</exception>
 		/// <exception cref="System.Net.WebException">A timeout occurred.</exception>
-		/// <exception cref="DfoLogin.DfoAuthenticationException">Either the username/password is incorrect
+		/// <exception cref="Dfo.Controlling.DfoAuthenticationException">Either the username/password is incorrect
 		/// or a change was made to the way the authentication token is given to the browser, in which case
 		/// this function will not work.</exception>
 		/// 
 		/// <returns></returns>
-		public static string GetDfoArg( string username, string password, string loginUrl, int timeoutInMillis, string ini )
+		public static string GetDfoArg( string username, string password, string loginUrl, int timeoutInMs, string ini )
 		{
 			if ( ini == null )
 			{
 				throw new ArgumentNullException( "ini" );
 			}
-			return GetAuthToken( username, password, loginUrl, timeoutInMillis ) + "?" + ini;
+			return GetAuthToken( username, password, loginUrl, timeoutInMs ) + "?" + ini;
 		}
 
 		/// <summary>
@@ -88,21 +97,24 @@ namespace Dfo.Login
 		/// is needed for authentication, this function blocks.
 		/// </summary>
 		/// 
-		/// <param name="username">Username to log in as</param>
-		/// <param name="password">Password to log in with</param>
+		/// <param name="username">Username to log in as.</param>
+		/// <param name="password">Password to log in with.</param>
+		/// <param name="timeoutInMs">Timeout in milliseconds. If this time expires while waiting for a
+		/// response from the server, a System.Net.WebException will be thrown.</param>
 		/// 
 		/// <exception cref="System.Security.SecurityException">The caller does not have permission to
 		/// connect to the DFO URI or a URI that the request is redirected to.</exception>
 		/// <exception cref="System.ArgumentNullException">username or password is null.</exception>
+		/// <exception cref="System.ArgumentOutOfRangeException"><paramref name="timeoutInMs"/> is negative.</exception>
 		/// <exception cref="System.Net.WebException">A timeout occurred.</exception>
-		/// <exception cref="DfoLogin.DfoAuthenticationException">Either the username/password is incorrect
+		/// <exception cref="Dfo.Controlling.DfoAuthenticationException">Either the username/password is incorrect
 		/// or a change was made to the way the authentication token is given to the browser, in which case
 		/// this function will not work.</exception>
 		/// 
 		/// <returns>An authentication token string for the given username</returns>
-		public static string GetAuthToken( string username, string password )
+		public static string GetAuthToken( string username, string password, int timeoutInMs )
 		{
-			return GetAuthToken( username, password, DefaultLoginUrl, DefaultTimeoutInMillis );
+			return GetAuthToken( username, password, DefaultLoginUrl, timeoutInMs );
 		}
 
 		/// <summary>
@@ -113,7 +125,7 @@ namespace Dfo.Login
 		/// <param name="username">Username to log in as</param>
 		/// <param name="password">Password to log in with</param>
 		/// <param name="loginUrl">The DFO login URL</param>
-		/// <param name="timeoutInMillis">Timeout in milliseconds. If this time expires while waiting for a
+		/// <param name="timeoutInMs">Timeout in milliseconds. If this time expires while waiting for a
 		/// response from the server, a System.Net.WebException will be thrown.</param>
 		/// 
 		/// <exception cref="System.UriFormatException">The URI specified is not a valid URI.</exception>
@@ -121,14 +133,14 @@ namespace Dfo.Login
 		/// connect to the requested URI or a URI that the request is redirected to.</exception>
 		/// <exception cref="System.ArgumentNullException">loginUrl, username, or password is null</exception>
 		/// <exception cref="System.NotSupportedException">The request scheme specified in loginUrl is not http.</exception>
-		/// <exception cref="System.ArgumentOutOfRangeException">timeout is negative.</exception>
+		/// <exception cref="System.ArgumentOutOfRangeException"><paramref name="timeoutInMs"/> is negative.</exception>
 		/// <exception cref="System.Net.WebException">A timeout occurred.</exception>
-		/// <exception cref="DfoLogin.DfoAuthenticationException">Either the username/password is incorrect
+		/// <exception cref="Dfo.Controlling.DfoAuthenticationException">Either the username/password is incorrect
 		/// or a change was made to the way the authentication token is given to the browser, in which case
 		/// this function will not work.</exception>
 		/// 
 		/// <returns>An authentication token string for the given username</returns>
-		public static string GetAuthToken( string username, string password, string loginUrl, int timeoutInMillis )
+		public static string GetAuthToken( string username, string password, string loginUrl, int timeoutInMs )
 		{
 			if ( username == null )
 			{
@@ -152,8 +164,8 @@ namespace Dfo.Login
 			loginPostRequest.Method = "POST";
 			loginPostRequest.ContentType = "application/x-www-form-urlencoded";
 			loginPostRequest.UserAgent = DefaultUserAgent; // Probably not needed but we may as well act like a browser
-			loginPostRequest.Timeout = timeoutInMillis;
-			loginPostRequest.ReadWriteTimeout = timeoutInMillis; // Dunno if this is relevant
+			loginPostRequest.Timeout = timeoutInMs;
+			loginPostRequest.ReadWriteTimeout = timeoutInMs; // Dunno if this is relevant
 			loginPostRequest.KeepAlive = false; // We don't need to bother keeping the connection alive
 			loginPostRequest.CookieContainer = new CookieContainer(); // Necessary for the HttpWebResponse object to contain cookies set in the response. Otherwise we'd have to manually parse the set-cookie headers
 
@@ -162,7 +174,7 @@ namespace Dfo.Login
 			string viewstate; // ASP.NET doesn't like it when you don't give it a viewstate
 			try
 			{
-				viewstate = GetViewstate( loginUrl, timeoutInMillis ); // Getting a fresh viewstate may be more likely to succeed. Using a hardcoded viewstate would probably work, but the time taken for an extra connection is not a concern here.
+				viewstate = GetViewstate( loginUrl, timeoutInMs ); // Getting a fresh viewstate may be more likely to succeed. Using a hardcoded viewstate would probably work, but the time taken for an extra connection is not a concern here.
 			}
 			catch ( DfoAuthenticationException )
 			{
@@ -272,7 +284,7 @@ namespace Dfo.Login
 		/// <param name="username">Username to log in as</param>
 		/// <param name="password">Password to log in with</param>
 		/// 
-		/// <exception cref="DfoLogin.DfoLaunchException">There was an error while attempting to authenticate
+		/// <exception cref="Dfo.Controlling.DfoLaunchException">There was an error while attempting to authenticate
 		/// or start DFO. The Message property contains an already user-friendly error message.</exception>
 		/// <exception cref="System.ArgumentNullException">username or password is null.</exception>
 		public static void StartDfo( string username, string password )
@@ -280,7 +292,7 @@ namespace Dfo.Login
 			string dfoLauncherPath = ""; // assignment to shut the compiler up. I know that if Win32Exception is thrown, this has been set.
 			try
 			{
-				string dfoArg = GetDfoArg( username, password );
+				string dfoArg = GetDfoArg( username, password, DfoLogin.DefaultTimeoutInMillis );
 				Process dfo = new Process();
 				dfoLauncherPath = Path.Combine( AppDomain.CurrentDomain.BaseDirectory, "DFOLauncher.exe" );
 				dfo.StartInfo.FileName = dfoLauncherPath;
@@ -311,7 +323,7 @@ namespace Dfo.Login
 }
 
 /*
- Copyright 2009 Greg Najda
+ Copyright 2010 Greg Najda
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
