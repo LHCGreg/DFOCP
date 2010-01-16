@@ -725,14 +725,7 @@ namespace Dfo.Controlling
 					dfoProcesses = Process.GetProcessesByName( Path.GetFileNameWithoutExtension( copiedParams.DfoExe ) );
 					if ( dfoProcesses.Length > 0 )
 					{
-						try
-						{
-							dfoProcesses[ 0 ].WaitForExit();
-						}
-						catch ( System.ComponentModel.Win32Exception )
-						{
-							; // Process already dead
-						}
+						Thread.Sleep( copiedParams.GameDeadPollingIntervalInMs );
 					}
 				} while ( dfoProcesses.Length > 0 );
 

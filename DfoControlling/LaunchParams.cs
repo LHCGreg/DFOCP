@@ -185,6 +185,13 @@ namespace Dfo.Controlling
 		internal int GameDonePollingIntervalInMs { get; set; }
 
 		/// <summary>
+		/// Gets or sets the number of milliseconds to wait when polling for the game process to end after the
+		/// main game window has closed.
+		/// Default: 100 (100 milliseconds)
+		/// </summary>
+		internal int GameDeadPollingIntervalInMs { get; set; }
+
+		/// <summary>
 		/// Creates a new <c>LaunchParams</c> object with default values.
 		/// </summary>
 		public LaunchParams()
@@ -201,6 +208,7 @@ namespace Dfo.Controlling
 			DfoWindowClassName = "DFO";
 			GameDonePollingIntervalInMs = 500;
 			GameWindowCreatedPollingIntervalInMs = 100;
+			GameDeadPollingIntervalInMs = 100;
 		}
 
 		/// <summary>
@@ -278,6 +286,7 @@ namespace Dfo.Controlling
 			clone.DfoWindowClassName = this.DfoWindowClassName;
 			clone.GameDonePollingIntervalInMs = this.GameDonePollingIntervalInMs;
 			clone.GameWindowCreatedPollingIntervalInMs = this.GameWindowCreatedPollingIntervalInMs;
+			clone.GameDeadPollingIntervalInMs = this.GameDeadPollingIntervalInMs;
 
 			return clone;
 		}
@@ -297,6 +306,7 @@ namespace Dfo.Controlling
 			builder.AppendLine( string.Format( "DFO exe: {0}", DfoExe ) );
 			builder.AppendLine( string.Format( "DFO launcher exe: {0}", DfoLauncherExe ) );
 			builder.AppendLine( string.Format( "DFO window class name: {0}", DfoWindowClassName ) );
+			builder.AppendLine( string.Format( "Game dead polling interval: {0}", GameDeadPollingIntervalInMs ) );
 			builder.AppendLine( string.Format( "Game done polling interval: {0}", GameDonePollingIntervalInMs ) );
 			builder.AppendLine( string.Format( "Game window created polling interval: {0}", GameWindowCreatedPollingIntervalInMs ) );
 			builder.AppendLine( string.Format( "Launch in windowed: {0}", LaunchInWindowed ) );
