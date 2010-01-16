@@ -104,7 +104,6 @@
     </Compile>
     <Compile Include="SettingsLoader.cs" />
     <Compile Include="StartupSettings.cs" />
-    <Compile Include="UsernamePasswordPair.cs" />
     <Compile Include="Properties\VersionInfo.cs" />
     <None Include="Properties\VersionInfo.template.cs" />
   </ItemGroup>
