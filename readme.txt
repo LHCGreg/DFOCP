@@ -23,7 +23,7 @@ Q: The instructions are hard. I don't get it!
 A: Ask for help on the dfosource thread. Future versions will be able to generate BrowserlessDFO.bat for you.
 
 
-If you wish to log in from the command-line or from a script, you can see the command-line arguments accepted by running
+If you wish to use DFO Control Panel from the command-line or from a script, you can see the command-line arguments accepted by running
 
 DFOCP.exe -help
 

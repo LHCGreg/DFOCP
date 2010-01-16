@@ -108,7 +108,7 @@ namespace Dfo.ControlPanel
 				  || ex is DfoAuthenticationException
 				  || ex is DfoLaunchException )
 				{
-					Logging.Log.ErrorFormat( "There was a problem while trying to start the game. {0}.", ex.Message );
+					Logging.Log.ErrorFormat( "There was a problem while trying to start the game. {0}", ex.Message );
 					return 2;
 				}
 				else
