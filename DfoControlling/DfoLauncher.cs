@@ -982,7 +982,7 @@ namespace Dfo.Controlling
 		/// Fixes soundpack directory mixup usually caused by a system or DFOCP crash. Does nothing if no problems
 		/// are detected. Does nothing if the game is currently running.
 		/// </summary>
-		/// <exception cref="Sytem.IO.IOException">Something went wrong while trying to fix the mixup.</exception>
+		/// <exception cref="System.IO.IOException">Something went wrong while trying to fix the mixup.</exception>
 		public void FixBrokenSoundpacks()
 		{
 			if ( !SoundpacksBroken() )
