@@ -352,10 +352,17 @@ namespace Dfo.Controlling
 				m_launcherProcess.Exited += LauncherProcessExitedHandler; // Use async notification instead of synchronous waiting so the we can cancel while the launcher process is going
 				m_launcherProcess.Start();
 
-				m_dfoMonitorThread = new Thread( BackgroundThreadEntryPoint ); // Start the thread that monitors the state of DFO
-				m_dfoMonitorThread.IsBackground = true;
-				m_dfoMonitorThread.Name = "DFO monitor";
-				m_dfoMonitorThread.Start( Params.Clone() ); // Give it a copy of the launch params so the caller can change the Params property while the game is running with no effects for the next time they launch
+				lock ( m_syncHandle )
+				{
+					// Start the thread that monitors the state of DFO
+					m_dfoMonitorThread = new Thread( BackgroundThreadEntryPoint );
+					m_dfoMonitorThread.IsBackground = true;
+					m_dfoMonitorThread.Name = "DFO monitor";
+
+					// Give it a copy of the launch params so the caller can change the Params property while
+					// the game is running with no effects for the next time they launch
+					m_dfoMonitorThread.Start( Params.Clone() );
+				}
 			}
 			catch ( System.Security.SecurityException ex )
 			{
