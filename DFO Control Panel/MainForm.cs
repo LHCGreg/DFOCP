@@ -40,12 +40,71 @@ namespace Dfo.ControlPanel
 		}
 		private string Username { get { return ctlUsername.Text; } set { ctlUsername.Text = value; } }
 		private string Password { get { return ctlPassword.Text; } set { ctlPassword.Text = value; } }
-		private string DfoDir { get { return m_launcher.Params.DfoDir; } set { m_launcher.Params.DfoDir = value; } }
-		private string CustomSoundpackDir { get { return m_launcher.Params.CustomSoundpackDir; } set { m_launcher.Params.CustomSoundpackDir = value; } }
-		private string TempSoundpackDir { get { return m_launcher.Params.TempSoundpackDir; } set { m_launcher.Params.TempSoundpackDir = value; } }
+
+		private string m_dfoDir;
+		private string DfoDir
+		{
+			get { return m_dfoDir; }
+			set
+			{
+				ValidatePath( value, "DfoDir" );
+				m_dfoDir = value;
+			}
+		}
+
+		private string m_customSoundpackDir;
+		private string CustomSoundpackDir
+		{
+			get { return m_customSoundpackDir; }
+			set
+			{
+				ValidatePath( value, "CustomSoundpackDir" );
+				m_customSoundpackDir = value;
+			}
+		}
+
+		private string m_tempSoundpackDir;
+		private string TempSoundpackDir
+		{
+			get { return m_tempSoundpackDir; }
+			set
+			{
+				ValidatePath( value, "TempSoundpackDir" );
+				m_tempSoundpackDir = value;
+			}
+		}
+
+		private static void ValidatePath( string path, string propertyName )
+		{
+			if ( path == null )
+			{
+				throw new ArgumentNullException( propertyName );
+			}
+			char[] invalidChars = Path.GetInvalidPathChars();
+			if ( path.IndexOfAny( invalidChars ) != -1 )
+			{
+				throw new ArgumentException( string.Format(
+					"{0} contains characters that are invalid in a path.", path ) );
+			}
+		}
 
 		// Prefer Control.BeginInvoke to Control.Invoke. Using Control.Invoke when the UI thread is waiting for the
 		// current thread to finish results in a deadlock.
+
+		private void SetLauncherParams()
+		{
+			// Sets the launcher params to the values of the GUI controls. This is easier and more efficient
+			// than handling the "changed" events of all the relevant controls
+
+			m_launcher.Params.ClosePopup = ClosePopup;
+			m_launcher.Params.CustomSoundpackDir = CustomSoundpackDir;
+			m_launcher.Params.DfoDir = DfoDir;
+			m_launcher.Params.LaunchInWindowed = LaunchWindowed;
+			m_launcher.Params.Password = Password;
+			m_launcher.Params.SwitchSoundpacks = SwitchSoundpacks;
+			m_launcher.Params.TempSoundpackDir = TempSoundpackDir;
+			m_launcher.Params.Username = Username;
+		}
 
 		// Left for designer support only
 		[Obsolete( "The default constructor is for designer support only.", true )]
@@ -78,6 +137,9 @@ namespace Dfo.ControlPanel
 			try
 			{
 				m_launcher.Params.AutoDetectDfoDir();
+				DfoDir = m_launcher.Params.DfoDir;
+				CustomSoundpackDir = m_launcher.Params.CustomSoundpackDir;
+				TempSoundpackDir = m_launcher.Params.TempSoundpackDir;
 			}
 			catch ( IOException ex )
 			{
@@ -86,6 +148,8 @@ namespace Dfo.ControlPanel
 
 			m_savedSettings = SettingsLoader.Load();
 			ApplySettingsAndArguments();
+
+			FixSoundpacksIfNeeded();
 
 			bool mainSoundpackDirExists = Directory.Exists( m_launcher.Params.SoundpackDir );
 			bool customSoundpackDirExists = Directory.Exists( CustomSoundpackDir );
@@ -105,6 +169,37 @@ namespace Dfo.ControlPanel
 			Logging.Log.Debug( "Main window loaded." );
 		}
 
+		/// <summary>
+		/// Attempts to fix mixed-up soundpacks usually caused by a system crash while the game is running.
+		/// This function uses m_launcher's DfoDir, CustomSoundpackDir, and TempSoundpackDir properties.
+		/// </summary>
+		private void FixSoundpacksIfNeeded()
+		{
+			if ( m_launcher.SoundpacksBroken() )
+			{
+				Logging.Log.Info( "Broken soundpack directories detected, attempting to fix them..." );
+				bool fixWorked = false;
+				try
+				{
+					m_launcher.FixBrokenSoundpacks();
+					fixWorked = true;
+				}
+				catch ( IOException ex )
+				{
+					DisplayError( string.Format(
+						"Error while trying to fix broken soundpack directories. {0} I guess you'll have to fix them yourself.",
+						ex.Message ),
+						"Couldn't fix the soundpacks" );
+				}
+
+				if ( fixWorked )
+				{
+					DisplayInfo( "Your soundpack directories were detected to be mixed up (this is usually caused by a system crash). They have been fixed.",
+						"Soundpacks fixed" );
+				}
+			}
+		}
+
 		private void ApplySettingsAndArguments()
 		{
 			SettingsLoader.ApplySettingStruct( m_parsedArgs.Settings.ClosePopup, m_savedSettings.ClosePopup, null,
@@ -112,7 +207,7 @@ namespace Dfo.ControlPanel
 
 			SettingsLoader.ApplySettingStruct( m_parsedArgs.Settings.LaunchWindowed, m_savedSettings.LaunchWindowed, null,
 				"Launch windowed", ( bool windowed ) => LaunchWindowed = windowed, false, false );
-			
+
 			SettingsLoader.ApplySettingStruct( m_parsedArgs.Settings.SwitchSoundpacks, m_savedSettings.SwitchSoundpacks,
 				null, "Switch soundpacks", ( bool switchSoundpacks ) => SwitchSoundpacks = switchSoundpacks,
 				m_launcher.Params.SwitchSoundpacks, false );
@@ -221,14 +316,7 @@ namespace Dfo.ControlPanel
 		{
 			ctlLaunch.Enabled = false;
 
-			m_launcher.Params.ClosePopup = ClosePopup;
-			m_launcher.Params.LaunchInWindowed = LaunchWindowed;
-			m_launcher.Params.Password = Password;
-			m_launcher.Params.SwitchSoundpacks = SwitchSoundpacks;
-			m_launcher.Params.Username = Username;
-			m_launcher.Params.DfoDir = DfoDir;
-			m_launcher.Params.CustomSoundpackDir = CustomSoundpackDir;
-			m_launcher.Params.TempSoundpackDir = TempSoundpackDir;
+			SetLauncherParams();
 
 			Logging.Log.DebugFormat( "Launching. Launch parameters:{0}{1}", Environment.NewLine, m_launcher.Params );
 
@@ -302,6 +390,12 @@ namespace Dfo.ControlPanel
 		{
 			Logging.Log.Error( errorMessage );
 			MessageBox.Show( errorMessage, secondaryText, MessageBoxButtons.OK, MessageBoxIcon.Error );
+		}
+
+		private void DisplayInfo( string message, string secondaryText )
+		{
+			Logging.Log.Info( message );
+			MessageBox.Show( message, secondaryText, MessageBoxButtons.OK, MessageBoxIcon.Information );
 		}
 
 		private void ctlMainForm_FormClosing( object sender, FormClosingEventArgs e )

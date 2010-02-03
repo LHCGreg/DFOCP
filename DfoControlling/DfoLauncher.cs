@@ -902,6 +902,135 @@ namespace Dfo.Controlling
 				}
 			}
 		}
+		
+		// The soundpack directories go through the following states:
+		
+		// normal soundpacks: soundpackDir
+		// custom soundpacks: customSoundpackDir
+
+		// Rename soundpackDir to tempSoundpackDir
+		
+		// normal soundpacks: tempSoundpackDir
+		// custom soundpacks: customSoundpackDir
+
+		// Rename customSoundpackDir to soundpackDir
+
+		// normal soundpacks: tempSoundpackDir
+		// custom soundpacks: soundpackDir
+
+		// Game runs...
+		// Game stops...
+
+		// Rename soundpackDir to customSoundpackDir
+
+		// normal soundpacks: tempSoundpackDir
+		// custom soundpacks: customSoundpackDir
+
+		// Rename tempSoundpackDir to soundpackDir
+
+		// normal soundpacks: soundpackDir
+		// custom soundpacks: customSoundpackDir
+
+		// That makes the abnormal states:
+		//
+		// normal soundpacks: tempSoundpackDir
+		// custom soundpacks: customSoundpackDir
+		//
+		// (this is the common (unfortunately) case of a crash while the game is running
+		// normal soundpacks: tempSoundpackDir
+		// custom soundpacks: soundpackDir
+		
+		/// <summary>
+		/// Checks if the soundpack directories (normal and custom) are not where they should be (perhaps because
+		/// of a crash). This only checks if it is something that can be fixed by <c>FixBrokenSoundpacks()</c>.
+		/// For example, a completely missing soundpack directory with no temp soundpack directory is not
+		/// considered to be "broken". If the game process is currently running, the soundpacks are not
+		/// considered to be "broken".
+		/// </summary>
+		/// <returns>True if the soundpack directories are in an abnormal state that can be fixed by
+		/// <c>FixBrokenSoundpacks()</c>.</returns>
+		public bool SoundpacksBroken()
+		{
+			Process[] dfoProcesses = Process.GetProcessesByName( Path.GetFileNameWithoutExtension( Params.DfoExe ) );
+			if ( dfoProcesses.Length > 0 )
+			{
+				return false;
+			}
+
+			if ( Directory.Exists( Params.TempSoundpackDir ) && Directory.Exists( Params.SoundpackDir ) )
+			{
+				return true;
+			}
+			else if ( Directory.Exists( Params.TempSoundpackDir ) && Directory.Exists( Params.CustomSoundpackDir ) )
+			{
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+
+		/// <summary>
+		/// Fixes soundpack directory mixup usually caused by a system or DFOCP crash. Does nothing if no problems
+		/// are detected. Does nothing if the game is currently running.
+		/// </summary>
+		/// <exception cref="Sytem.IO.IOException">Something went wrong while trying to fix the mixup.</exception>
+		public void FixBrokenSoundpacks()
+		{
+			if ( !SoundpacksBroken() )
+			{
+				return;
+			}
+
+			if ( Directory.Exists( Params.TempSoundpackDir ) && Directory.Exists( Params.SoundpackDir ) )
+			{
+				// Rename soundpackDir to customSoundpackDir
+				try
+				{
+					Directory.Move( Params.SoundpackDir, Params.CustomSoundpackDir );
+				}
+				catch ( Exception ex )
+				{
+					throw new IOException( string.Format(
+						"Could not move back custom soundpack in {0} back to {1}. {2}",
+						Params.SoundpackDir, Params.CustomSoundpackDir, ex.Message ),
+						ex );
+				}
+
+				// Rename tempSoundpackDir to soundpackDir
+				try
+				{
+					Directory.Move( Params.TempSoundpackDir, Params.SoundpackDir );
+				}
+				catch ( Exception ex )
+				{
+					throw new IOException( string.Format(
+						"Could not move back main soundpack in {0} back to {1}. {2}",
+						Params.TempSoundpackDir, Params.SoundpackDir, ex.Message ),
+						ex );
+				}
+			}
+			else if ( Directory.Exists( Params.TempSoundpackDir ) && Directory.Exists( Params.CustomSoundpackDir ) )
+			{
+				// Rename tempSoundpackDir to soundpackDir
+				try
+				{
+					Directory.Move( Params.TempSoundpackDir, Params.SoundpackDir );
+				}
+				catch ( Exception ex )
+				{
+					throw new IOException( string.Format(
+						"Could not move back main soundpack in {0} back to {1}. {2}",
+						Params.TempSoundpackDir, Params.SoundpackDir, ex.Message ),
+						ex );
+				}
+			}
+			else
+			{
+				return;
+			}
+		}
 
 		//public void ResizeDfoWindow( int x, int y )
 		//{
