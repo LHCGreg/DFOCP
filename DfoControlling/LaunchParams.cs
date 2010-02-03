@@ -180,7 +180,7 @@ namespace Dfo.Controlling
 
 		/// <summary>
 		/// Gets or sets the number of milliseconds to wait when polling for the main game window to be closed.
-		/// Default: 500 (500 milliseconds)
+		/// Default: 250 (250 milliseconds)
 		/// </summary>
 		internal int GameDonePollingIntervalInMs { get; set; }
 
@@ -206,7 +206,7 @@ namespace Dfo.Controlling
 			ClosePopup = true;
 			LaunchInWindowed = null;
 			DfoWindowClassName = "DFO";
-			GameDonePollingIntervalInMs = 500;
+			GameDonePollingIntervalInMs = 250;
 			GameWindowCreatedPollingIntervalInMs = 100;
 			GameDeadPollingIntervalInMs = 100;
 		}
