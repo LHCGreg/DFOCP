@@ -166,7 +166,7 @@ namespace Dfo.ControlPanel
 
 		private void PopupKillFailedHandler( object sender, Dfo.Controlling.ErrorEventArgs e )
 		{
-			DisplayError( string.Format( "Could not kill the popup. {0}", e.Error.Message ), "Popup Close Error" );
+			Logging.Log.Warn( string.Format( "Could not kill the popup. {0}", e.Error.Message ) );
 		}
 
 		private void StateChangedHandler( object sender, EventArgs e )
