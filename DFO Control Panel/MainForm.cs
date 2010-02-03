@@ -175,6 +175,7 @@ namespace Dfo.ControlPanel
 		/// </summary>
 		private void FixSoundpacksIfNeeded()
 		{
+			Logging.Log.Info( "Checking for broken soundpacks..." );
 			if ( m_launcher.SoundpacksBroken() )
 			{
 				Logging.Log.Info( "Broken soundpack directories detected, attempting to fix them..." );
@@ -186,6 +187,7 @@ namespace Dfo.ControlPanel
 				}
 				catch ( IOException ex )
 				{
+					// XXX: Should the program exit?
 					DisplayError( string.Format(
 						"Error while trying to fix broken soundpack directories. {0} I guess you'll have to fix them yourself.",
 						ex.Message ),
@@ -197,6 +199,10 @@ namespace Dfo.ControlPanel
 					DisplayInfo( "Your soundpack directories were detected to be mixed up (this is usually caused by a system crash). They have been fixed.",
 						"Soundpacks fixed" );
 				}
+			}
+			else
+			{
+				Logging.Log.Info( "Soundpacks are OK." );
 			}
 		}
 

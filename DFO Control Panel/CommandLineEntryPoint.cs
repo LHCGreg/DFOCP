@@ -82,6 +82,17 @@ namespace Dfo.ControlPanel
 				return 1;
 			}
 
+			try
+			{
+				FixSoundpacksIfNeeded();
+			}
+			catch ( IOException ex )
+			{
+				Logging.Log.FatalFormat( "Error while trying to fix broken soundpack directories. {0} I guess you'll have to fix them yourself.",
+					ex.Message );
+				return 2;
+			}
+
 			m_launcher.LaunchStateChanged += StateChangedHandler;
 			m_launcher.SoundpackSwitchFailed += SoundSwitchFailHandler;
 			m_launcher.WindowModeFailed += WindowFailHandler;
@@ -108,7 +119,7 @@ namespace Dfo.ControlPanel
 				  || ex is DfoAuthenticationException
 				  || ex is DfoLaunchException )
 				{
-					Logging.Log.ErrorFormat( "There was a problem while trying to start the game. {0}", ex.Message );
+					Logging.Log.FatalFormat( "There was a problem while trying to start the game. {0}", ex.Message );
 					return 2;
 				}
 				else
@@ -118,6 +129,31 @@ namespace Dfo.ControlPanel
 			}
 
 			return 0;
+		}
+
+		/// <summary>
+		/// Attempts to fix mixed-up soundpacks usually caused by a system crash while the game is running.
+		/// This function uses m_launcher's DfoDir, CustomSoundpackDir, and TempSoundpackDir properties.
+		/// </summary>
+		/// <exception cref="System.IO.IOException">Something went wrong while trying to fix the soundpacks.</exception>
+		private void FixSoundpacksIfNeeded()
+		{
+			// XXX: Code and message overlap with GUI code
+			Logging.Log.Info( "Checking for broken soundpacks..." );
+			if ( m_launcher.SoundpacksBroken() )
+			{
+				Logging.Log.Info( "Broken soundpack directories detected, attempting to fix them..." );
+
+				m_launcher.FixBrokenSoundpacks();
+
+				string successMessage = "Your soundpack directories were detected to be mixed up (this is usually caused by a system crash). They have been fixed.";
+				Console.WriteLine( successMessage );
+				Logging.Log.Info( successMessage );
+			}
+			else
+			{
+				Logging.Log.Info( "Soundpacks are OK." );
+			}
 		}
 
 		private void StateChangedHandler( object sender, EventArgs e )
