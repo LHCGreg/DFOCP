@@ -1,6 +1,5 @@
 2.1:
 Saving to .bat file
-Check for broken custom soundpack directory setup (ie computer crashed while playing DFO with switched soundpacks) and fix it
 Resizing DFO window
 Icon? Spiffier GUI?
 Minimizing to tray while game in progress?
