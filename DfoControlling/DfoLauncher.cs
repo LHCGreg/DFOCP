@@ -306,13 +306,13 @@ namespace Dfo.Controlling
 			{
 				throw new ObjectDisposedException( "DfoLauncher" );
 			}
-			if ( Params.LoginTimeoutInMs < 0 )
-			{
-				throw new ArgumentOutOfRangeException( "LoginTimeoutInMs cannot be negative." );
-			}
 			if ( Params == null )
 			{
 				throw new ArgumentNullException( "Params" );
+			}
+			if ( Params.LoginTimeoutInMs < 0 )
+			{
+				throw new ArgumentOutOfRangeException( "LoginTimeoutInMs cannot be negative." );
 			}
 			if ( Params.Username == null )
 			{
