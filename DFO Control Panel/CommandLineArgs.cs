@@ -20,15 +20,15 @@ namespace Dfo.ControlPanel
 		{
 			OptionSet optionSet = new OptionSet()
 			{
-				{ "h|help", "Show this message and exit.", argExistence => ShowHelp = (argExistence != null) },
+				{ "?|h|help", "Show this message and exit.", argExistence => ShowHelp = (argExistence != null) },
 				{ "v|version", "Show version information and exit.", argExistence => ShowVersion = (argExistence != null) },
 				{ "gui", "Start the GUI with whatever parameters have been supplied.", argExistence => Gui = (argExistence != null) },
 				{ "cli", "Explicitly says you want the command-line version to be used.", argExistence => Gui = !(argExistence != null) },
 				{ "u|username=", "Username to use when logging in.", argValue => Settings.Username = argValue },
-				{ "pw|password=", "Password to use when logging in.", argValue => Settings.Password = argValue },
+				{ "p|pw|password=", "Password to use when logging in.", argValue => Settings.Password = argValue },
 				{ "closepopup", "Close the popup when the game is done. This is the default.", argExistence => Settings.ClosePopup = (argExistence != null) },
 				{ "noclosepopup", "Don't close the popup when the game is done.", argExistence => Settings.ClosePopup = !(argExistence != null) },
-				{ "windowed", "Launch the game in windowed mode.", argExistence => Settings.LaunchWindowed = (argExistence != null) },
+				{ "window|windowed", "Launch the game in windowed mode.", argExistence => Settings.LaunchWindowed = (argExistence != null) },
 				{ "full", "Don't launch the game in windowed mode. This is the default.", argExistence => Settings.LaunchWindowed = !(argExistence != null) },
 				{ "soundswitch", "Switch soundpacks.", argExistence => Settings.SwitchSoundpacks = (argExistence != null) },
 				{ "nosoundswitch", "Don't switch soundpacks. This is the default.", argExistence => Settings.SwitchSoundpacks = !(argExistence != null) },
