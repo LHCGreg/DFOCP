@@ -48,6 +48,8 @@
 			this.ctlProgressBar = new System.Windows.Forms.ToolStripProgressBar();
 			this.ctlMenuStrip = new System.Windows.Forms.MenuStrip();
 			this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.exportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
 			this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -65,6 +67,7 @@
 			this.ctlUsername.Name = "ctlUsername";
 			this.ctlUsername.Size = new System.Drawing.Size( 198, 20 );
 			this.ctlUsername.TabIndex = 0;
+			this.ctlUsername.TextChanged += new System.EventHandler( this.ctlUsername_TextChanged );
 			// 
 			// ctlPassword
 			// 
@@ -75,6 +78,7 @@
 			this.ctlPassword.Size = new System.Drawing.Size( 198, 20 );
 			this.ctlPassword.TabIndex = 1;
 			this.ctlPassword.UseSystemPasswordChar = true;
+			this.ctlPassword.TextChanged += new System.EventHandler( this.ctlPassword_TextChanged );
 			// 
 			// lblUsername
 			// 
@@ -228,15 +232,33 @@
 			// fileToolStripMenuItem
 			// 
 			this.fileToolStripMenuItem.DropDownItems.AddRange( new System.Windows.Forms.ToolStripItem[] {
+            this.exportToolStripMenuItem,
+            this.toolStripSeparator1,
             this.exitToolStripMenuItem} );
 			this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
 			this.fileToolStripMenuItem.Size = new System.Drawing.Size( 35, 20 );
 			this.fileToolStripMenuItem.Text = "&File";
 			// 
+			// exportToolStripMenuItem
+			// 
+			this.exportToolStripMenuItem.Enabled = false;
+			this.exportToolStripMenuItem.Name = "exportToolStripMenuItem";
+			this.exportToolStripMenuItem.ShortcutKeys = ( (System.Windows.Forms.Keys)( ( System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S ) ) );
+			this.exportToolStripMenuItem.Size = new System.Drawing.Size( 197, 22 );
+			this.exportToolStripMenuItem.Text = "Save As .bat...";
+			this.exportToolStripMenuItem.ToolTipText = "abc";
+			this.exportToolStripMenuItem.EnabledChanged += new System.EventHandler( this.exportToolStripMenuItem_EnabledChanged );
+			this.exportToolStripMenuItem.Click += new System.EventHandler( this.exportToolStripMenuItem_Click );
+			// 
+			// toolStripSeparator1
+			// 
+			this.toolStripSeparator1.Name = "toolStripSeparator1";
+			this.toolStripSeparator1.Size = new System.Drawing.Size( 194, 6 );
+			// 
 			// exitToolStripMenuItem
 			// 
 			this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-			this.exitToolStripMenuItem.Size = new System.Drawing.Size( 103, 22 );
+			this.exitToolStripMenuItem.Size = new System.Drawing.Size( 197, 22 );
 			this.exitToolStripMenuItem.Text = "E&xit";
 			this.exitToolStripMenuItem.Click += new System.EventHandler( this.exitToolStripMenuItem_Click );
 			// 
@@ -305,6 +327,8 @@
 		private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem helpToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
+		private System.Windows.Forms.ToolStripMenuItem exportToolStripMenuItem;
+		private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
 	}
 }
 

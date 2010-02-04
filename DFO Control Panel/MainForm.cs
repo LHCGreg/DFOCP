@@ -24,6 +24,9 @@ namespace Dfo.ControlPanel
 		private CommandLineArgs m_parsedArgs;
 		private StartupSettings m_savedSettings = new StartupSettings();
 
+		private static readonly string s_exportEnabledTooltip = "Creates a .bat file you can double-click to start the game immediately.";
+		private static readonly string s_exportDisabledTooltip = s_exportEnabledTooltip + " You must enter a username and password.";
+
 		private bool ClosePopup { get { return ctlClosePopup.Checked; } set { ctlClosePopup.Checked = value; } }
 		private bool LaunchWindowed { get { return ctlLaunchWindowed.Checked; } set { ctlLaunchWindowed.Checked = value; } }
 		private bool RememberMe { get { return ctlRememberMe.Checked; } set { ctlRememberMe.Checked = value; } }
@@ -117,6 +120,8 @@ namespace Dfo.ControlPanel
 		{
 			Logging.Log.Debug( "Creating main window." );
 			InitializeComponent();
+
+			exportToolStripMenuItem.ToolTipText = s_exportDisabledTooltip;
 
 			m_parsedArgs = parsedArgs;
 
@@ -404,6 +409,31 @@ namespace Dfo.ControlPanel
 			MessageBox.Show( message, secondaryText, MessageBoxButtons.OK, MessageBoxIcon.Information );
 		}
 
+		private bool GetOkCancel( string message, string secondaryText, bool defaultChoice )
+		{
+			MessageBoxDefaultButton defaultButton;
+			if ( defaultChoice == true )
+			{
+				defaultButton = MessageBoxDefaultButton.Button1;
+			}
+			else
+			{
+				defaultButton = MessageBoxDefaultButton.Button2;
+			}
+
+			DialogResult result = MessageBox.Show( message, secondaryText, MessageBoxButtons.OKCancel,
+				MessageBoxIcon.Warning, defaultButton );
+
+			if ( result == DialogResult.OK )
+			{
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+
 		private void ctlMainForm_FormClosing( object sender, FormClosingEventArgs e )
 		{
 			if ( m_launcher.State == LaunchState.GameInProgress && m_launcher.Params.SwitchSoundpacks )
@@ -452,6 +482,98 @@ namespace Dfo.ControlPanel
 			{
 				aboutBox.ShowDialog();
 			}
+		}
+
+		private void ctlUsername_TextChanged( object sender, EventArgs e )
+		{
+			UpdateSaveAsVisibility();
+		}
+
+		private void ctlPassword_TextChanged( object sender, EventArgs e )
+		{
+			UpdateSaveAsVisibility();
+		}
+
+		private void UpdateSaveAsVisibility()
+		{
+			if ( Username == string.Empty || Password == string.Empty )
+			{
+				exportToolStripMenuItem.Enabled = false;
+			}
+			else
+			{
+				exportToolStripMenuItem.Enabled = true;
+			}
+		}
+
+		private void exportToolStripMenuItem_EnabledChanged( object sender, EventArgs e )
+		{
+			if ( exportToolStripMenuItem.Enabled )
+			{
+				exportToolStripMenuItem.ToolTipText = s_exportEnabledTooltip;
+			}
+			else
+			{
+				exportToolStripMenuItem.ToolTipText = s_exportDisabledTooltip;
+			}
+		}
+
+		private void exportToolStripMenuItem_Click( object sender, EventArgs e )
+		{
+			bool userUnderstandsRisks = GetOkCancel(
+				"This will save your username and password in a text file. Anyone who has access to your computer will be able to see your username and password if they open the file. Are you sure you want to continue?",
+				"Security Warning!",
+				false );
+			
+			using ( SaveFileDialog fileDialog = new SaveFileDialog() )
+			{
+				fileDialog.AddExtension = true;
+				fileDialog.DefaultExt = "bat";
+				fileDialog.Filter = "Batch Scripts (*.bat)|*.bat";
+				fileDialog.InitialDirectory = Application.StartupPath;
+				DialogResult result = fileDialog.ShowDialog();
+
+				if ( result == DialogResult.OK )
+				{
+					Logging.Log.InfoFormat( "Creating batch script {0}...", fileDialog.FileName );
+					try
+					{
+						SettingsExporter.ExportToBat( GetCurrentSettings(), fileDialog.FileName );
+						Logging.Log.InfoFormat("Batch script saved to {0}.", fileDialog.FileName);
+					}
+					catch ( IOException ex )
+					{
+						DisplayError( ex.Message, "Error while saving" );
+					}
+				}
+			}
+		}
+
+		private StartupSettings GetCurrentSettings()
+		{
+			StartupSettings settings = new StartupSettings();
+			
+			if ( m_parsedArgs.Settings.DfoDir != null )
+			{
+				settings.DfoDir = DfoDir;
+			}
+			if ( m_parsedArgs.Settings.CustomSoundpackDir != null )
+			{
+				settings.CustomSoundpackDir = CustomSoundpackDir;
+			}
+			if ( m_parsedArgs.Settings.TempSoundpackDir != null )
+			{
+				settings.CustomSoundpackDir = TempSoundpackDir;
+			}
+
+			settings.ClosePopup = ClosePopup;
+			settings.LaunchWindowed = LaunchWindowed;
+			settings.Password = Password;
+			settings.RememberUsername = RememberMe;
+			settings.SwitchSoundpacks = SwitchSoundpacks;
+			settings.Username = Username;
+
+			return settings;
 		}
 	}
 }
