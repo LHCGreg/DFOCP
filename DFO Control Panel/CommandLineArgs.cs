@@ -16,6 +16,9 @@ namespace Dfo.ControlPanel
 		private StartupSettings m_settings = new StartupSettings();
 		public StartupSettings Settings { get { return m_settings; } }
 
+		private List<string> m_messages = new List<string>();
+		public IEnumerable<string> Messages { get { return m_messages; } }
+
 		public OptionSet GetOptionSet()
 		{
 			OptionSet optionSet = new OptionSet()
@@ -35,7 +38,15 @@ namespace Dfo.ControlPanel
 				{ "dfodir=", "Directory where DFO is. Defaults to the autodetected DFO directory.", argValue => Settings.DfoDir = argValue },
 				{ "customsounddir=", "Directory where custom soundpacks are if switching soundpacks. Defaults to dfodir/SoundPacksCustom.", argValue => Settings.CustomSoundpackDir = argValue },
 				{ "tempsounddir=", "Directory to rename the normal soundpack directory while the game is running if switching soundpacks. Defaults to dfodir/SoundPacksOriginal.", argValue => Settings.TempSoundpackDir = argValue },
+				{ "<>", argValue => // Default handler - Report unrecognized arguments
+					{
+						string message = string.Format("Unrecognized command-line argument: {0}", argValue);
 
+						// This little hack is necessary because we don't have a console at this time
+						// - we don't know if we're doing the GUI or the CLI yet
+						m_messages.Add(message);
+					}
+				}
 			};
 
 			return optionSet;

@@ -59,6 +59,14 @@ namespace Dfo.ControlPanel
 			else
 			{
 				EnsureConsoleExists();
+
+				foreach ( string message in parsedArgs.Messages )
+				{
+					Logging.Log.Warn( message );
+					// Doing the log in the arg handler and a Console.WriteLine here causes anything written
+					// to the console to not show up, wtf?
+				}
+
 				Logging.Log.Info( "Starting command-line launcher." );
 
 				using ( CommandLineEntryPoint cmd = new CommandLineEntryPoint( parsedArgs ) )
@@ -66,6 +74,8 @@ namespace Dfo.ControlPanel
 					Environment.ExitCode = cmd.Run();
 				}
 			}
+
+			Logging.Log.InfoFormat( "Finished. Return code = {0}", Environment.ExitCode );
 		}
 
 		[DllImport( "kernel32.dll", SetLastError = true )]
