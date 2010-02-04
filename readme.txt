@@ -1,8 +1,8 @@
-DFO Control Panel requires the .NET Framework version 3.5 or higher.
+DFO Control Panel requires the .NET Framework version 3.5 or higher. If DFOCP.exe does not start, it probably means you don't have .NET 3.5 installed. You can download it here: http://www.microsoft.com/downloads/details.aspx?FamilyID=AB99342F-5D1A-413D-8319-81DA479AB0D7&displaylang=en
 
 You may run DFO Control Panel from any directory, it should autodetect the directory that DFO is installed in. If it does not, you can put DFO Control Panel in your DFO directory or use the --dfodir= command-line option.
 
-You are free to redistribute DFO Control Panel in binary form, provided that the LICENSE and NOTICE files are kept in the distribution. The source code with Visual C# 2008 solution and project files is freely available under the Apache 2.0 license. The link for the latest version will be at http://www.dfosource.com/forum/general-discussion/1831-release-browserless-dfo-launcher-post17604.html. I encourage you to compile from source if you know how, to verify that the only place your password is going is Nexon.
+You are free to redistribute DFO Control Panel in binary form, provided that the LICENSE.txt, NDesk_LICENSE.txt, and NOTICE.txt files are kept in the distribution. The source code with Visual C# 2008 solution and project files is freely available under the Apache 2.0 license. The link for the latest version will be at http://www.dfosource.com/forum/general-discussion/1831-release-browserless-dfo-launcher-post17604.html. I encourage you to compile from source if you know how, to verify that the only place your password is going is Nexon.
 
 BE SURE YOU TRUST WHERE YOU DOWNLOAD THIS FROM. I WILL NOT BE HELD RESPONSIBLE IF YOU GET SCAMMED BY SOFTWARE PRETENDING TO BE THE REAL DFO CONTROL PANEL. IF YOU DO NOT TRUST IT AND CANNOT GET THE SOURCE CODE FOR IT, DO NOT USE IT.
 
@@ -16,11 +16,7 @@ Q: Why is the "switch soundpacks" box greyed out?
 A: You must have a directory called SoundPacksCustom in your DFO directory with the foreign soundpacks you wish to use.
 
 
-BrowserlessDFO.bat is a batch file you can edit to put in your username and password so all you have to do is double-click BrowserlessDFO.bat without having to enter your username and password anymore. Make sure you understand the risks of storing a password in a file on your computer. If you choose to use this method, open BrowserlessDFO.bat in a text editor like Notepad, follow the directions inside, and save it. You can then double-click BrowerlessDFO.bat to log in without entering your username and password anymore. You must leave the window it creates open. It will close itself when DFO finishes.
-
-Q: The instructions are hard. I don't get it!
-
-A: Ask for help on the dfosource thread. Future versions will be able to generate BrowserlessDFO.bat for you.
+By clicking File->Save As Bat... you can export your username, password, and options to a .bat script. Once you save the .bat file, just double-click the .bat file to start DFO with the username, password, and options you had entered. You won't need to open DFOCP.exe anymore (but you still need to keep it on your computer). Make sure you understand the risks of storing a password in a file on your computer. You must leave the window that is created when double-clicking the .bat file open. It will close itself when DFO finishes.
 
 
 If you wish to use DFO Control Panel from the command-line or from a script, you can see the command-line arguments accepted by running
