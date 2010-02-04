@@ -153,6 +153,7 @@ namespace Dfo.ControlPanel
 
 			m_savedSettings = SettingsLoader.Load();
 			ApplySettingsAndArguments();
+			SetLauncherParams();
 
 			FixSoundpacksIfNeeded();
 
