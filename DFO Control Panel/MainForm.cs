@@ -525,6 +525,11 @@ namespace Dfo.ControlPanel
 				"This will save your username and password in a text file. Anyone who has access to your computer will be able to see your username and password if they open the file. Are you sure you want to continue?",
 				"Security Warning!",
 				false );
+
+			if ( !userUnderstandsRisks )
+			{
+				return;
+			}
 			
 			using ( SaveFileDialog fileDialog = new SaveFileDialog() )
 			{
