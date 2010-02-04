@@ -1,6 +1,3 @@
-2.1:
-Saving to .bat file
-
 2.2:
 Resizing DFO window
 Icon? Spiffier GUI?
