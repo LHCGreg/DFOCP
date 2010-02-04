@@ -1,0 +1,5 @@
+Solution and project files are in Visual C# 2008 format.
+
+The C# language version used is 3 and the .NET version targeted is 3.5
+
+You must have Python (http://www.python.org/) and Subversion (http://subversion.tigris.org/servlets/ProjectDocumentList?folderID=8100) installed to properly build DFO Control Panel, in addition to a C# compiler. TortoiseSVN is not sufficient, you must have the svn command line tools intalled. A pre-build Python script is used to insert the the last changed SVN revision of each project into the 4th part of the version number.
