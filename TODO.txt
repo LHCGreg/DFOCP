@@ -1,8 +1,9 @@
 2.2:
 Resizing DFO window
+Disable login button when username or password is blank
+Option to leave program open after game is done (GUI only, makes no sense with command-line)
 Icon? Spiffier GUI?
-Minimizing to tray while game in progress?
-More logging?
+Minimizing to tray instead of taskbar?
 
 2.3:
 DnF, Arad Senki support
