@@ -1,8 +1,8 @@
-DFO Control Panel requires the .NET Framework version 3.5 or higher. If DFOCP.exe does not start, it probably means you don't have .NET 3.5 installed. You can download it here: http://www.microsoft.com/downloads/details.aspx?FamilyID=AB99342F-5D1A-413D-8319-81DA479AB0D7&displaylang=en
+DFO Control Panel requires the .NET Framework version 3.5 SP1 or higher. If DFOCP.exe does not start, it probably means you don't have .NET 3.5 SP1 installed. You can download it here: http://www.microsoft.com/downloads/details.aspx?FamilyID=AB99342F-5D1A-413D-8319-81DA479AB0D7&displaylang=en
 
 You may run DFO Control Panel from any directory, it should autodetect the directory that DFO is installed in. If it does not, you can put DFO Control Panel in your DFO directory or use the --dfodir= command-line option.
 
-You are free to redistribute DFO Control Panel in binary form, provided that the LICENSE.txt, NDesk_LICENSE.txt, and NOTICE.txt files are kept in the distribution. The source code with Visual C# 2008 solution and project files is freely available under the Apache 2.0 license. The link for the latest version will be at http://www.dfosource.com/forum/general-discussion/1831-release-browserless-dfo-launcher-post17604.html. I encourage you to compile from source if you know how, to verify that the only place your password is going is Nexon.
+You are free to redistribute DFO Control Panel in binary form, provided that the LICENSE.txt, NDesk_LICENSE.txt, and NOTICE.txt files are kept in the distribution. The source code with Visual C# 2008 solution and project files is freely available under the Apache 2.0 license. The link for the latest version will be at http://code.google.com/p/dfocp/downloads/list. I encourage you to compile from source if you know how, to verify that the only place your password is going is Nexon.
 
 BE SURE YOU TRUST WHERE YOU DOWNLOAD THIS FROM. I WILL NOT BE HELD RESPONSIBLE IF YOU GET SCAMMED BY SOFTWARE PRETENDING TO BE THE REAL DFO CONTROL PANEL. IF YOU DO NOT TRUST IT AND CANNOT GET THE SOURCE CODE FOR IT, DO NOT USE IT.
 
