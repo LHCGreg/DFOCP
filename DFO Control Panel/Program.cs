@@ -31,6 +31,9 @@ namespace Dfo.ControlPanel
 				};
 
 			Logging.Log.InfoFormat( "{0} version {1} started.", VersionInfo.AssemblyTitle, VersionInfo.AssemblyVersion );
+			Logging.Log.DebugFormat( "CLR Version: {0}", Environment.Version );
+			Logging.Log.DebugFormat( "Operating System: {0}", Environment.OSVersion );
+			Logging.Log.DebugFormat( "Number of processors: {0}", Environment.ProcessorCount );
 			Logging.Log.Debug( "Parsing command-line arguments." );
 
 			CommandLineArgs parsedArgs = null;
