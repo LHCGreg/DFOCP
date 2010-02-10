@@ -349,7 +349,7 @@ namespace Dfo.Controlling
 				m_launcherProcess.StartInfo.FileName = Params.DfoLauncherExe;
 				m_launcherProcess.StartInfo.Arguments = dfoArg; // This argument contains the authentication token we got from logging in
 				m_launcherProcess.EnableRaisingEvents = true;
-				m_launcherProcess.Exited += LauncherProcessExitedHandler; // Use async notification instead of synchronous waiting so the we can cancel while the launcher process is going
+				m_launcherProcess.Exited += LauncherProcessExitedHandler; // Use async notification instead of synchronous waiting so we can cancel while the launcher process is going
 				m_launcherProcess.Start();
 
 				lock ( m_syncHandle )
