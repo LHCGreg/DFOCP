@@ -4,6 +4,7 @@ using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Threading;
 using NDesk.Options;
+using System.Reflection;
 
 namespace Dfo.ControlPanel
 {
@@ -34,6 +35,31 @@ namespace Dfo.ControlPanel
 			Logging.Log.DebugFormat( "CLR Version: {0}", Environment.Version );
 			Logging.Log.DebugFormat( "Operating System: {0}", Environment.OSVersion );
 			Logging.Log.DebugFormat( "Number of processors: {0}", Environment.ProcessorCount );
+			Logging.Log.DebugFormat( "Checking .NET framework version..." );
+
+			// Code before this point must not use any .NET 3.5 SP1 features that are not in .NET 3.5.
+
+			int returnCode = Run( args );
+			Environment.ExitCode = returnCode;
+
+			Logging.Log.InfoFormat( "Finished. Return code = {0}", Environment.ExitCode );
+		}
+
+		private static int Run( string[] args )
+		{
+			if ( !RunningOn35Sp1OrBetter() )
+			{
+				EnsureConsoleExists();
+				Logging.Log.FatalFormat( "Not running on .NET 3.5 SP1 or better. .NET 3.5 SP1 or better is required. Exiting." );
+				Console.WriteLine( "Press enter to exit." );
+				Console.ReadLine();
+				return 1;
+			}
+			else
+			{
+				Logging.Log.InfoFormat( ".NET 3.5 SP1 or better detected." );
+			}
+
 			Logging.Log.Debug( "Parsing command-line arguments." );
 
 			CommandLineArgs parsedArgs = null;
@@ -47,7 +73,7 @@ namespace Dfo.ControlPanel
 				Logging.Log.Fatal( ex.Message );
 				Logging.Log.FatalFormat( "Try {0} --help for more information.", CommandLineArgs.GetProgramName() );
 
-				Environment.Exit( 1 );
+				return 1;
 			}
 
 			Logging.Log.DebugFormat( "Command line parsed. Argument dump:{0}{1}", Environment.NewLine, parsedArgs );
@@ -58,6 +84,7 @@ namespace Dfo.ControlPanel
 				Application.EnableVisualStyles();
 				Application.SetCompatibleTextRenderingDefault( false );
 				Application.Run( new ctlMainForm( parsedArgs ) );
+				return Environment.ExitCode;
 			}
 			else
 			{
@@ -74,11 +101,9 @@ namespace Dfo.ControlPanel
 
 				using ( CommandLineEntryPoint cmd = new CommandLineEntryPoint( parsedArgs ) )
 				{
-					Environment.ExitCode = cmd.Run();
+					return cmd.Run();
 				}
 			}
-
-			Logging.Log.InfoFormat( "Finished. Return code = {0}", Environment.ExitCode );
 		}
 
 		[DllImport( "kernel32.dll", SetLastError = true )]
@@ -109,8 +134,23 @@ namespace Dfo.ControlPanel
 			}
 		}
 
-		
-
+		/// <summary>
+		/// Determines if the currently executing program is running on .NET 3.5 SP1 or better, ASSUMING THAT
+		/// IT IS RUNNING ON 3.5 OR BETTER.
+		/// </summary>
+		/// <returns></returns>
+		private static bool RunningOn35Sp1OrBetter()
+		{
+			MethodInfo waitOneInt = typeof( System.Threading.WaitHandle ).GetMethod( "WaitOne", new Type[] { typeof( Int32 ) } );
+			if ( waitOneInt != null )
+			{
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
 	}
 }
 
