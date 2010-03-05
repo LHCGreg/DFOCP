@@ -55,25 +55,16 @@ namespace Dfo.ControlPanel
 				Console.WriteLine( "Try {0} --help for usage information.", CommandLineArgs.GetProgramName() );
 				return 1;
 			}
-
-			try
-			{
-				m_launcher.Params.AutoDetectDfoDir();
-			}
-			catch ( IOException ex )
-			{
-				Logging.Log.ErrorFormat( "Could not autodetect the DFO directory. {0}", ex.Message );
-			}
 			
 			try
 			{
 				if ( m_parsedArgs.Settings.ClosePopup != null ) m_launcher.Params.ClosePopup = m_parsedArgs.Settings.ClosePopup.Value;
-				if ( m_parsedArgs.Settings.CustomSoundpackDir != null ) m_launcher.Params.CustomSoundpackDir = m_parsedArgs.Settings.CustomSoundpackDir;
-				if ( m_parsedArgs.Settings.DfoDir != null ) m_launcher.Params.DfoDir = m_parsedArgs.Settings.DfoDir;
+				if ( m_parsedArgs.Settings.CustomSoundpackDir != null ) m_launcher.Params.CustomSoundpackDirRaw = m_parsedArgs.Settings.CustomSoundpackDir;
+				if ( m_parsedArgs.Settings.DfoDir != null ) m_launcher.Params.GameDir = m_parsedArgs.Settings.DfoDir;
 				if ( m_parsedArgs.Settings.LaunchWindowed != null ) m_launcher.Params.LaunchInWindowed = m_parsedArgs.Settings.LaunchWindowed.Value;
 				if ( m_parsedArgs.Settings.Password != null ) m_launcher.Params.Password = m_parsedArgs.Settings.Password;
 				if ( m_parsedArgs.Settings.SwitchSoundpacks != null ) m_launcher.Params.SwitchSoundpacks = m_parsedArgs.Settings.SwitchSoundpacks.Value;
-				if ( m_parsedArgs.Settings.TempSoundpackDir != null ) m_launcher.Params.TempSoundpackDir = m_parsedArgs.Settings.TempSoundpackDir;
+				if ( m_parsedArgs.Settings.TempSoundpackDir != null ) m_launcher.Params.TempSoundpackDirRaw = m_parsedArgs.Settings.TempSoundpackDir;
 				if ( m_parsedArgs.Settings.Username != null ) m_launcher.Params.Username = m_parsedArgs.Settings.Username;
 			}
 			catch ( ArgumentException ex ) // A parameter was not valid
@@ -82,6 +73,18 @@ namespace Dfo.ControlPanel
 				return 1;
 			}
 
+			if ( m_parsedArgs.Settings.DfoDir == null )
+			{
+				try
+				{
+					m_launcher.Params.AutoDetectGameDir();
+				}
+				catch ( IOException ex )
+				{
+					Logging.Log.ErrorFormat( "Could not autodetect the DFO directory. {0}", ex.Message );
+				}
+			}
+			
 			try
 			{
 				FixSoundpacksIfNeeded();

@@ -37,7 +37,7 @@ namespace Dfo.ControlPanel
 			XElement root;
 			try
 			{
-				Logging.Log.DebugFormat( "Loading settings from {0}.", Paths.SettingsPath );
+				Logging.Log.InfoFormat( "Loading settings from {0}.", Paths.SettingsPath );
 				root = XElement.Load( Paths.SettingsPath );
 			}
 			catch ( Exception ex )
@@ -99,14 +99,14 @@ namespace Dfo.ControlPanel
 					}
 				}
 			}
-			
+
 			settings.Username = GetString( settingsRoot, s_username );
 			settings.RememberUsername = GetBool( settingsRoot, s_rememberMe );
 			settings.ClosePopup = GetBool( settingsRoot, s_closePopup );
 			settings.LaunchWindowed = GetBool( settingsRoot, s_launchWindowed );
 			settings.SwitchSoundpacks = GetBool( settingsRoot, s_switchSoundpacks );
 
-			Logging.Log.Debug( "Settings loaded." );
+			Logging.Log.Info( "Settings loaded." );
 
 			return settings;
 		}
@@ -164,7 +164,7 @@ namespace Dfo.ControlPanel
 
 		public static void Save( StartupSettings settings )
 		{
-			Logging.Log.DebugFormat( "Saving settings to {0}.", Paths.SettingsPath );
+			Logging.Log.InfoFormat( "Saving settings to {0}.", Paths.SettingsPath );
 
 			XElement root = new XElement( s_rootName );
 			string settingsVersion = string.Format( "{0}.{1}", s_majorVersion, s_minorVersion );
@@ -181,7 +181,7 @@ namespace Dfo.ControlPanel
 			try
 			{
 				root.Save( Paths.SettingsPath );
-				Logging.Log.DebugFormat( "Settings saved." );
+				Logging.Log.InfoFormat( "Settings saved." );
 			}
 			catch ( Exception ex )
 			{
@@ -281,7 +281,7 @@ namespace Dfo.ControlPanel
 
 			if ( !valueFound )
 			{
-				string valueString = suppressValueDisplay ? "(hidden)" : defaultValue.ToString();
+				string valueString = suppressValueDisplay ? "(hidden)" : string.Format( "{0}", defaultValue ); // defaultValue can be null, so can't use defaultValue.ToString()
 				settingValue = defaultValue;
 				valueFound = true;
 				Logging.Log.DebugFormat( "{0} = {1} (default)", settingName, valueString );

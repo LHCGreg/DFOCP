@@ -36,8 +36,8 @@ namespace Dfo.ControlPanel
 				{ "soundswitch", "Switch soundpacks.", argExistence => Settings.SwitchSoundpacks = (argExistence != null) },
 				{ "nosoundswitch", "Don't switch soundpacks. This is the default.", argExistence => Settings.SwitchSoundpacks = !(argExistence != null) },
 				{ "dfodir=", "Directory where DFO is. Defaults to the autodetected DFO directory.", argValue => Settings.DfoDir = argValue },
-				{ "customsounddir=", "Directory where custom soundpacks are if switching soundpacks. Defaults to dfodir/SoundPacksCustom.", argValue => Settings.CustomSoundpackDir = argValue },
-				{ "tempsounddir=", "Directory to rename the normal soundpack directory while the game is running if switching soundpacks. Defaults to dfodir/SoundPacksOriginal.", argValue => Settings.TempSoundpackDir = argValue },
+				{ "customsounddir=", "Directory where custom soundpacks are if switching soundpacks. If a relative path is given, it is relative to dfodir. Defaults to SoundPacksCustom.", argValue => Settings.CustomSoundpackDir = argValue },
+				{ "tempsounddir=", "Directory to rename the normal soundpack directory while the game is running if switching soundpacks. If a relative path is given, it is relative to dfodir. Defaults to SoundPacksOriginal.", argValue => Settings.TempSoundpackDir = argValue },
 				{ "<>", argValue => // Default handler - Report unrecognized arguments
 					{
 						string message = string.Format("Unrecognized command-line argument: {0}", argValue);
