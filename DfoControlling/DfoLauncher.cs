@@ -6,6 +6,7 @@ using System.Threading;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Management;
+using Microsoft.Win32;
 
 namespace Dfo.Controlling
 {
@@ -403,7 +404,7 @@ namespace Dfo.Controlling
 				{
 					try
 					{
-						Directory.CreateDirectory( Path.Combine( Params.DfoDir, magicWindowModeDirectory ) );
+						Directory.CreateDirectory( Path.Combine( Params.GameDir, magicWindowModeDirectory ) );
 					}
 					catch ( Exception ex )
 					{
@@ -425,7 +426,7 @@ namespace Dfo.Controlling
 				{
 					try
 					{
-						Directory.Delete( Path.Combine( Params.DfoDir, magicWindowModeDirectory ), true );
+						Directory.Delete( Path.Combine( Params.GameDir, magicWindowModeDirectory ), true );
 					}
 					catch ( DirectoryNotFoundException )
 					{
@@ -725,7 +726,7 @@ namespace Dfo.Controlling
 			if ( soundpacksSwitched )
 			{
 				// Wait for DFO process to end, otherwise the OS won't let us move the soundpack directory
-				
+
 				Process[] dfoProcesses;
 				do
 				{
@@ -909,14 +910,14 @@ namespace Dfo.Controlling
 				}
 			}
 		}
-		
+
 		// The soundpack directories go through the following states:
-		
+
 		// normal soundpacks: soundpackDir
 		// custom soundpacks: customSoundpackDir
 
 		// Rename soundpackDir to tempSoundpackDir
-		
+
 		// normal soundpacks: tempSoundpackDir
 		// custom soundpacks: customSoundpackDir
 
@@ -946,7 +947,7 @@ namespace Dfo.Controlling
 		// (this is the common (unfortunately) case of a crash while the game is running
 		// normal soundpacks: tempSoundpackDir
 		// custom soundpacks: soundpackDir
-		
+
 		/// <summary>
 		/// Checks if the soundpack directories (normal and custom) are not where they should be (perhaps because
 		/// of a crash). This only checks if it is something that can be fixed by <c>FixBrokenSoundpacks()</c>.
@@ -1057,6 +1058,68 @@ namespace Dfo.Controlling
 				m_launcherDoneEvent.Close();
 				m_disposed = true;
 			}
+		}
+
+		/// <summary>
+		/// Tries to figure out where the game directory for a given game is.
+		/// </summary>
+		/// <exception cref="System.IO.IOException">The game directory could not be detected.</exception>
+		public static string AutoDetectGameDir( Game game )
+		{
+			object gameRoot = null;
+
+			string keyName;
+			string valueName;
+
+			if ( game == Game.DFO )
+			{
+				keyName = @"HKEY_LOCAL_MACHINE\SOFTWARE\Nexon\DFO";
+				valueName = "RootPath";
+			}
+			else
+			{
+				throw new Exception( "Oops, missed a game." );
+			}
+
+			try
+			{
+				gameRoot = Registry.GetValue( keyName, valueName, null );
+			}
+			catch ( System.Security.SecurityException ex )
+			{
+				ThrowAutoDetectException( keyName, valueName, ex );
+			}
+			catch ( IOException ex )
+			{
+				ThrowAutoDetectException( keyName, valueName, ex );
+			}
+
+			if ( gameRoot == null )
+			{
+				ThrowAutoDetectException( keyName, valueName, "The registry value does not exist." );
+			}
+
+			string gameRootDir = gameRoot.ToString();
+			if ( LaunchParams.PathIsValid( gameRootDir ) )
+			{
+				return gameRootDir;
+			}
+			else
+			{
+				throw new IOException( string.Format( "Registry value {0} in {1} is not a valid path." ) );
+			}
+		}
+
+		private static void ThrowAutoDetectException( string keyname, string valueName, Exception ex )
+		{
+			throw new IOException( string.Format( "Could not read registry value {0} in {1}. {2}",
+				valueName, keyname, ex.Message ), ex );
+		}
+
+		private static void ThrowAutoDetectException( string keyname, string valueName, string message )
+		{
+			throw new IOException( string.Format( "Could not read registry value {0} in {1}. {2}",
+				valueName, keyname, message ) );
 		}
 	}
 }

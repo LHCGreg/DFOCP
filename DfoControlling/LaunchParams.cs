@@ -7,10 +7,28 @@ using Microsoft.Win32;
 namespace Dfo.Controlling
 {
 	/// <summary>
+	/// Represents a game that Dfo.Controlling can launch.
+	/// </summary>
+	public enum Game
+	{
+		/// <summary>
+		/// Dungeon Fighter Online
+		/// </summary>
+		DFO
+	}
+
+	/// <summary>
 	/// Represents parameters controlling how the game is launched and controlled.
 	/// </summary>
 	public class LaunchParams
 	{
+		private Game m_gameToLaunch = Game.DFO;
+		/// <summary>
+		/// Gets or sets the game to launch.
+		/// Default: DFO
+		/// </summary>
+		public Game GameToLaunch { get { return m_gameToLaunch; } set { m_gameToLaunch = value; } }
+
 		/// <summary>
 		/// Gets or sets the username to log in as.
 		/// Default: null
@@ -43,104 +61,138 @@ namespace Dfo.Controlling
 			}
 		}
 
-		private string m_dfoDir;
+		private string m_gameDir;
 		/// <summary>
-		/// Gets or sets the DFO root directory.
+		/// Gets or sets the game root directory.
 		/// Default: The directory containing currently executing program.
 		/// </summary>
 		/// <exception cref="System.ArgumentNullException">The value was attempted to be set to null.</exception>
 		/// <exception cref="System.ArgumentException">The value was attempted to be set to a path that contains
 		/// characters in <c>System.IO.Path.GetInvalidPathChars()</c>.</exception>
-		public string DfoDir
+		public string GameDir
 		{
-			get { return m_dfoDir; }
+			get { return m_gameDir; }
 			set
 			{
-				ValidatePath( value, "DfoDir" );
-				m_dfoDir = value;
+				ValidatePath( value, "GameDir" );
+				m_gameDir = value;
 			}
 		}
 
 		/// <summary>
-		/// Gets the default DFO root directory.
+		/// Gets the default game root directory.
 		/// </summary>
-		public string DfoDirDefault { get { return AppDomain.CurrentDomain.BaseDirectory; } }
+		private string GameDirDefault { get { return AppDomain.CurrentDomain.BaseDirectory; } }
 
 		/// <summary>
-		/// Gets or sets whether to switch soundpacks to use different sounds in the game.
+		/// Gets or sets whether to switch soundpacks to use different sounds in the game. Only supported for DFO.
 		/// Default: false
 		/// </summary>
 		public bool SwitchSoundpacks { get; set; }
 
 		/// <summary>
-		/// Gets the path of the directory containing the normal soundpacks.
-		/// This will be some subdirectory of DfoDir.
+		/// Gets the path of the directory containing the normal soundpacks. This property only makes sense for DFO.
 		/// </summary>
 		public string SoundpackDir
 		{
 			get
 			{
-				return Path.Combine( DfoDir, "SoundPacks" );
+				return GetFullPath( "SoundPacks" );
 			}
 		}
 
 		private string m_customSoundpackDir;
 		/// <summary>
+		/// Gets the absolute path to the directory containing the soundpacks to switch to. If
+		/// <c>SwitchSoundpacks</c> is false, this setting is not used. If <c>CustomSoundpackDirRaw</c> is set
+		/// to a relative path, it is relative to <c>GameDir</c> and the value of this property will change as
+		/// <c>GameDir</c> does.
+		/// This property only makes sense for DFO.
+		/// Default: SoundPacksCustom
+		/// </summary>
+		public string CustomSoundpackDir
+		{
+			get { return GetFullPath( m_customSoundpackDir ); }
+		}
+
+		/// <summary>
 		/// Gets or sets the directory containing the soundpacks to switch to. If <c>SwitchSoundpacks</c> is
-		/// false, this setting is not used.
-		/// Default: DfoDir/SoundPacksCustom
+		/// false, this setting is not used. If set to a relative path, <c>CustomSoundpackDir</c> will be relative
+		/// to <c>GameDir</c>. Getting this directory will return a relative path if a relative was specified,
+		/// unlike <c>CustomSoundpackDir</c> which will expand to an absolute path.
+		/// This property only makes sense for DFO.
+		/// Default: SoundPacksCustom
 		/// </summary>
 		/// <exception cref="System.ArgumentNullException">The value was attempted to be set to null.</exception>
 		/// <exception cref="System.ArgumentException">The value was attempted to be set to a path that contains
-		/// characters in <c>System.IO.Path.GetInvalidPathChars()</c></exception>.
-		public string CustomSoundpackDir
+		/// characters in <c>System.IO.Path.GetInvalidPathChars().</c></exception>
+		public string CustomSoundpackDirRaw
 		{
 			get { return m_customSoundpackDir; }
 			set
 			{
-				ValidatePath( value, "CustomSoundpackDir" );
+				ValidatePath( value, "CustomSoundpackDirRaw" );
 				m_customSoundpackDir = value;
 			}
 		}
 
 		/// <summary>
-		/// Gets the default custom soundpack directory as a subdirectory of DfoDir.
+		/// Gets the default custom soundpack directory. If it is a relative path, it is relative to GameDir.
+		/// This property only makes sense for DFO.
 		/// </summary>
-		public string CustomSoundpackDirDefault { get { return Path.Combine( DfoDir, "SoundPacksCustom" ); } }
+		private string CustomSoundpackDirDefault { get { return "SoundPacksCustom"; } }
 
 		private string m_tempSoundpackDir;
 		/// <summary>
+		/// Gets the absolute path to the directory to put the original soundpacks in while the game is running.
+		/// If <c>SwitchSoundpacks</c> is false, this setting is not used. If <c>TempSoundpackDirRaw</c> is set
+		/// to a relative path, it is relative to <c>GameDir</c> and the value of this property will change as
+		/// <c>GameDir</c> does.
+		/// This property only makes sense for DFO.
+		/// Default: SoundPacksCustom
+		/// </summary>
+		public string TempSoundpackDir
+		{
+			get { return GetFullPath( m_tempSoundpackDir ); }
+		}
+
+		/// <summary>
 		/// Gets or sets the directory to put the original soundpacks in while the game is running. If
-		/// <c>SwitchSoundpacks</c> is false, this setting is not used.
-		/// Default: DfoDir/SoundPacksOriginal
+		/// <c>SwitchSoundpacks</c> is false, this setting is not used. If set to a relative path,
+		/// <c>TempSoundpackDir</c> will be relative to <c>GameDir</c>. Getting this directory will return
+		/// a relative path if a relative was specified, unlike <c>TempSoundpackDir</c> which will expand to
+		/// an absolute path.
+		/// This property only makes sense for DFO.
+		/// Default: SoundPacksOriginal
 		/// </summary>
 		/// <exception cref="System.ArgumentNullException">The value was attempted to be set to null.</exception>
 		/// <exception cref="System.ArgumentException">The value was attempted to be set to a path that contains
-		/// characters in <c>System.IO.Path.GetInvalidPathChars()</c>.</exception>
-		public string TempSoundpackDir
+		/// characters in <c>System.IO.Path.GetInvalidPathChars().</c></exception>
+		public string TempSoundpackDirRaw
 		{
 			get { return m_tempSoundpackDir; }
 			set
 			{
-				ValidatePath( value, "TempSoundpackDir" );
+				ValidatePath( value, "TempSoundpackDirRaw" );
 				m_tempSoundpackDir = value;
 			}
 		}
 
 		/// <summary>
-		/// Gets the default temporary soundpack directory as a subdirectory of DfoDir.
+		/// Gets the default temporary soundpack directory as a subdirectory of GameDir. This only makes sense
+		/// for DFO.
 		/// </summary>
-		public string TempSoundpackDirDefault { get { return Path.Combine( DfoDir, "SoundPacksOriginal" ); } }
+		private string TempSoundpackDirDefault { get { return "SoundPacksOriginal"; } }
 
 		/// <summary>
-		/// Gets or sets whether to kill the popup at the end of the game.
+		/// Gets or sets whether to kill the popup at the end of the game. Only supported for DFO.
 		/// Default: true
 		/// </summary>
 		public bool ClosePopup { get; set; }
 
 		/// <summary>
 		/// Gets or sets whether to launch in windowed mode. null means "don't care" and will use
-		/// whatever the user is already configured for.
+		/// whatever the user is already configured for. Only supported for DFO.
 		/// Default: null
 		/// </summary>
 		public bool? LaunchInWindowed { get; set; }
@@ -151,24 +203,24 @@ namespace Dfo.Controlling
 		internal string DfoWindowClassName { get; set; }
 
 		/// <summary>
-		/// Gets the path of the DFO launcher program. This will be in DfoDir.
+		/// Gets the path of the DFO launcher program.
 		/// </summary>
 		internal string DfoLauncherExe
 		{
 			get
 			{
-				return Path.Combine( DfoDir, "DFOLauncher.exe" );
+				return GetFullPath( "DFOLauncher.exe" );
 			}
 		}
 
 		/// <summary>
-		/// Gets the path to the DFO executable. This will be in DfoDir.
+		/// Gets the path to the DFO executable.
 		/// </summary>
 		internal string DfoExe
 		{
 			get
 			{
-				return Path.Combine( DfoDir, "DFO.exe" );
+				return GetFullPath( "DFO.exe" );
 			}
 		}
 
@@ -199,10 +251,10 @@ namespace Dfo.Controlling
 			Username = null;
 			Password = null;
 			LoginTimeoutInMs = 10000;
-			DfoDir = DfoDirDefault;
+			GameDir = GameDirDefault;
 			SwitchSoundpacks = false;
-			CustomSoundpackDir = CustomSoundpackDirDefault;
-			TempSoundpackDir = TempSoundpackDirDefault;
+			CustomSoundpackDirRaw = CustomSoundpackDirDefault;
+			TempSoundpackDirRaw = TempSoundpackDirDefault;
 			ClosePopup = true;
 			LaunchInWindowed = null;
 			DfoWindowClassName = "DFO";
@@ -212,57 +264,13 @@ namespace Dfo.Controlling
 		}
 
 		/// <summary>
-		/// Tries to figure out where the DFO directory is and sets DfoDir to it and changes CustomSoundpackDir
-		/// and TempSoundpackDir as well.
+		/// Tries to figure out where the game directory for the game currently selected is and sets
+		/// <c>GameDir</c> to it. 
 		/// </summary>
-		/// <exception cref="System.IO.IOException">The DFO directory could not be detected.</exception>
-		public void AutoDetectDfoDir()
+		/// <exception cref="System.IO.IOException">The game directory could not be detected.</exception>
+		public void AutoDetectGameDir()
 		{
-			object dfoRoot = null;
-			string keyName = @"HKEY_LOCAL_MACHINE\SOFTWARE\Nexon\DFO";
-			string valueName = "RootPath";
-
-			try
-			{
-				dfoRoot = Registry.GetValue( keyName, valueName, null );
-			}
-			catch ( System.Security.SecurityException ex )
-			{
-				ThrowAutoDetectException( keyName, valueName, ex );
-			}
-			catch ( IOException ex )
-			{
-				ThrowAutoDetectException( keyName, valueName, ex );
-			}
-
-			if ( dfoRoot == null )
-			{
-				ThrowAutoDetectException( keyName, valueName, "The registry value does not exist" );
-			}
-
-			string dfoRootDir = dfoRoot.ToString();
-			if ( PathIsValid( dfoRootDir ) )
-			{
-				DfoDir = dfoRootDir;
-				CustomSoundpackDir = CustomSoundpackDirDefault;
-				TempSoundpackDir = TempSoundpackDirDefault;
-			}
-			else
-			{
-				throw new IOException( string.Format( "Registry value {0} in {1} is not a valid path." ) );
-			}
-		}
-
-		private void ThrowAutoDetectException( string keyname, string valueName, Exception ex )
-		{
-			throw new IOException( string.Format( "Could not read registry value {0} in {1}. {2}",
-				valueName, keyname, ex.Message ), ex );
-		}
-
-		private void ThrowAutoDetectException( string keyname, string valueName, string message )
-		{
-			throw new IOException( string.Format( "Could not read registry value {0} in {1}. {2}",
-				valueName, keyname, message ) );
+			GameDir = DfoLauncher.AutoDetectGameDir( GameToLaunch );
 		}
 
 		/// <summary>
@@ -273,13 +281,14 @@ namespace Dfo.Controlling
 		{
 			LaunchParams clone = new LaunchParams();
 
+			clone.GameToLaunch = this.GameToLaunch;
 			clone.Username = this.Username;
 			clone.Password = this.Password;
 			clone.LoginTimeoutInMs = this.LoginTimeoutInMs;
-			clone.DfoDir = this.DfoDir;
+			clone.GameDir = this.GameDir;
 			clone.SwitchSoundpacks = this.SwitchSoundpacks;
-			clone.CustomSoundpackDir = this.CustomSoundpackDir;
-			clone.TempSoundpackDir = this.TempSoundpackDir;
+			clone.CustomSoundpackDirRaw = this.CustomSoundpackDirRaw;
+			clone.TempSoundpackDirRaw = this.TempSoundpackDirRaw;
 			clone.ClosePopup = this.ClosePopup;
 			clone.LaunchInWindowed = this.LaunchInWindowed;
 
@@ -300,9 +309,10 @@ namespace Dfo.Controlling
 		{
 			StringBuilder builder = new StringBuilder();
 
+			builder.AppendLine( string.Format( "Game: {0}", GameToLaunch ) );
 			builder.AppendLine( string.Format( "Close popup: {0}", ClosePopup ) );
-			builder.AppendLine( string.Format( "Custom soundpack dir: {0}", CustomSoundpackDir ) );
-			builder.AppendLine( string.Format( "DFO dir: {0}", DfoDir ) );
+			builder.AppendLine( string.Format( "Custom soundpack dir: {0}", CustomSoundpackDirRaw ) );
+			builder.AppendLine( string.Format( "Game dir: {0}", GameDir ) );
 			builder.AppendLine( string.Format( "DFO exe: {0}", DfoExe ) );
 			builder.AppendLine( string.Format( "DFO launcher exe: {0}", DfoLauncherExe ) );
 			builder.AppendLine( string.Format( "DFO window class name: {0}", DfoWindowClassName ) );
@@ -313,7 +323,7 @@ namespace Dfo.Controlling
 			builder.AppendLine( string.Format( "Login timeout: {0}", LoginTimeoutInMs ) );
 			builder.AppendLine( string.Format( "Soundpack dir: {0}", SoundpackDir ) );
 			builder.AppendLine( string.Format( "Switch soundpacks: {0}", SwitchSoundpacks ) );
-			builder.AppendLine( string.Format( "Temp soundpack dir: {0}", TempSoundpackDir ) );
+			builder.AppendLine( string.Format( "Temp soundpack dir: {0}", TempSoundpackDirRaw ) );
 			builder.AppendLine( string.Format( "Username present: {0}", Username != null ) );
 			builder.Append( string.Format( "Password present: {0}", Password != null ) );
 			// DO NOT include the username or password!
@@ -354,6 +364,18 @@ namespace Dfo.Controlling
 			else
 			{
 				return true;
+			}
+		}
+
+		private string GetFullPath( string possiblyRelativePath )
+		{
+			if ( Path.IsPathRooted( possiblyRelativePath ) )
+			{
+				return possiblyRelativePath;
+			}
+			else
+			{
+				return Path.Combine( GameDir, possiblyRelativePath );
 			}
 		}
 	}

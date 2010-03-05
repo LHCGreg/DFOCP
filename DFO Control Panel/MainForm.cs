@@ -44,10 +44,20 @@ namespace Dfo.ControlPanel
 		private string Username { get { return ctlUsername.Text; } set { ctlUsername.Text = value; } }
 		private string Password { get { return ctlPassword.Text; } set { ctlPassword.Text = value; } }
 
+		private string DefaultDfoDir { get { return AppDomain.CurrentDomain.BaseDirectory; } }
 		private string m_dfoDir;
-		private string DfoDir
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <exception cref="System.ArgumentNullException">This property is attempted to be set to null.</exception>
+		/// <exception cref="System.ArgumentException">This property is attempted to be set to a path containing
+		/// invalid characters.</exception>
+		private string DfoDir // Gets set when applying settings
 		{
-			get { return m_dfoDir; }
+			get
+			{
+				return m_dfoDir;
+			}
 			set
 			{
 				ValidatePath( value, "DfoDir" );
@@ -55,25 +65,84 @@ namespace Dfo.ControlPanel
 			}
 		}
 
-		private string m_customSoundpackDir;
+		/// <summary>
+		/// Autodetects the DFO directory and sets DfoDir.
+		/// </summary>
+		/// <exception cref="System.IO.IOException">The DFO directory could not be detected.</exception>
+		private void AutoDetectDfoDir()
+		{
+			DfoDir = DfoLauncher.AutoDetectGameDir( Game.DFO );
+		}
+
+		//private bool m_autoDetectMapleDir = true;
+		//private bool AutoDetectMapleDir { get { return m_autoDetectMapleDir; } set { m_autoDetectMapleDir = value; } }
+
+		private string DefaultCustomSoundpackDir { get { return "SoundPacksCustom"; } }
+		private string m_customSoundpackDir; // If this is a relative path, it is relative to DfoDir
+		/// <summary>
+		/// Gets the absolute path of the custom soundpack directory
+		/// </summary>
 		private string CustomSoundpackDir
+		{
+			get { return ResolveRelativeDfoPath( m_customSoundpackDir ); }
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <exception cref="System.ArgumentNullException">This property is attempted to be set to null.</exception>
+		/// <exception cref="System.ArgumentException">This property is attempted to be set to a path containing
+		/// invalid characters.</exception>
+		private string CustomSoundpackDirRaw // Gets set when applying settings
 		{
 			get { return m_customSoundpackDir; }
 			set
 			{
-				ValidatePath( value, "CustomSoundpackDir" );
+				ValidatePath( value, "CustomSoundpackDirRaw" );
 				m_customSoundpackDir = value;
 			}
 		}
 
-		private string m_tempSoundpackDir;
+		private string DefaultTempSoundpackDir { get { return "SoundPacksOriginal"; } }
+		private string m_tempSoundpackDir; // If this is a relative path, it is relative to DfoDir
+		/// <summary>
+		/// Gets the absolute path of the temporary soundpack directory
+		/// </summary>
 		private string TempSoundpackDir
+		{
+			get { return ResolveRelativeDfoPath( m_tempSoundpackDir ); }
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <exception cref="System.ArgumentNullException">This property is attempted to be set to null.</exception>
+		/// <exception cref="System.ArgumentException">This property is attempted to be set to a path containing
+		/// invalid characters.</exception>
+		private string TempSoundpackDirRaw // Gets set when applying settings
 		{
 			get { return m_tempSoundpackDir; }
 			set
 			{
-				ValidatePath( value, "TempSoundpackDir" );
+				ValidatePath( value, "TempSoundpackDirRaw" );
 				m_tempSoundpackDir = value;
+			}
+		}
+
+		/// <summary>
+		/// Assumes that possiblyRelativePath does not contain invalid characters.
+		/// </summary>
+		/// <param name="possiblyRelativePath"></param>
+		/// <returns></returns>
+		private string ResolveRelativeDfoPath( string possiblyRelativePath )
+		{
+			if ( Path.IsPathRooted( possiblyRelativePath ) )
+			{
+				return possiblyRelativePath;
+			}
+			else
+			{
+				return Path.Combine( DfoDir, possiblyRelativePath );
 			}
 		}
 
@@ -100,12 +169,12 @@ namespace Dfo.ControlPanel
 			// than handling the "changed" events of all the relevant controls
 
 			m_launcher.Params.ClosePopup = ClosePopup;
-			m_launcher.Params.CustomSoundpackDir = CustomSoundpackDir;
-			m_launcher.Params.DfoDir = DfoDir;
+			m_launcher.Params.CustomSoundpackDirRaw = CustomSoundpackDirRaw;
+			m_launcher.Params.GameDir = DfoDir;
 			m_launcher.Params.LaunchInWindowed = LaunchWindowed;
 			m_launcher.Params.Password = Password;
 			m_launcher.Params.SwitchSoundpacks = SwitchSoundpacks;
-			m_launcher.Params.TempSoundpackDir = TempSoundpackDir;
+			m_launcher.Params.TempSoundpackDirRaw = TempSoundpackDirRaw;
 			m_launcher.Params.Username = Username;
 		}
 
@@ -139,21 +208,8 @@ namespace Dfo.ControlPanel
 		{
 			Logging.Log.Debug( "Loading main window." );
 
-			try
-			{
-				m_launcher.Params.AutoDetectDfoDir();
-				DfoDir = m_launcher.Params.DfoDir;
-				CustomSoundpackDir = m_launcher.Params.CustomSoundpackDir;
-				TempSoundpackDir = m_launcher.Params.TempSoundpackDir;
-			}
-			catch ( IOException ex )
-			{
-				Logging.Log.ErrorFormat( "Could not autodetect the DFO directory. {0}", ex.Message );
-			}
-
 			m_savedSettings = SettingsLoader.Load();
 			ApplySettingsAndArguments();
-			SetLauncherParams();
 
 			FixSoundpacksIfNeeded();
 
@@ -177,11 +233,13 @@ namespace Dfo.ControlPanel
 
 		/// <summary>
 		/// Attempts to fix mixed-up soundpacks usually caused by a system crash while the game is running.
-		/// This function uses m_launcher's DfoDir, CustomSoundpackDir, and TempSoundpackDir properties.
+		/// This function calls SetLauncherParams().
 		/// </summary>
 		private void FixSoundpacksIfNeeded()
 		{
 			Logging.Log.Info( "Checking for broken soundpacks..." );
+			SetLauncherParams();
+
 			if ( m_launcher.SoundpacksBroken() )
 			{
 				Logging.Log.Info( "Broken soundpack directories detected, attempting to fix them..." );
@@ -214,6 +272,8 @@ namespace Dfo.ControlPanel
 
 		private void ApplySettingsAndArguments()
 		{
+			Logging.Log.Debug( "Applying settings and arguments." );
+
 			SettingsLoader.ApplySettingStruct( m_parsedArgs.Settings.ClosePopup, m_savedSettings.ClosePopup, null,
 				"Close popup", ( bool closePopup ) => ClosePopup = closePopup, m_launcher.Params.ClosePopup, false );
 
@@ -246,16 +306,34 @@ namespace Dfo.ControlPanel
 			};
 
 			SettingsLoader.ApplySettingClass( m_parsedArgs.Settings.DfoDir, m_savedSettings.DfoDir, validatePath,
-				"DFO directory", ( string dfodir ) => DfoDir = dfodir, m_launcher.Params.DfoDir, false );
+				"DFO directory", ( string dfodir ) => { if ( dfodir != null ) DfoDir = dfodir; }, null, false );
+
+			if ( DfoDir == null )
+			{
+				try
+				{
+					Logging.Log.Info( "Autodetecting the DFO directory..." );
+					AutoDetectDfoDir();
+					Logging.Log.InfoFormat( "DFO directory detected to be {0}", DfoDir );
+				}
+				catch ( IOException ex )
+				{
+					Logging.Log.ErrorFormat( "Could not autodetect the DFO directory. {0} Using {1} as a fallback.",
+						ex.Message, DefaultDfoDir );
+					DfoDir = DefaultDfoDir;
+				}
+			}
 
 			SettingsLoader.ApplySettingClass( m_parsedArgs.Settings.CustomSoundpackDir,
 				m_savedSettings.CustomSoundpackDir, validatePath, "Custom soundpack directory",
-				( string customSoundDir ) => CustomSoundpackDir = customSoundDir, m_launcher.Params.CustomSoundpackDir,
+				( string customSoundDir ) => CustomSoundpackDirRaw = customSoundDir, DefaultCustomSoundpackDir,
 				false );
 
 			SettingsLoader.ApplySettingClass( m_parsedArgs.Settings.TempSoundpackDir, m_savedSettings.TempSoundpackDir,
-				validatePath, "Temp soundpack directory", ( string tempSoundDir ) => TempSoundpackDir = tempSoundDir,
-				m_launcher.Params.TempSoundpackDir, false );
+				validatePath, "Temp soundpack directory", ( string tempSoundDir ) => TempSoundpackDirRaw = tempSoundDir,
+				DefaultTempSoundpackDir, false );
+
+			Logging.Log.Debug( "Done applying settings and arguments." );
 		}
 
 		private void WindowModeFailedHandler( object sender, CancelErrorEventArgs e )
@@ -530,7 +608,7 @@ namespace Dfo.ControlPanel
 			{
 				return;
 			}
-			
+
 			using ( SaveFileDialog fileDialog = new SaveFileDialog() )
 			{
 				fileDialog.AddExtension = true;
@@ -545,7 +623,7 @@ namespace Dfo.ControlPanel
 					try
 					{
 						SettingsExporter.ExportToBat( GetCurrentSettings(), fileDialog.FileName );
-						Logging.Log.InfoFormat("Batch script saved to {0}.", fileDialog.FileName);
+						Logging.Log.InfoFormat( "Batch script saved to {0}.", fileDialog.FileName );
 					}
 					catch ( IOException ex )
 					{
@@ -558,7 +636,7 @@ namespace Dfo.ControlPanel
 		private StartupSettings GetCurrentSettings()
 		{
 			StartupSettings settings = new StartupSettings();
-			
+
 			if ( m_parsedArgs.Settings.DfoDir != null )
 			{
 				settings.DfoDir = DfoDir;
