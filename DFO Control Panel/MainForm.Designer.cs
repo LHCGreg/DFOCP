@@ -43,6 +43,7 @@
 			this.ctlRememberMe = new System.Windows.Forms.CheckBox();
 			this.ctlLoginInfoBox = new System.Windows.Forms.GroupBox();
 			this.ctlOptionsBox = new System.Windows.Forms.GroupBox();
+			this.ctlSwitchAudioXml = new System.Windows.Forms.CheckBox();
 			this.ctlStatusStrip = new System.Windows.Forms.StatusStrip();
 			this.ctlStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
 			this.ctlProgressBar = new System.Windows.Forms.ToolStripProgressBar();
@@ -63,7 +64,7 @@
 			// 
 			this.ctlUsername.Anchor = ( (System.Windows.Forms.AnchorStyles)( ( ( System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left )
 						| System.Windows.Forms.AnchorStyles.Right ) ) );
-			this.ctlUsername.Location = new System.Drawing.Point( 94, 19 );
+			this.ctlUsername.Location = new System.Drawing.Point( 94, 30 );
 			this.ctlUsername.Name = "ctlUsername";
 			this.ctlUsername.Size = new System.Drawing.Size( 198, 20 );
 			this.ctlUsername.TabIndex = 0;
@@ -73,7 +74,7 @@
 			// 
 			this.ctlPassword.Anchor = ( (System.Windows.Forms.AnchorStyles)( ( ( System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left )
 						| System.Windows.Forms.AnchorStyles.Right ) ) );
-			this.ctlPassword.Location = new System.Drawing.Point( 94, 45 );
+			this.ctlPassword.Location = new System.Drawing.Point( 94, 56 );
 			this.ctlPassword.Name = "ctlPassword";
 			this.ctlPassword.Size = new System.Drawing.Size( 198, 20 );
 			this.ctlPassword.TabIndex = 1;
@@ -85,7 +86,7 @@
 			this.lblUsername.Anchor = ( (System.Windows.Forms.AnchorStyles)( ( ( System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left )
 						| System.Windows.Forms.AnchorStyles.Right ) ) );
 			this.lblUsername.AutoSize = true;
-			this.lblUsername.Location = new System.Drawing.Point( 11, 22 );
+			this.lblUsername.Location = new System.Drawing.Point( 11, 33 );
 			this.lblUsername.Name = "lblUsername";
 			this.lblUsername.Size = new System.Drawing.Size( 55, 13 );
 			this.lblUsername.TabIndex = 2;
@@ -96,7 +97,7 @@
 			this.lblPassword.Anchor = ( (System.Windows.Forms.AnchorStyles)( ( ( System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left )
 						| System.Windows.Forms.AnchorStyles.Right ) ) );
 			this.lblPassword.AutoSize = true;
-			this.lblPassword.Location = new System.Drawing.Point( 11, 48 );
+			this.lblPassword.Location = new System.Drawing.Point( 11, 59 );
 			this.lblPassword.Name = "lblPassword";
 			this.lblPassword.Size = new System.Drawing.Size( 53, 13 );
 			this.lblPassword.TabIndex = 3;
@@ -156,7 +157,7 @@
 			this.ctlRememberMe.Anchor = ( (System.Windows.Forms.AnchorStyles)( ( ( System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left )
 						| System.Windows.Forms.AnchorStyles.Right ) ) );
 			this.ctlRememberMe.AutoSize = true;
-			this.ctlRememberMe.Location = new System.Drawing.Point( 14, 71 );
+			this.ctlRememberMe.Location = new System.Drawing.Point( 14, 82 );
 			this.ctlRememberMe.Name = "ctlRememberMe";
 			this.ctlRememberMe.Size = new System.Drawing.Size( 142, 17 );
 			this.ctlRememberMe.TabIndex = 2;
@@ -174,7 +175,7 @@
 			this.ctlLoginInfoBox.Controls.Add( this.lblPassword );
 			this.ctlLoginInfoBox.Location = new System.Drawing.Point( 15, 45 );
 			this.ctlLoginInfoBox.Name = "ctlLoginInfoBox";
-			this.ctlLoginInfoBox.Size = new System.Drawing.Size( 320, 107 );
+			this.ctlLoginInfoBox.Size = new System.Drawing.Size( 320, 118 );
 			this.ctlLoginInfoBox.TabIndex = 10;
 			this.ctlLoginInfoBox.TabStop = false;
 			this.ctlLoginInfoBox.Text = "Login Information";
@@ -182,15 +183,28 @@
 			// ctlOptionsBox
 			// 
 			this.ctlOptionsBox.Anchor = ( (System.Windows.Forms.AnchorStyles)( ( System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right ) ) );
+			this.ctlOptionsBox.Controls.Add( this.ctlSwitchAudioXml );
 			this.ctlOptionsBox.Controls.Add( this.ctlClosePopup );
 			this.ctlOptionsBox.Controls.Add( this.ctlSwitchSoundpacks );
 			this.ctlOptionsBox.Controls.Add( this.ctlLaunchWindowed );
 			this.ctlOptionsBox.Location = new System.Drawing.Point( 341, 45 );
 			this.ctlOptionsBox.Name = "ctlOptionsBox";
-			this.ctlOptionsBox.Size = new System.Drawing.Size( 139, 107 );
+			this.ctlOptionsBox.Size = new System.Drawing.Size( 139, 118 );
 			this.ctlOptionsBox.TabIndex = 11;
 			this.ctlOptionsBox.TabStop = false;
 			this.ctlOptionsBox.Text = "Options";
+			// 
+			// ctlSwitchAudioXml
+			// 
+			this.ctlSwitchAudioXml.Anchor = ( (System.Windows.Forms.AnchorStyles)( ( ( System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left )
+						| System.Windows.Forms.AnchorStyles.Right ) ) );
+			this.ctlSwitchAudioXml.AutoSize = true;
+			this.ctlSwitchAudioXml.Location = new System.Drawing.Point( 6, 88 );
+			this.ctlSwitchAudioXml.Name = "ctlSwitchAudioXml";
+			this.ctlSwitchAudioXml.Size = new System.Drawing.Size( 111, 17 );
+			this.ctlSwitchAudioXml.TabIndex = 6;
+			this.ctlSwitchAudioXml.Text = "Switch audio.xml?";
+			this.ctlSwitchAudioXml.UseVisualStyleBackColor = true;
 			// 
 			// ctlStatusStrip
 			// 
@@ -329,6 +343,7 @@
 		private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem exportToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
+		private System.Windows.Forms.CheckBox ctlSwitchAudioXml;
 	}
 }
 

@@ -135,33 +135,33 @@ namespace Dfo.Controlling
 		#endregion
 
 		/// <summary>
-		/// Raised when the soundpacks could not be switched or switched back.
+		/// Raised when a file requested to be switched could not be switched or switched back.
 		/// </summary>
-		public event EventHandler<ErrorEventArgs> SoundpackSwitchFailed
+		public event EventHandler<ErrorEventArgs> FileSwitchFailed
 		{
 			add
 			{
-				lock ( m_SoundpackSwitchFailedLock ) { m_SoundpackSwitchFailedDelegate += value; }
+				lock ( m_FileSwitchFailedLock ) { m_FileSwitchFailedDelegate += value; }
 			}
 			remove
 			{
-				lock ( m_SoundpackSwitchFailedLock ) { m_SoundpackSwitchFailedDelegate -= value; }
+				lock ( m_FileSwitchFailedLock ) { m_FileSwitchFailedDelegate -= value; }
 			}
 		}
 		#region thread-safe event stuff
-		private object m_SoundpackSwitchFailedLock = new object();
-		private EventHandler<ErrorEventArgs> m_SoundpackSwitchFailedDelegate;
+		private object m_FileSwitchFailedLock = new object();
+		private EventHandler<ErrorEventArgs> m_FileSwitchFailedDelegate;
 
 		/// <summary>
 		/// Raises the <c>SoundpackSwitchFailed</c> event.
 		/// </summary>
 		/// <param name="e">An <c>ErrorEventArgs</c> that contains the event data.</param>
-		protected virtual void OnSoundpackSwitchFailed( ErrorEventArgs e )
+		protected virtual void OnFileSwitchFailed( ErrorEventArgs e )
 		{
 			EventHandler<ErrorEventArgs> currentDelegate;
-			lock ( m_SoundpackSwitchFailedLock )
+			lock ( m_FileSwitchFailedLock )
 			{
-				currentDelegate = m_SoundpackSwitchFailedDelegate;
+				currentDelegate = m_FileSwitchFailedDelegate;
 			}
 			if ( currentDelegate != null )
 			{
@@ -571,14 +571,21 @@ namespace Dfo.Controlling
 				canceled = true;
 			}
 
-			bool soundpacksSwitched = false;
+			//bool soundpacksSwitched = false;
+			List<SwitchedFile> switchedFiles = new List<SwitchedFile>();
 			if ( !canceled )
 			{
-				// Switch soundpacks if we were told to do so
-				if ( copiedParams.SwitchSoundpacks )
+				// Switch any files we need to
+				foreach ( FileSwitcher fileToSwitch in copiedParams.FilesToSwitch )
 				{
-					soundpacksSwitched = SwitchSoundpacks( copiedParams.SoundpackDir, copiedParams.CustomSoundpackDir, copiedParams.TempSoundpackDir );
+					switchedFiles.Add( SwitchFile( fileToSwitch ) );
 				}
+
+				//// Switch soundpacks if we were told to do so
+				//if ( copiedParams.SwitchSoundpacks )
+				//{
+				//    soundpacksSwitched = SwitchSoundpacks( copiedParams.SoundpackDir, copiedParams.CustomSoundpackDir, copiedParams.TempSoundpackDir );
+				//}
 			}
 
 			IntPtr dfoMainWindowHandle = IntPtr.Zero;
@@ -593,7 +600,7 @@ namespace Dfo.Controlling
 						{
 							if ( DfoWindowIsOpen( dfoWindowHandle ) )
 							{
-								return new Pair<IntPtr, bool>( dfoWindowHandle, true ); // Window exists nd is visible, done polling
+								return new Pair<IntPtr, bool>( dfoWindowHandle, true ); // Window exists and is visible, done polling
 							}
 							else
 							{
@@ -722,10 +729,10 @@ namespace Dfo.Controlling
 			}
 
 			// Done, clean up.
-			// Switch back soundpacks if they were switched
-			if ( soundpacksSwitched )
+			// Switch back any switched files.
+			if ( switchedFiles.Count > 0 )
 			{
-				// Wait for DFO process to end, otherwise the OS won't let us move the soundpack directory
+				// Wait for DFO process to end, otherwise the OS won't let us move the files that are used by the game
 
 				Process[] dfoProcesses;
 				do
@@ -737,8 +744,30 @@ namespace Dfo.Controlling
 					}
 				} while ( dfoProcesses.Length > 0 );
 
-				bool switchbackSuccess = SwitchBackSoundpacks( copiedParams.SoundpackDir, copiedParams.CustomSoundpackDir, copiedParams.TempSoundpackDir );
+				foreach ( SwitchedFile switchedFile in switchedFiles )
+				{
+					SwitchBackFile( switchedFile );
+				}
 			}
+
+
+			//// Switch back soundpacks if they were switched
+			//if ( soundpacksSwitched )
+			//{
+			//    // Wait for DFO process to end, otherwise the OS won't let us move the soundpack directory
+
+			//    Process[] dfoProcesses;
+			//    do
+			//    {
+			//        dfoProcesses = Process.GetProcessesByName( Path.GetFileNameWithoutExtension( copiedParams.DfoExe ) );
+			//        if ( dfoProcesses.Length > 0 )
+			//        {
+			//            Thread.Sleep( copiedParams.GameDeadPollingIntervalInMs );
+			//        }
+			//    } while ( dfoProcesses.Length > 0 );
+
+			//    bool switchbackSuccess = SwitchBackSoundpacks( copiedParams.SoundpackDir, copiedParams.CustomSoundpackDir, copiedParams.TempSoundpackDir );
+			//}
 
 			lock ( m_syncHandle )
 			{
@@ -800,105 +829,140 @@ namespace Dfo.Controlling
 			return IsWindowVisible( dfoWindowHandle );
 		}
 
-		private bool SwitchSoundpacks( string soundpackDir, string customSoundpackDir, string tempSoundpackDir )
+		private SwitchedFile SwitchFile( FileSwitcher fileToSwitch )
 		{
-			bool firstMoveSuccessful = false;
+			if ( fileToSwitch == null )
+			{
+				return null;
+			}
+
 			try
 			{
-				// Move soundpackDir to tempSoundpackDir
-				Directory.Move( soundpackDir, tempSoundpackDir );
-				firstMoveSuccessful = true;
-
-				// Move customSoundpackDir to soundpackDir
-				Directory.Move( customSoundpackDir, soundpackDir );
+				return fileToSwitch.Switch();
 			}
-			catch ( Exception ex )
+			catch ( IOException ex )
 			{
-				// If the first move was successful, we can probably move it back
-				bool undoSuccess = false;
-				Exception undoError = null;
-				if ( firstMoveSuccessful )
-				{
-					try
-					{
-						Directory.Move( tempSoundpackDir, soundpackDir );
-						undoSuccess = true;
-					}
-					catch ( Exception ex2 )
-					{
-						undoError = ex2;
-					}
-				}
-
-				ErrorEventArgs e;
-				if ( !firstMoveSuccessful )
-				{
-					e = new ErrorEventArgs( new IOException( string.Format(
-					"Could not move main soundpack directory {0} to temp soundpack directory {1}. {2}",
-					soundpackDir, tempSoundpackDir, ex.Message ), ex ) );
-				}
-				else
-				{
-					string undoMessage;
-					if ( undoSuccess )
-					{
-						undoMessage = string.Format(
-						"Main soundpack in {0} successfully moved back to {1}. Soundpack directories are in a consistent state.",
-						tempSoundpackDir, soundpackDir );
-					}
-					else
-					{
-						undoMessage = string.Format(
-						"Main soundpack in {0} could not be moved back to {1}. {2} Soundpack directories are in an inconsistent state! You must manually fix them.",
-						tempSoundpackDir, soundpackDir, undoError.Message );
-					}
-					e = new ErrorEventArgs( new IOException( string.Format(
-					"Could not move custom soundpack directory {0} to main soundpack directory {1}. {2} {3}",
-					customSoundpackDir, soundpackDir, ex.Message, undoMessage ), ex ) );
-				}
-
-				OnSoundpackSwitchFailed( e );
-
-				return false;
+				OnFileSwitchFailed( new ErrorEventArgs( ex ) );
+				return null;
 			}
-
-			return true;
 		}
 
-		private bool SwitchBackSoundpacks( string soundpackDir, string customSoundpackDir, string tempSoundpackDir )
+		private void SwitchBackFile( SwitchedFile fileToSwitchBack )
 		{
-			bool firstMoveSuccessful = false;
+			if ( fileToSwitchBack == null )
+			{
+				return;
+			}
+
 			try
 			{
-				// Move soundpackDir to customSoundpackDir
-				Directory.Move( soundpackDir, customSoundpackDir );
-				firstMoveSuccessful = true;
-
-				// Move tempSoundpackDir to soundpackDir
-				Directory.Move( tempSoundpackDir, soundpackDir );
+				fileToSwitchBack.SwitchBack();
 			}
-			catch ( Exception ex )
+			catch ( IOException ex )
 			{
-				ErrorEventArgs e;
-				if ( !firstMoveSuccessful )
-				{
-					e = new ErrorEventArgs( new IOException( string.Format(
-					"Could not move back custom soundpack in {0} back to {1}. {2}",
-					soundpackDir, customSoundpackDir, ex.Message ), ex ) );
-				}
-				else
-				{
-					e = new ErrorEventArgs( new IOException( string.Format(
-					"Could not move back main soundpack in {0} back to {1}. {2}",
-					tempSoundpackDir, soundpackDir, ex.Message ), ex ) );
-				}
-
-				OnSoundpackSwitchFailed( e );
-
-				return false;
+				OnFileSwitchFailed( new ErrorEventArgs( ex ) );
 			}
-			return true;
 		}
+
+		//private bool SwitchSoundpacks( string soundpackDir, string customSoundpackDir, string tempSoundpackDir )
+		//{
+		//    bool firstMoveSuccessful = false;
+		//    try
+		//    {
+		//        // Move soundpackDir to tempSoundpackDir
+		//        Directory.Move( soundpackDir, tempSoundpackDir );
+		//        firstMoveSuccessful = true;
+
+		//        // Move customSoundpackDir to soundpackDir
+		//        Directory.Move( customSoundpackDir, soundpackDir );
+		//    }
+		//    catch ( Exception ex )
+		//    {
+		//        // If the first move was successful, we can probably move it back
+		//        bool undoSuccess = false;
+		//        Exception undoError = null;
+		//        if ( firstMoveSuccessful )
+		//        {
+		//            try
+		//            {
+		//                Directory.Move( tempSoundpackDir, soundpackDir );
+		//                undoSuccess = true;
+		//            }
+		//            catch ( Exception ex2 )
+		//            {
+		//                undoError = ex2;
+		//            }
+		//        }
+
+		//        ErrorEventArgs e;
+		//        if ( !firstMoveSuccessful )
+		//        {
+		//            e = new ErrorEventArgs( new IOException( string.Format(
+		//            "Could not move main soundpack directory {0} to temp soundpack directory {1}. {2}",
+		//            soundpackDir, tempSoundpackDir, ex.Message ), ex ) );
+		//        }
+		//        else
+		//        {
+		//            string undoMessage;
+		//            if ( undoSuccess )
+		//            {
+		//                undoMessage = string.Format(
+		//                "Main soundpack in {0} successfully moved back to {1}. Soundpack directories are in a consistent state.",
+		//                tempSoundpackDir, soundpackDir );
+		//            }
+		//            else
+		//            {
+		//                undoMessage = string.Format(
+		//                "Main soundpack in {0} could not be moved back to {1}. {2} Soundpack directories are in an inconsistent state! You must manually fix them.",
+		//                tempSoundpackDir, soundpackDir, undoError.Message );
+		//            }
+		//            e = new ErrorEventArgs( new IOException( string.Format(
+		//            "Could not move custom soundpack directory {0} to main soundpack directory {1}. {2} {3}",
+		//            customSoundpackDir, soundpackDir, ex.Message, undoMessage ), ex ) );
+		//        }
+
+		//        OnFileSwitchFailed( e );
+
+		//        return false;
+		//    }
+
+		//    return true;
+		//}
+
+		//private bool SwitchBackSoundpacks( string soundpackDir, string customSoundpackDir, string tempSoundpackDir )
+		//{
+		//    bool firstMoveSuccessful = false;
+		//    try
+		//    {
+		//        // Move soundpackDir to customSoundpackDir
+		//        Directory.Move( soundpackDir, customSoundpackDir );
+		//        firstMoveSuccessful = true;
+
+		//        // Move tempSoundpackDir to soundpackDir
+		//        Directory.Move( tempSoundpackDir, soundpackDir );
+		//    }
+		//    catch ( Exception ex )
+		//    {
+		//        ErrorEventArgs e;
+		//        if ( !firstMoveSuccessful )
+		//        {
+		//            e = new ErrorEventArgs( new IOException( string.Format(
+		//            "Could not move back custom soundpack in {0} back to {1}. {2}",
+		//            soundpackDir, customSoundpackDir, ex.Message ), ex ) );
+		//        }
+		//        else
+		//        {
+		//            e = new ErrorEventArgs( new IOException( string.Format(
+		//            "Could not move back main soundpack in {0} back to {1}. {2}",
+		//            tempSoundpackDir, soundpackDir, ex.Message ), ex ) );
+		//        }
+
+		//        OnFileSwitchFailed( e );
+
+		//        return false;
+		//    }
+		//    return true;
+		//}
 
 		private void LauncherProcessExitedHandler( object sender, EventArgs e )
 		{
@@ -948,97 +1012,99 @@ namespace Dfo.Controlling
 		// normal soundpacks: tempSoundpackDir
 		// custom soundpacks: soundpackDir
 
-		/// <summary>
-		/// Checks if the soundpack directories (normal and custom) are not where they should be (perhaps because
-		/// of a crash). This only checks if it is something that can be fixed by <c>FixBrokenSoundpacks()</c>.
-		/// For example, a completely missing soundpack directory with no temp soundpack directory is not
-		/// considered to be "broken". If the game process is currently running, the soundpacks are not
-		/// considered to be "broken".
-		/// </summary>
-		/// <returns>True if the soundpack directories are in an abnormal state that can be fixed by
-		/// <c>FixBrokenSoundpacks()</c>.</returns>
-		public bool SoundpacksBroken()
-		{
-			Process[] dfoProcesses = Process.GetProcessesByName( Path.GetFileNameWithoutExtension( Params.DfoExe ) );
-			if ( dfoProcesses.Length > 0 )
-			{
-				return false;
-			}
+		///// <summary>
+		///// Checks if the soundpack directories (normal and custom) are not where they should be (perhaps because
+		///// of a crash). This only checks if it is something that can be fixed by <c>FixBrokenSoundpacks()</c>.
+		///// For example, a completely missing soundpack directory with no temp soundpack directory is not
+		///// considered to be "broken". If the game process is currently running, the soundpacks are not
+		///// considered to be "broken".
+		///// </summary>
+		///// <returns>True if the soundpack directories are in an abnormal state that can be fixed by
+		///// <c>FixBrokenSoundpacks()</c>.</returns>
+		//public bool SoundpacksBroken()
+		//{
+		//    Process[] dfoProcesses = Process.GetProcessesByName( Path.GetFileNameWithoutExtension( Params.DfoExe ) );
+		//    if ( dfoProcesses.Length > 0 )
+		//    {
+		//        return false;
+		//    }
 
-			if ( Directory.Exists( Params.TempSoundpackDir ) && Directory.Exists( Params.SoundpackDir ) )
-			{
-				return true;
-			}
-			else if ( Directory.Exists( Params.TempSoundpackDir ) && Directory.Exists( Params.CustomSoundpackDir ) )
-			{
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
+		//    if ( Directory.Exists( Params.TempSoundpackDir ) && Directory.Exists( Params.SoundpackDir ) )
+		//    {
+		//        return true;
+		//    }
+		//    else if ( Directory.Exists( Params.TempSoundpackDir ) && Directory.Exists( Params.CustomSoundpackDir ) )
+		//    {
+		//        return true;
+		//    }
+		//    else
+		//    {
+		//        return false;
+		//    }
+		//}
 
-		/// <summary>
-		/// Fixes soundpack directory mixup usually caused by a system or DFOCP crash. Does nothing if no problems
-		/// are detected. Does nothing if the game is currently running.
-		/// </summary>
-		/// <exception cref="System.IO.IOException">Something went wrong while trying to fix the mixup.</exception>
-		public void FixBrokenSoundpacks()
-		{
-			if ( !SoundpacksBroken() )
-			{
-				return;
-			}
+		
 
-			if ( Directory.Exists( Params.TempSoundpackDir ) && Directory.Exists( Params.SoundpackDir ) )
-			{
-				// Rename soundpackDir to customSoundpackDir
-				try
-				{
-					Directory.Move( Params.SoundpackDir, Params.CustomSoundpackDir );
-				}
-				catch ( Exception ex )
-				{
-					throw new IOException( string.Format(
-						"Could not move back custom soundpack in {0} back to {1}. {2}",
-						Params.SoundpackDir, Params.CustomSoundpackDir, ex.Message ),
-						ex );
-				}
+		///// <summary>
+		///// Fixes soundpack directory mixup usually caused by a system or DFOCP crash. Does nothing if no problems
+		///// are detected. Does nothing if the game is currently running.
+		///// </summary>
+		///// <exception cref="System.IO.IOException">Something went wrong while trying to fix the mixup.</exception>
+		//public void FixBrokenSoundpacks()
+		//{
+		//    if ( !SoundpacksBroken() )
+		//    {
+		//        return;
+		//    }
 
-				// Rename tempSoundpackDir to soundpackDir
-				try
-				{
-					Directory.Move( Params.TempSoundpackDir, Params.SoundpackDir );
-				}
-				catch ( Exception ex )
-				{
-					throw new IOException( string.Format(
-						"Could not move back main soundpack in {0} back to {1}. {2}",
-						Params.TempSoundpackDir, Params.SoundpackDir, ex.Message ),
-						ex );
-				}
-			}
-			else if ( Directory.Exists( Params.TempSoundpackDir ) && Directory.Exists( Params.CustomSoundpackDir ) )
-			{
-				// Rename tempSoundpackDir to soundpackDir
-				try
-				{
-					Directory.Move( Params.TempSoundpackDir, Params.SoundpackDir );
-				}
-				catch ( Exception ex )
-				{
-					throw new IOException( string.Format(
-						"Could not move back main soundpack in {0} back to {1}. {2}",
-						Params.TempSoundpackDir, Params.SoundpackDir, ex.Message ),
-						ex );
-				}
-			}
-			else
-			{
-				return;
-			}
-		}
+		//    if ( Directory.Exists( Params.TempSoundpackDir ) && Directory.Exists( Params.SoundpackDir ) )
+		//    {
+		//        // Rename soundpackDir to customSoundpackDir
+		//        try
+		//        {
+		//            Directory.Move( Params.SoundpackDir, Params.CustomSoundpackDir );
+		//        }
+		//        catch ( Exception ex )
+		//        {
+		//            throw new IOException( string.Format(
+		//                "Could not move back custom soundpack in {0} back to {1}. {2}",
+		//                Params.SoundpackDir, Params.CustomSoundpackDir, ex.Message ),
+		//                ex );
+		//        }
+
+		//        // Rename tempSoundpackDir to soundpackDir
+		//        try
+		//        {
+		//            Directory.Move( Params.TempSoundpackDir, Params.SoundpackDir );
+		//        }
+		//        catch ( Exception ex )
+		//        {
+		//            throw new IOException( string.Format(
+		//                "Could not move back main soundpack in {0} back to {1}. {2}",
+		//                Params.TempSoundpackDir, Params.SoundpackDir, ex.Message ),
+		//                ex );
+		//        }
+		//    }
+		//    else if ( Directory.Exists( Params.TempSoundpackDir ) && Directory.Exists( Params.CustomSoundpackDir ) )
+		//    {
+		//        // Rename tempSoundpackDir to soundpackDir
+		//        try
+		//        {
+		//            Directory.Move( Params.TempSoundpackDir, Params.SoundpackDir );
+		//        }
+		//        catch ( Exception ex )
+		//        {
+		//            throw new IOException( string.Format(
+		//                "Could not move back main soundpack in {0} back to {1}. {2}",
+		//                Params.TempSoundpackDir, Params.SoundpackDir, ex.Message ),
+		//                ex );
+		//        }
+		//    }
+		//    else
+		//    {
+		//        return;
+		//    }
+		//}
 
 		//public void ResizeDfoWindow( int x, int y )
 		//{

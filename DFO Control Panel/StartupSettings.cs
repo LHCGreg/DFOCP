@@ -13,14 +13,22 @@ namespace Dfo.ControlPanel
 		public bool? RememberUsername { get; set; }
 		public bool? ClosePopup { get; set; }
 		public bool? LaunchWindowed { get; set; }
-		public bool? SwitchSoundpacks { get; set; }
+		//public bool? SwitchSoundpacks { get; set; }
 		public string DfoDir { get; set; }
-		public string CustomSoundpackDir { get; set; }
-		public string TempSoundpackDir { get; set; }
+		//public string CustomSoundpackDir { get; set; }
+		//public string TempSoundpackDir { get; set; }
+		public IDictionary<string, SwitchableFile> SwitchableFiles { get; set; }
+		public IDictionary<string, bool?> SwitchFile { get; set; } // options in StartupSettings must be nullable to indicate preference for the default
 
 		public StartupSettings()
 		{
-			;
+			SwitchableFiles = new Dictionary<string, ISwitchableFile>();
+			ICollection<SwitchableFile> switchableFiles = SwitchableFile.GetSwitchableFiles();
+			foreach ( SwitchableFile switchableFile in switchableFiles )
+			{
+				SwitchableFiles.Add( switchableFile.Name, switchableFile );
+				SwitchFile.Add( switchableFile.Name, null );
+			}
 		}
 	}
 }

@@ -55,23 +55,15 @@ namespace Dfo.ControlPanel
 				Console.WriteLine( "Try {0} --help for usage information.", CommandLineArgs.GetProgramName() );
 				return 1;
 			}
-			
-			try
-			{
-				if ( m_parsedArgs.Settings.ClosePopup != null ) m_launcher.Params.ClosePopup = m_parsedArgs.Settings.ClosePopup.Value;
-				if ( m_parsedArgs.Settings.CustomSoundpackDir != null ) m_launcher.Params.CustomSoundpackDirRaw = m_parsedArgs.Settings.CustomSoundpackDir;
-				if ( m_parsedArgs.Settings.DfoDir != null ) m_launcher.Params.GameDir = m_parsedArgs.Settings.DfoDir;
-				if ( m_parsedArgs.Settings.LaunchWindowed != null ) m_launcher.Params.LaunchInWindowed = m_parsedArgs.Settings.LaunchWindowed.Value;
-				if ( m_parsedArgs.Settings.Password != null ) m_launcher.Params.Password = m_parsedArgs.Settings.Password;
-				if ( m_parsedArgs.Settings.SwitchSoundpacks != null ) m_launcher.Params.SwitchSoundpacks = m_parsedArgs.Settings.SwitchSoundpacks.Value;
-				if ( m_parsedArgs.Settings.TempSoundpackDir != null ) m_launcher.Params.TempSoundpackDirRaw = m_parsedArgs.Settings.TempSoundpackDir;
-				if ( m_parsedArgs.Settings.Username != null ) m_launcher.Params.Username = m_parsedArgs.Settings.Username;
-			}
-			catch ( ArgumentException ex ) // A parameter was not valid
-			{
-				Logging.Log.Fatal( ex.Message );
-				return 1;
-			}
+
+			if ( m_parsedArgs.Settings.ClosePopup != null ) m_launcher.Params.ClosePopup = m_parsedArgs.Settings.ClosePopup.Value;
+			//if ( m_parsedArgs.Settings.CustomSoundpackDir != null ) m_launcher.Params.CustomSoundpackDirRaw = m_parsedArgs.Settings.CustomSoundpackDir;
+			if ( m_parsedArgs.Settings.DfoDir != null ) m_launcher.Params.GameDir = m_parsedArgs.Settings.DfoDir;
+			if ( m_parsedArgs.Settings.LaunchWindowed != null ) m_launcher.Params.LaunchInWindowed = m_parsedArgs.Settings.LaunchWindowed.Value;
+			if ( m_parsedArgs.Settings.Password != null ) m_launcher.Params.Password = m_parsedArgs.Settings.Password;
+			//if ( m_parsedArgs.Settings.SwitchSoundpacks != null ) m_launcher.Params.SwitchSoundpacks = m_parsedArgs.Settings.SwitchSoundpacks.Value;
+			//if ( m_parsedArgs.Settings.TempSoundpackDir != null ) m_launcher.Params.TempSoundpackDirRaw = m_parsedArgs.Settings.TempSoundpackDir;
+			if ( m_parsedArgs.Settings.Username != null ) m_launcher.Params.Username = m_parsedArgs.Settings.Username;
 
 			if ( m_parsedArgs.Settings.DfoDir == null )
 			{
@@ -84,20 +76,39 @@ namespace Dfo.ControlPanel
 					Logging.Log.ErrorFormat( "Could not autodetect the DFO directory. {0}", ex.Message );
 				}
 			}
-			
+
+			foreach ( ISwitchableFile switchableFile in m_parsedArgs.Settings.SwitchableFiles.Values )
+			{
+				switchableFile.RelativeRoot = m_launcher.Params.GameDir;
+				switchableFile.ApplyDefaults();
+
+				if ( m_parsedArgs.Settings.SwitchFile[ switchableFile.Name ].HasValue &&
+				   m_parsedArgs.Settings.SwitchFile[ switchableFile.Name ].Value )
+				{
+					FileSwitcher fileToSwitch = new FileSwitcher();
+					fileToSwitch.FileToSwitch = switchableFile.ResolveNormalFile();
+					fileToSwitch.FileToSwitchWith = switchableFile.ResolveCustomFile();
+					fileToSwitch.TempFile = switchableFile.ResolveTempFile();
+
+					m_launcher.Params.FilesToSwitch.Add( fileToSwitch );
+				}
+			}
+
 			try
 			{
-				FixSoundpacksIfNeeded();
+				FixSwitchableFilesIfNeeded( m_parsedArgs.Settings.SwitchableFiles.Values );
 			}
 			catch ( IOException ex )
 			{
-				Logging.Log.FatalFormat( "Error while trying to fix broken soundpack directories. {0} I guess you'll have to fix them yourself.",
+				Logging.Log.FatalFormat(
+					"Error while trying to fix switchable file. {0} I guess you'll have to fix it yourself.",
 					ex.Message );
+
 				return 2;
 			}
 
 			m_launcher.LaunchStateChanged += StateChangedHandler;
-			m_launcher.SoundpackSwitchFailed += SoundSwitchFailHandler;
+			m_launcher.FileSwitchFailed += FileSwitchFailHandler;
 			m_launcher.WindowModeFailed += WindowFailHandler;
 			m_launcher.PopupKillFailed += PopupKillFailHandler;
 
@@ -135,29 +146,85 @@ namespace Dfo.ControlPanel
 		}
 
 		/// <summary>
-		/// Attempts to fix mixed-up soundpacks usually caused by a system crash while the game is running.
-		/// This function uses m_launcher's DfoDir, CustomSoundpackDir, and TempSoundpackDir properties.
+		/// Fixes any switchable files in the given collection that are in an inconsistent state.
 		/// </summary>
-		/// <exception cref="System.IO.IOException">Something went wrong while trying to fix the soundpacks.</exception>
-		private void FixSoundpacksIfNeeded()
+		/// <param name="filesToFix"></param>
+		/// <exception cref="System.IO.IOException">Something went wrong while trying to fix a switchable file.</exception>
+		private void FixSwitchableFilesIfNeeded( ICollection<SwitchableFile> filesToFix )
 		{
-			// XXX: Code and message overlap with GUI code
-			Logging.Log.Info( "Checking for broken soundpacks..." );
-			if ( m_launcher.SoundpacksBroken() )
+			foreach ( SwitchableFile file in filesToFix )
 			{
-				Logging.Log.Info( "Broken soundpack directories detected, attempting to fix them..." );
-
-				m_launcher.FixBrokenSoundpacks();
-
-				string successMessage = "Your soundpack directories were detected to be mixed up (this is usually caused by a system crash). They have been fixed.";
-				Console.WriteLine( successMessage );
-				Logging.Log.Info( successMessage );
-			}
-			else
-			{
-				Logging.Log.Info( "Soundpacks are OK." );
+				bool wasBroken;
+				file.FixBrokenFilesIfNeeded( out wasBroken );
+				if ( wasBroken )
+				{
+					Console.WriteLine( "Switchable file {0} was detected to be in a mixed-up state (this is usually caused by a system crash). It has been fixed.",
+						file.NormalFile );
+				}
 			}
 		}
+
+		///// <summary>
+		///// Fixes any switchable files that are in an inconsistent state.
+		///// </summary>
+		///// <param name="switchableFiles"></param>
+		///// <exception cref="System.IO.IOException">Something went wrong while trying to fix a switchable file.</exception>
+		//private void FixSwitchableFiles( ICollection<FileSwitcher> switchableFiles )
+		//{
+		//    foreach ( FileSwitcher switchableFile in switchableFiles )
+		//    {
+		//        FixSwitchableFiles( switchableFile );
+		//    }
+		//}
+
+		///// <summary>
+		///// Attempts to fix a mixed-up switchable file usually caused by a system crash while the game is running.
+		///// </summary>
+		///// <param name="switchableFile">The file to check. Assumed to be already validated.</param>
+		///// <exception cref="System.IO.IOException">Something went wrong while trying to fix the switchable file.</exception>
+		//private void FixSwitchableFile( FileSwitcher switchableFile )
+		//{
+		//    Logging.Log.InfoFormat( "Checking integrity of switchable file {0}.", switchableFile.FileToSwitch );
+		//    if ( m_launcher.SwitchableFilesBroken( switchableFile ) )
+		//    {
+		//        Logging.Log.Info( "Mixed up files detected, attempting to fix them..." );
+
+		//        m_launcher.FixBrokenSwitchableFiles( switchableFile );
+
+		//        Console.WriteLine( "Switchable file {0} was detected to be in a mixed-up state (this is usually caused by a system crash). It has been fixed.",
+		//            switchableFile.FileToSwitch );
+		//        Logging.Log.Info( "Fixed." );
+		//    }
+		//    else
+		//    {
+		//        Logging.Log.InfoFormat( "{0} is ok.", switchableFile.FileToSwitch );
+		//    }
+		//}
+
+		///// <summary>
+		///// Attempts to fix mixed-up soundpacks usually caused by a system crash while the game is running.
+		///// This function uses m_launcher's DfoDir, CustomSoundpackDir, and TempSoundpackDir properties.
+		///// </summary>
+		///// <exception cref="System.IO.IOException">Something went wrong while trying to fix the soundpacks.</exception>
+		//private void FixSoundpacksIfNeeded()
+		//{
+		//    // XXX: Code and message overlap with GUI code
+		//    Logging.Log.Info( "Checking for broken soundpacks..." );
+		//    if ( m_launcher.SoundpacksBroken() )
+		//    {
+		//        Logging.Log.Info( "Broken soundpack directories detected, attempting to fix them..." );
+
+		//        m_launcher.FixBrokenSoundpacks();
+
+		//        string successMessage = "Your soundpack directories were detected to be mixed up (this is usually caused by a system crash). They have been fixed.";
+		//        Console.WriteLine( successMessage );
+		//        Logging.Log.Info( successMessage );
+		//    }
+		//    else
+		//    {
+		//        Logging.Log.Info( "Soundpacks are OK." );
+		//    }
+		//}
 
 		private void StateChangedHandler( object sender, EventArgs e )
 		{
@@ -180,9 +247,9 @@ namespace Dfo.ControlPanel
 			}
 		}
 
-		private void SoundSwitchFailHandler( object sender, Dfo.Controlling.ErrorEventArgs e )
+		private void FileSwitchFailHandler( object sender, Dfo.Controlling.ErrorEventArgs e )
 		{
-			Logging.Log.ErrorFormat( "Switching soundpacks failed. {0}", e.Error.Message );
+			Logging.Log.ErrorFormat( "Switching files failed. {0}", e.Error.Message );
 		}
 
 		private void WindowFailHandler( object sender, CancelErrorEventArgs e )

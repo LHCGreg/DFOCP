@@ -30,6 +30,20 @@ namespace Dfo.ControlPanel
 		private bool ClosePopup { get { return ctlClosePopup.Checked; } set { ctlClosePopup.Checked = value; } }
 		private bool LaunchWindowed { get { return ctlLaunchWindowed.Checked; } set { ctlLaunchWindowed.Checked = value; } }
 		private bool RememberMe { get { return ctlRememberMe.Checked; } set { ctlRememberMe.Checked = value; } }
+
+		// Modify this method to bind a new switchable file to a checkbox.
+		private IDictionary<string, CheckBox> GetSwitchableCheckboxes()
+		{
+			return new Dictionary<string, CheckBox>()
+			{
+				{ SwitchableFile.Soundpacks, ctlSwitchSoundpacks },
+				{ SwitchableFile.AudioXml, ctlSwitchAudioXml },
+			};
+		}
+		
+		private Dictionary<string, ISwitchableFile> m_switchableFiles = new Dictionary<string,ISwitchableFile>();
+		private Dictionary<string, IUiSwitchableFile> SwitchableFiles { get { return m_switchableFiles; } }
+
 		private bool SwitchSoundpacks
 		{
 			get { return ctlSwitchSoundpacks.Checked; }
@@ -74,8 +88,7 @@ namespace Dfo.ControlPanel
 			DfoDir = DfoLauncher.AutoDetectGameDir( Game.DFO );
 		}
 
-		//private bool m_autoDetectMapleDir = true;
-		//private bool AutoDetectMapleDir { get { return m_autoDetectMapleDir; } set { m_autoDetectMapleDir = value; } }
+
 
 		private string DefaultCustomSoundpackDir { get { return "SoundPacksCustom"; } }
 		private string m_customSoundpackDir; // If this is a relative path, it is relative to DfoDir
@@ -196,7 +209,7 @@ namespace Dfo.ControlPanel
 
 			m_launcher.WindowModeFailed += WindowModeFailedHandler;
 			m_launcher.LaunchStateChanged += StateChangedHandler;
-			m_launcher.SoundpackSwitchFailed += SoundpackFailedHandler;
+			m_launcher.SoundpackSwitchFailed += FileSwitchFailedHandler;
 			m_launcher.PopupKillFailed += PopupKillFailedHandler;
 
 			ctlStatusLabel.Text = m_stateNoneText;
@@ -208,67 +221,107 @@ namespace Dfo.ControlPanel
 		{
 			Logging.Log.Debug( "Loading main window." );
 
+			// Bind switchable files to checkboxes
+			IDictionary<string, CheckBox> switchableFileCheckboxes = GetSwitchableCheckboxes();
+			foreach ( ISwitchableFile switchableFile in m_parsedArgs.Settings.SwitchableFiles.Values )
+			{
+				if ( switchableFileCheckboxes.ContainsKey( switchableFile.Name ) )
+				{
+					SwitchableFiles.Add( switchableFile.Name,
+						new CheckboxSwitchableFile( switchableFileCheckboxes[ switchableFile.Name ],
+							switchableFile ) );
+				}
+				else
+				{
+					// Hmmm...No UI binding for a switchable file. Add it as a switchable file and let
+					// setting/command-line behavior take effect.
+					SwitchableFiles.Add( switchableFile.Name, switchableFile );
+				}
+			}
+
 			m_savedSettings = SettingsLoader.Load();
 			ApplySettingsAndArguments();
 
-			FixSoundpacksIfNeeded();
-
-			bool mainSoundpackDirExists = Directory.Exists( m_launcher.Params.SoundpackDir );
-			bool customSoundpackDirExists = Directory.Exists( CustomSoundpackDir );
-			bool tempSoundpackDirFree = !Directory.Exists( TempSoundpackDir );
-
-			if ( !mainSoundpackDirExists || !customSoundpackDirExists || !tempSoundpackDirFree )
-			{
-				Logging.Log.InfoFormat(
-					"Directories are not set up for soundpack switching, greying out that option. Main soundpack dir exists = {0}, custom soundpack dir exists = {1}, temp soundpack dir available = {2}.",
-					mainSoundpackDirExists, customSoundpackDirExists, tempSoundpackDirFree );
-
-				ctlSwitchSoundpacks.Checked = false;
-				ctlSwitchSoundpacks.Enabled = false;
-			}
+			FixSwitchableFilesIfNeeded();
 
 			ctlUsername.Select();
 			Logging.Log.Debug( "Main window loaded." );
 		}
 
 		/// <summary>
-		/// Attempts to fix mixed-up soundpacks usually caused by a system crash while the game is running.
-		/// This function calls SetLauncherParams().
+		/// Attempts to fix mixed-up switchable files usually caused by a system crash while the game is running.
+		/// The SwitchableFiles collection is used.
 		/// </summary>
-		private void FixSoundpacksIfNeeded()
+		private void FixSwitchableFilesIfNeeded()
 		{
-			Logging.Log.Info( "Checking for broken soundpacks..." );
-			SetLauncherParams();
-
-			if ( m_launcher.SoundpacksBroken() )
+			bool anyFailed = false;
+			bool anyFixed = false;
+			foreach ( IUiSwitchableFile switchableFile in SwitchableFiles.Values )
 			{
-				Logging.Log.Info( "Broken soundpack directories detected, attempting to fix them..." );
-				bool fixWorked = false;
 				try
 				{
-					m_launcher.FixBrokenSoundpacks();
-					fixWorked = true;
+					bool wasBroken;
+					switchableFile.FixBrokenFilesIfNeeded( out wasBroken );
+					anyFixed = true;
 				}
 				catch ( IOException ex )
 				{
 					// XXX: Should the program exit?
+					anyFailed = true;
 					DisplayError( string.Format(
-						"Error while trying to fix broken soundpack directories. {0} I guess you'll have to fix them yourself.",
+						"Error while trying to fix switchable files. {0} I guess you'll have to fix them yourself.",
 						ex.Message ),
-						"Couldn't fix the soundpacks" );
+						"Couldn't fix switchable files" );
 				}
 
-				if ( fixWorked )
-				{
-					DisplayInfo( "Your soundpack directories were detected to be mixed up (this is usually caused by a system crash). They have been fixed.",
-						"Soundpacks fixed" );
-				}
+				switchableFile.Refesh();
 			}
-			else
+
+			if ( anyFixed && !anyFailed )
 			{
-				Logging.Log.Info( "Soundpacks are OK." );
+				DisplayInfo( "Some switchable files were detected to be mixed up (this is usually caused by a system crash). They have been fixed.",
+						"Switchable files fixed" );
 			}
 		}
+		
+		///// <summary>
+		///// Attempts to fix mixed-up soundpacks usually caused by a system crash while the game is running.
+		///// This function calls SetLauncherParams().
+		///// </summary>
+		//private void FixSoundpacksIfNeeded()
+		//{
+		//    Logging.Log.Info( "Checking for broken soundpacks..." );
+		//    SetLauncherParams();
+
+		//    if ( m_launcher.SoundpacksBroken() )
+		//    {
+		//        Logging.Log.Info( "Broken soundpack directories detected, attempting to fix them..." );
+		//        bool fixWorked = false;
+		//        try
+		//        {
+		//            m_launcher.FixBrokenSoundpacks();
+		//            fixWorked = true;
+		//        }
+		//        catch ( IOException ex )
+		//        {
+		//            // XXX: Should the program exit?
+		//            DisplayError( string.Format(
+		//                "Error while trying to fix broken soundpack directories. {0} I guess you'll have to fix them yourself.",
+		//                ex.Message ),
+		//                "Couldn't fix the soundpacks" );
+		//        }
+
+		//        if ( fixWorked )
+		//        {
+		//            DisplayInfo( "Your soundpack directories were detected to be mixed up (this is usually caused by a system crash). They have been fixed.",
+		//                "Soundpacks fixed" );
+		//        }
+		//    }
+		//    else
+		//    {
+		//        Logging.Log.Info( "Soundpacks are OK." );
+		//    }
+		//}
 
 		private void ApplySettingsAndArguments()
 		{
@@ -279,10 +332,6 @@ namespace Dfo.ControlPanel
 
 			SettingsLoader.ApplySettingStruct( m_parsedArgs.Settings.LaunchWindowed, m_savedSettings.LaunchWindowed, null,
 				"Launch windowed", ( bool windowed ) => LaunchWindowed = windowed, false, false );
-
-			SettingsLoader.ApplySettingStruct( m_parsedArgs.Settings.SwitchSoundpacks, m_savedSettings.SwitchSoundpacks,
-				null, "Switch soundpacks", ( bool switchSoundpacks ) => SwitchSoundpacks = switchSoundpacks,
-				m_launcher.Params.SwitchSoundpacks, false );
 
 			SettingsLoader.ApplySettingStruct( null, m_savedSettings.RememberUsername, null, "Remember username",
 				( bool remember ) => RememberMe = remember, false, false );
@@ -324,14 +373,43 @@ namespace Dfo.ControlPanel
 				}
 			}
 
-			SettingsLoader.ApplySettingClass( m_parsedArgs.Settings.CustomSoundpackDir,
-				m_savedSettings.CustomSoundpackDir, validatePath, "Custom soundpack directory",
-				( string customSoundDir ) => CustomSoundpackDirRaw = customSoundDir, DefaultCustomSoundpackDir,
-				false );
+			//SettingsLoader.ApplySettingStruct( m_parsedArgs.Settings.SwitchSoundpacks, m_savedSettings.SwitchSoundpacks,
+				//null, "Switch soundpacks", ( bool switchSoundpacks ) => SwitchSoundpacks = switchSoundpacks,
+				//m_launcher.Params.SwitchSoundpacks, false );
+			foreach ( string switchableName in m_parsedArgs.Settings.SwitchableFiles.Keys )
+			{
+				ISwitchableFile switchableFromArgs = m_parsedArgs.Settings.SwitchableFiles[ switchableName ];
+				bool? switchFromArgs = m_parsedArgs.Settings.SwitchFile[ switchableName ];
+				ISwitchableFile switchableFromSettings = m_savedSettings.SwitchableFiles[ switchableName ];
+				bool? switchFromSettings = m_savedSettings.SwitchFile[ switchableName ];
 
-			SettingsLoader.ApplySettingClass( m_parsedArgs.Settings.TempSoundpackDir, m_savedSettings.TempSoundpackDir,
-				validatePath, "Temp soundpack directory", ( string tempSoundDir ) => TempSoundpackDirRaw = tempSoundDir,
-				DefaultTempSoundpackDir, false );
+				SwitchableFiles[ switchableName ].RelativeRoot = DfoDir;
+
+				SettingsLoader.ApplySettingStruct( switchFromArgs, switchFromSettings, null,
+					string.Format( "Switch {0}", switchableFromArgs.NormalFile ),
+					( bool switchFile ) => SwitchableFiles[ switchableName ].Switch = switchFile, false, false );
+
+				SettingsLoader.ApplySettingClass( switchableFromArgs.CustomFile, switchableFromSettings.CustomFile,
+					validatePath,
+					string.Format( "Custom file for {0}", switchableFromArgs.NormalFile ),
+					( string customFile ) => SwitchableFiles[ switchableName ].CustomFile = customFile,
+					switchableFromArgs.DefaultCustomFile, false );
+
+				SettingsLoader.ApplySettingClass( switchableFromArgs.TempFile, switchableFromSettings.TempFile,
+					validatePath,
+					string.Format( "Temp file for {0}", switchableFromArgs.NormalFile ),
+					( string tempFile ) => SwitchableFiles[ switchableName ].TempFile = tempFile,
+					switchableFromArgs.DefaultTempFile, false );
+			}
+
+			//SettingsLoader.ApplySettingClass( m_parsedArgs.Settings.CustomSoundpackDir,
+			//    m_savedSettings.CustomSoundpackDir, validatePath, "Custom soundpack directory",
+			//    ( string customSoundDir ) => CustomSoundpackDirRaw = customSoundDir, DefaultCustomSoundpackDir,
+			//    false );
+
+			//SettingsLoader.ApplySettingClass( m_parsedArgs.Settings.TempSoundpackDir, m_savedSettings.TempSoundpackDir,
+			//    validatePath, "Temp soundpack directory", ( string tempSoundDir ) => TempSoundpackDirRaw = tempSoundDir,
+			//    DefaultTempSoundpackDir, false );
 
 			Logging.Log.Debug( "Done applying settings and arguments." );
 		}
@@ -343,10 +421,10 @@ namespace Dfo.ControlPanel
 			e.Cancel = true;
 		}
 
-		private void SoundpackFailedHandler( object sender, Dfo.Controlling.ErrorEventArgs e )
+		private void FileSwitchFailedHandler( object sender, Dfo.Controlling.ErrorEventArgs e )
 		{
-			DisplayError( string.Format( "Switching soundpacks failed. {0}", e.Error.Message ),
-				"Soundpack Switch Error" );
+			DisplayError( string.Format( "Switching file failed. {0}", e.Error.Message ),
+				"File Switch Error" );
 		}
 
 		private void PopupKillFailedHandler( object sender, Dfo.Controlling.ErrorEventArgs e )

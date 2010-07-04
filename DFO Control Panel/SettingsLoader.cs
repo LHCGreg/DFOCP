@@ -10,12 +10,26 @@ namespace Dfo.ControlPanel
 {
 	static class SettingsLoader
 	{
+		// 2.0
 		// <DFOCP_Settings SettingsVersion="major.minor">
 		// Username - string
 		// RememberMe - bool
 		// ClosePopup - bool
 		// LaunchWindowed - bool
 		// SwitchSoundpacks - bool
+		// </DFOCP_Settings>
+
+		// 3.0
+		// <DFOCP_Settings SettingsVersion="major.minor">
+		// Username - string
+		// RememberMe - bool
+		// ClosePopup - bool
+		// LaunchWindowed - bool
+		//
+		// <switchable name="soundpack">
+		//   switch - bool
+		// </switchable>
+		// ...
 		// </DFOCP_Settings>
 
 		private static readonly string s_rootName = "DFOCP_Settings";
@@ -25,9 +39,12 @@ namespace Dfo.ControlPanel
 		private static readonly string s_closePopup = "ClosePopup";
 		private static readonly string s_launchWindowed = "LaunchWindowed";
 		private static readonly string s_switchSoundpacks = "SwitchSoundpacks";
+		private static readonly string s_switchableElement = "Switchable";
+		private static readonly string s_switchableNameAttr = "name";
+		private static readonly string s_switchableSwitch = "Switch";
 
 		// These are for settings format versioning, which is not the same as program versioning
-		private static readonly string s_majorVersion = "2";
+		private static readonly string s_majorVersion = "3";
 		private static readonly string s_minorVersion = "0";
 
 		// bool = 0 or 1, anything else is an error
@@ -67,11 +84,13 @@ namespace Dfo.ControlPanel
 			}
 			if ( settingsRoot == null )
 			{
-				Logging.Log.ErrorFormat( "DFOCP_Settings element not found." );
+				Logging.Log.ErrorFormat( "{0} element not found.", s_rootName );
 				return new StartupSettings();
 			}
 
 			string settingsVersion = GetAttribute( settingsRoot, s_settingsVersion );
+			string majorVersion;
+			string minorVersion;
 			if ( settingsVersion == null )
 			{
 				Logging.Log.ErrorFormat( "Settings version not found. Assuming {0}.{1}",
@@ -84,17 +103,19 @@ namespace Dfo.ControlPanel
 				{
 					Logging.Log.ErrorFormat( "Settings version '{0}' is badly formatted. Assuming {1}.{2}.",
 						settingsVersion, s_majorVersion, s_minorVersion );
+					majorVersion = s_majorVersion;
+					minorVersion = s_minorVersion;
 				}
 				else
 				{
-					string major = versionSplit[ 0 ];
-					string minor = versionSplit[ 1 ];
+					majorVersion = versionSplit[ 0 ];
+					minorVersion = versionSplit[ 1 ];
 
-					if ( major != s_majorVersion )
+					if ( majorVersion != s_majorVersion && majorVersion != "2")
 					{
 						Logging.Log.InfoFormat(
 						"Major version of settings file format is {0}, which is different from {1}. Ignoring file and using default settings.",
-						major, s_majorVersion );
+						majorVersion, s_majorVersion );
 						return new StartupSettings();
 					}
 				}
@@ -104,7 +125,27 @@ namespace Dfo.ControlPanel
 			settings.RememberUsername = GetBool( settingsRoot, s_rememberMe );
 			settings.ClosePopup = GetBool( settingsRoot, s_closePopup );
 			settings.LaunchWindowed = GetBool( settingsRoot, s_launchWindowed );
-			settings.SwitchSoundpacks = GetBool( settingsRoot, s_switchSoundpacks );
+
+			if ( majorVersion == "2" )
+			{
+				settings.SwitchFile[ SwitchableFile.Soundpacks ] = GetBool( settingsRoot, s_switchSoundpacks );
+			}
+			else
+			{
+				XElement switchable = null;
+				var switchableCollection = settingsRoot.Elements( s_switchableElement );
+				foreach ( XElement switchable in switchableCollection )
+				{
+					string switchableName = GetAttribute( switchable, s_switchableNameAttr );
+					if ( switchableName == null )
+					{
+						continue;
+					}
+					bool? whetherToSwitch = GetBool( switchable, s_switchableSwitch );
+
+					settings.SwitchFile[ switchableName ] = whetherToSwitch;
+				}
+			}
 
 			Logging.Log.Info( "Settings loaded." );
 
@@ -168,7 +209,7 @@ namespace Dfo.ControlPanel
 
 			XElement root = new XElement( s_rootName );
 			string settingsVersion = string.Format( "{0}.{1}", s_majorVersion, s_minorVersion );
-			root.SetAttributeValue( s_settingsVersion, string.Format( "{0}.{1}", s_majorVersion, s_minorVersion ) );
+			root.SetAttributeValue( s_settingsVersion, settingsVersion );
 			if ( settings.RememberUsername == true )
 			{
 				AddElement( root, s_rememberMe, GetBoolString( settings.RememberUsername ) );
@@ -176,7 +217,13 @@ namespace Dfo.ControlPanel
 			}
 			AddElement( root, s_closePopup, GetBoolString( settings.ClosePopup ) );
 			AddElement( root, s_launchWindowed, GetBoolString( settings.LaunchWindowed ) );
-			AddElement( root, s_switchSoundpacks, GetBoolString( settings.SwitchSoundpacks ) );
+			foreach ( string switchableName in settings.SwitchFile )
+			{
+				XElement switchableElement = new XElement( s_switchableElement );
+				AddElement( switchableElement, s_switchableSwitch, GetBoolString( settings.SwitchFile[ switchableName ].Value ) );
+				switchableElement.SetAttributeValue( s_switchableNameAttr, switchableName );
+				root.Add( switchableElement );
+			}
 
 			try
 			{
