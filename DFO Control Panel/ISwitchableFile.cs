@@ -19,7 +19,7 @@ namespace Dfo.ControlPanel
 		string NormalFile { get; set; }
 		string CustomFile { get; set; }
 		string TempFile { get; set; }
-		string RelativeRoot { get; }
+		string RelativeRoot { get; set; }
 	}
 
 	static class ISwitchableFileExtensions
@@ -106,10 +106,7 @@ namespace Dfo.ControlPanel
 			wasBroken = false;
 			Logging.Log.InfoFormat( "Checking integrity of switchable file {0}.", switchableFile.NormalFile );
 
-			FileSwitcher files = new FileSwitcher();
-			files.FileToSwitch = switchableFile.ResolveNormalFile();
-			files.FileToSwitchWith = switchableFile.ResolveCustomFile();
-			files.TempFile = switchableFile.ResolveTempFile();
+			FileSwitcher files = switchableFile.AsFileSwitcher();
 
 			if ( files.FilesBroken() )
 			{
@@ -123,6 +120,24 @@ namespace Dfo.ControlPanel
 			{
 				Logging.Log.InfoFormat( "{0} is ok.", switchableFile.NormalFile );
 			}
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="switchableFile"></param>
+		/// <returns></returns>
+		/// <exception cref="System.ArgumentException">NormalFile, CustomFile, TempFile, or RelativeRoot contain
+		/// invalid characters.</exception>
+		/// <exception cref="System.ArgumentNullException">NormalFile, CustomFile, TempFile, or RelativeRoot
+		/// are null.</exception>
+		public static FileSwitcher AsFileSwitcher( this ISwitchableFile switchableFile )
+		{
+			FileSwitcher fileSwitcher = new FileSwitcher();
+			fileSwitcher.NormalFile = switchableFile.ResolveNormalFile();
+			fileSwitcher.CustomFile = switchableFile.ResolveCustomFile();
+			fileSwitcher.TempFile = switchableFile.ResolveTempFile();
+			return fileSwitcher;
 		}
 	}
 }

@@ -332,7 +332,7 @@ namespace Dfo.Controlling
 			foreach ( FileSwitcher fileToSwitch in FilesToSwitch )
 			{
 				builder.AppendLine( string.Format( "Switching file {0} with {1} using {2} as a temporary.",
-					fileToSwitch.FileToSwitch, fileToSwitch.FileToSwitchWith, fileToSwitch.TempFile ) );
+					fileToSwitch.NormalFile, fileToSwitch.CustomFile, fileToSwitch.TempFile ) );
 			}
 
 			//builder.AppendLine( string.Format( "Soundpack dir: {0}", SoundpackDir ) );

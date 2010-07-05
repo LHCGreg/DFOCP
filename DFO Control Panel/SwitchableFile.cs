@@ -8,7 +8,7 @@ namespace Dfo.ControlPanel
 	class SwitchableFile : ISwitchableFile
 	{
 		public string Name { get; set; }
-		public string WhetherToSwitcharg { get; set; }
+		public string WhetherToSwitchArg { get; set; }
 		public string CustomFileArg { get; set; }
 		public string TempFileArg { get; set; }
 		public string SettingName { get; set; }
@@ -22,11 +22,32 @@ namespace Dfo.ControlPanel
 		public string CustomFile { get; set; }
 		public string TempFile { get; set; }
 
-		public string RelativeRoot { get { return Environment.CurrentDirectory; } }
+		private string m_relativeRoot = Environment.CurrentDirectory;
+		public string RelativeRoot { get { return m_relativeRoot; } set { m_relativeRoot = value; } }
 
 		public SwitchableFile()
 		{
 			;
+		}
+
+		/// <summary>
+		/// Copy constructor
+		/// </summary>
+		/// <param name="other"></param>
+		public SwitchableFile( ISwitchableFile other )
+		{
+			this.Name = other.Name;
+			this.WhetherToSwitchArg = other.WhetherToSwitchArg;
+			this.CustomFileArg = other.CustomFileArg;
+			this.TempFileArg = other.TempFileArg;
+			this.SettingName = other.SettingName;
+			this.DefaultCustomFile = other.DefaultCustomFile;
+			this.DefaultTempFile = other.DefaultTempFile;
+			this.Switch = other.Switch;
+			this.NormalFile = other.NormalFile;
+			this.CustomFile = other.CustomFile;
+			this.TempFile = other.TempFile;
+			this.RelativeRoot = other.RelativeRoot;
 		}
 
 		public static ICollection<SwitchableFile> GetSwitchableFiles()
@@ -41,7 +62,7 @@ namespace Dfo.ControlPanel
 			soundpack.NormalFile = "SoundPacks";
 			soundpack.SettingName = "soundpack";
 			soundpack.TempFileArg = "tempsounddir";
-			soundpack.WhetherToSwitcharg = "soundswitch";
+			soundpack.WhetherToSwitchArg = "soundswitch";
 
 			switchableFiles.Add( soundpack );
 
@@ -53,7 +74,7 @@ namespace Dfo.ControlPanel
 			soundpack.NormalFile = "audio.xml";
 			soundpack.SettingName = "audio.xml";
 			soundpack.TempFileArg = "tempaudioxml";
-			soundpack.WhetherToSwitcharg = "audioxmlswitch";
+			soundpack.WhetherToSwitchArg = "audioxmlswitch";
 
 			switchableFiles.Add( soundpack );
 

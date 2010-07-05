@@ -13,7 +13,7 @@ namespace Dfo.ControlPanel
 	class CheckboxSwitchableFile : IUiSwitchableFile
 	{
 		private CheckBox m_checkbox;
-		
+
 		public string Name { get; private set; }
 		public string WhetherToSwitchArg { get; private set; }
 		public string CustomFileArg { get; private set; }
@@ -22,6 +22,15 @@ namespace Dfo.ControlPanel
 		public string DefaultCustomFile { get; private set; }
 		public string DefaultTempFile { get; private set; }
 
+		private bool m_switchIfFilesOk;
+		public bool SwitchIfFilesOk
+		{
+			get { return m_switchIfFilesOk; }
+			set { m_switchIfFilesOk = value; Switch = value; }
+		}
+
+		// XXX: Doing a get right after a set may not give you the same value back if the checkbox isn't enabled.
+		// That's kind of unintutive behavior.
 		public bool Switch
 		{
 			get
@@ -32,16 +41,41 @@ namespace Dfo.ControlPanel
 			{
 				if ( m_checkbox.Enabled )
 				{
-					m_checkbox.Checked = true;
+					m_checkbox.Checked = value;
 				}
 			}
 		}
 
-		public string NormalFile { get; set; }
-		public string CustomFile { get; set; }
-		public string TempFile { get; set; }
+		private bool m_autoRefresh = true;
+		public bool AutoRefresh { get { return m_autoRefresh; } set { m_autoRefresh = value; } }
 
-		public string RelativeRoot { get; set; }
+		private string m_normalFile;
+		public string NormalFile
+		{
+			get { return m_normalFile; }
+			set { m_normalFile = value; if ( AutoRefresh ) Refresh(); }
+		}
+
+		private string m_customFile;
+		public string CustomFile
+		{
+			get { return m_customFile; }
+			set { m_customFile = value; if ( AutoRefresh ) Refresh(); }
+		}
+
+		private string m_tempFile;
+		public string TempFile
+		{
+			get { return m_tempFile; }
+			set { m_tempFile = value; if ( AutoRefresh ) Refresh(); }
+		}
+
+		private string m_relativeRoot;
+		public string RelativeRoot
+		{
+			get { return m_relativeRoot; }
+			set { m_relativeRoot = value; if ( AutoRefresh ) Refresh(); }
+		}
 
 		/// <summary>
 		/// Binds switchable file properties to a checkbox using the properties of some other ISwitchableFile.
@@ -52,6 +86,8 @@ namespace Dfo.ControlPanel
 		{
 			checkbox.ThrowIfNull( "checkbox" );
 			m_checkbox = checkbox;
+
+			AutoRefresh = false;
 
 			Name = other.Name;
 			WhetherToSwitchArg = other.WhetherToSwitchArg;
@@ -66,6 +102,9 @@ namespace Dfo.ControlPanel
 			RelativeRoot = other.RelativeRoot;
 
 			Switch = other.Switch;
+			SwitchIfFilesOk = other.Switch;
+
+			AutoRefresh = true;
 
 			Refresh();
 		}
@@ -83,15 +122,27 @@ namespace Dfo.ControlPanel
 				   TempFile != null && !Utilities.FileOrDirectoryExists( this.ResolveTempFile() ) )
 				{
 					m_checkbox.Enabled = true;
+					if ( SwitchIfFilesOk )
+					{
+						m_checkbox.Checked = true;
+					}
 				}
 				else
 				{
+					if ( m_checkbox.Enabled )
+					{
+						m_switchIfFilesOk = m_checkbox.Checked;
+					}
 					m_checkbox.Enabled = false;
 					m_checkbox.Checked = false;
 				}
 			}
 			catch ( ArgumentException )
 			{
+				if ( m_checkbox.Enabled )
+				{
+					m_switchIfFilesOk = m_checkbox.Checked;
+				}
 				m_checkbox.Enabled = false;
 				m_checkbox.Checked = false;
 			}

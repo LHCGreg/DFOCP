@@ -86,8 +86,8 @@ namespace Dfo.ControlPanel
 				   m_parsedArgs.Settings.SwitchFile[ switchableFile.Name ].Value )
 				{
 					FileSwitcher fileToSwitch = new FileSwitcher();
-					fileToSwitch.FileToSwitch = switchableFile.ResolveNormalFile();
-					fileToSwitch.FileToSwitchWith = switchableFile.ResolveCustomFile();
+					fileToSwitch.NormalFile = switchableFile.ResolveNormalFile();
+					fileToSwitch.CustomFile = switchableFile.ResolveCustomFile();
 					fileToSwitch.TempFile = switchableFile.ResolveTempFile();
 
 					m_launcher.Params.FilesToSwitch.Add( fileToSwitch );

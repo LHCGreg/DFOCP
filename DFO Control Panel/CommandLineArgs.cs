@@ -130,7 +130,7 @@ namespace Dfo.ControlPanel
 			foreach ( ISwitchableFile switchableFile in Settings.SwitchableFiles.Values )
 			{
 				builder.AppendLine( string.Format( "Switch {0} = {1}",
-					switchableFile.NormalFile, switchableFile.Switch ) );
+					switchableFile.NormalFile, Settings.SwitchFile[switchableFile.Name] ) );
 				builder.AppendLine( string.Format( "Custom {0} file = {1}",
 					switchableFile.NormalFile, switchableFile.CustomFile ) );
 				builder.AppendLine( string.Format( "Temp {0} file = {1}",

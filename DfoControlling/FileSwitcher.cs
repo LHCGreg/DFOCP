@@ -6,10 +6,24 @@ using System.IO;
 
 namespace Dfo.Controlling
 {
+	/// <summary>
+	/// A class for temporarily switching two files or directories.
+	/// </summary>
 	public class FileSwitcher
 	{
-		public string FileToSwitch { get; set; }
-		public string FileToSwitchWith { get; set; }
+		/// <summary>
+		/// The absolute path of the file to switch out.
+		/// </summary>
+		public string NormalFile { get; set; }
+		
+		/// <summary>
+		/// The absolute path of the file to switch in.
+		/// </summary>
+		public string CustomFile { get; set; }
+		
+		/// <summary>
+		/// The absolute path of the file of use as a temporary location for the file being switched out.
+		/// </summary>
 		public string TempFile { get; set; }
 
 		public FileSwitcher()
@@ -26,19 +40,19 @@ namespace Dfo.Controlling
 		/// <exception cref="System.IO.IOException">The file could not be switched.</exception>
 		public SwitchedFile Switch()
 		{
-			FileToSwitch.ThrowIfNull( "FileToSwitch" );
-			FileToSwitchWith.ThrowIfNull( "FileToSwitchWith" );
+			NormalFile.ThrowIfNull( "FileToSwitch" );
+			CustomFile.ThrowIfNull( "FileToSwitchWith" );
 			TempFile.ThrowIfNull( "TempFile" );
 
 			bool firstMoveSuccessful = false;
 			try
 			{
-				File.Move( FileToSwitch, TempFile );
+				File.Move( NormalFile, TempFile );
 				firstMoveSuccessful = true;
 
-				File.Move( FileToSwitchWith, FileToSwitch );
+				File.Move( CustomFile, NormalFile );
 
-				return new SwitchedFile( FileToSwitch, FileToSwitchWith, TempFile );
+				return new SwitchedFile( NormalFile, CustomFile, TempFile );
 			}
 			catch ( Exception ex )
 			{
@@ -49,7 +63,7 @@ namespace Dfo.Controlling
 				{
 					try
 					{
-						File.Move( TempFile, FileToSwitch );
+						File.Move( TempFile, NormalFile );
 						undoSuccess = true;
 					}
 					catch ( Exception ex2 )
@@ -62,7 +76,7 @@ namespace Dfo.Controlling
 				{
 					throw new IOException( string.Format(
 						"Could not move {0} to {1}. {2}",
-						FileToSwitch, TempFile, ex.Message ), ex );
+						NormalFile, TempFile, ex.Message ), ex );
 				}
 				else
 				{
@@ -71,18 +85,18 @@ namespace Dfo.Controlling
 					{
 						undoMessage = string.Format(
 						"{0} moved back to {1}.",
-						TempFile, FileToSwitch );
+						TempFile, NormalFile );
 					}
 					else
 					{
 						undoMessage = string.Format(
 						"{0} could not be moved back to {1}. {2} Files are in an inconsistent state!",
-						TempFile, FileToSwitch, undoError.Message );
+						TempFile, NormalFile, undoError.Message );
 					}
 
 					throw new IOException( string.Format(
 						"Could not move {0} to {1}. {2} {3}",
-						FileToSwitchWith, FileToSwitch, ex.Message, undoMessage ), ex );
+						CustomFile, NormalFile, ex.Message, undoMessage ), ex );
 				}
 			}
 		}
@@ -99,15 +113,15 @@ namespace Dfo.Controlling
 		/// <c>FixBrokenSwitchableFiles()</c>.</returns>
 		public bool FilesBroken()
 		{
-			FileToSwitch.ThrowIfNull( "FileToSwitch" );
-			FileToSwitchWith.ThrowIfNull( "FileToSwitchWith" );
+			NormalFile.ThrowIfNull( "FileToSwitch" );
+			CustomFile.ThrowIfNull( "FileToSwitchWith" );
 			TempFile.ThrowIfNull( "TempFile" );
 
-			if ( Utilities.FileOrDirectoryExists( TempFile ) && Utilities.FileOrDirectoryExists( FileToSwitch ) )
+			if ( Utilities.FileOrDirectoryExists( TempFile ) && Utilities.FileOrDirectoryExists( NormalFile ) )
 			{
 				return true;
 			}
-			else if ( Utilities.FileOrDirectoryExists( TempFile ) && Utilities.FileOrDirectoryExists( FileToSwitchWith ) )
+			else if ( Utilities.FileOrDirectoryExists( TempFile ) && Utilities.FileOrDirectoryExists( CustomFile ) )
 			{
 				return true;
 			}
@@ -125,8 +139,8 @@ namespace Dfo.Controlling
 		/// <exception cref="System.IO.IOException">Something went wrong while trying to fix the mixup.</exception>
 		public void FixBrokenFiles()
 		{
-			FileToSwitch.ThrowIfNull( "FileToSwitch" );
-			FileToSwitchWith.ThrowIfNull( "FileToSwitchWith" );
+			NormalFile.ThrowIfNull( "FileToSwitch" );
+			CustomFile.ThrowIfNull( "FileToSwitchWith" );
 			TempFile.ThrowIfNull( "TempFile" );
 
 			if ( !FilesBroken() )
@@ -134,41 +148,41 @@ namespace Dfo.Controlling
 				return;
 			}
 
-			if ( Utilities.FileOrDirectoryExists( TempFile ) && Utilities.FileOrDirectoryExists( FileToSwitch ) )
+			if ( Utilities.FileOrDirectoryExists( TempFile ) && Utilities.FileOrDirectoryExists( NormalFile ) )
 			{
 				// Rename FileToSwitch to FileToSwitchWith
 				try
 				{
-					File.Move( FileToSwitch, FileToSwitchWith );
+					File.Move( NormalFile, CustomFile );
 				}
 				catch ( Exception ex )
 				{
 					throw new IOException( string.Format( "Could not move {0} to {1}. {2}",
-						FileToSwitch, FileToSwitchWith, ex.Message ) );
+						NormalFile, CustomFile, ex.Message ) );
 				}
 
 				// Rename TempFile to FileToSwitch
 				try
 				{
-					File.Move( TempFile, FileToSwitch );
+					File.Move( TempFile, NormalFile );
 				}
 				catch ( Exception ex )
 				{
 					throw new IOException( string.Format( "Could not move {0} to {1}. {2}",
-						TempFile, FileToSwitch, ex.Message ) );
+						TempFile, NormalFile, ex.Message ) );
 				}
 			}
-			else if ( Utilities.FileOrDirectoryExists( TempFile ) && Utilities.FileOrDirectoryExists( FileToSwitchWith ) )
+			else if ( Utilities.FileOrDirectoryExists( TempFile ) && Utilities.FileOrDirectoryExists( CustomFile ) )
 			{
 				// Rename TempFile to FileToSwitch
 				try
 				{
-					File.Move( TempFile, FileToSwitch );
+					File.Move( TempFile, NormalFile );
 				}
 				catch ( Exception ex )
 				{
 					throw new IOException( string.Format( "Could not move {0} to {1}. {2}",
-						TempFile, FileToSwitch, ex.Message ) );
+						TempFile, NormalFile, ex.Message ) );
 				}
 			}
 			else

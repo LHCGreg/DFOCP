@@ -6,6 +6,9 @@ using Dfo.Controlling;
 
 namespace Dfo.ControlPanel
 {
+	/// <summary>
+	/// Null values indicate that a default should be used.
+	/// </summary>
 	class StartupSettings
 	{
 		public string Username { get; set; }
@@ -22,7 +25,8 @@ namespace Dfo.ControlPanel
 
 		public StartupSettings()
 		{
-			SwitchableFiles = new Dictionary<string, ISwitchableFile>();
+			SwitchableFiles = new Dictionary<string, SwitchableFile>();
+			SwitchFile = new Dictionary<string, bool?>();
 			ICollection<SwitchableFile> switchableFiles = SwitchableFile.GetSwitchableFiles();
 			foreach ( SwitchableFile switchableFile in switchableFiles )
 			{

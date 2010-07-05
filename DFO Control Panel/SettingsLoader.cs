@@ -89,12 +89,12 @@ namespace Dfo.ControlPanel
 			}
 
 			string settingsVersion = GetAttribute( settingsRoot, s_settingsVersion );
-			string majorVersion;
-			string minorVersion;
+			string majorVersion = s_majorVersion;
+			string minorVersion = s_minorVersion;
 			if ( settingsVersion == null )
 			{
 				Logging.Log.ErrorFormat( "Settings version not found. Assuming {0}.{1}",
-					s_majorVersion, s_minorVersion );
+					majorVersion, minorVersion );
 			}
 			else
 			{
@@ -102,9 +102,7 @@ namespace Dfo.ControlPanel
 				if ( versionSplit.Length < 2 )
 				{
 					Logging.Log.ErrorFormat( "Settings version '{0}' is badly formatted. Assuming {1}.{2}.",
-						settingsVersion, s_majorVersion, s_minorVersion );
-					majorVersion = s_majorVersion;
-					minorVersion = s_minorVersion;
+						settingsVersion, majorVersion, minorVersion );
 				}
 				else
 				{
@@ -132,7 +130,6 @@ namespace Dfo.ControlPanel
 			}
 			else
 			{
-				XElement switchable = null;
 				var switchableCollection = settingsRoot.Elements( s_switchableElement );
 				foreach ( XElement switchable in switchableCollection )
 				{
@@ -217,7 +214,7 @@ namespace Dfo.ControlPanel
 			}
 			AddElement( root, s_closePopup, GetBoolString( settings.ClosePopup ) );
 			AddElement( root, s_launchWindowed, GetBoolString( settings.LaunchWindowed ) );
-			foreach ( string switchableName in settings.SwitchFile )
+			foreach ( string switchableName in settings.SwitchFile.Keys )
 			{
 				XElement switchableElement = new XElement( s_switchableElement );
 				AddElement( switchableElement, s_switchableSwitch, GetBoolString( settings.SwitchFile[ switchableName ].Value ) );
