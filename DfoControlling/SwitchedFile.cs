@@ -13,8 +13,9 @@ namespace Dfo.Controlling
 		public string SwitchedPath { get; private set; }
 		public string SwitchedOriginalPath { get; private set; }
 		public string TempPath { get; private set; }
+		public FileType FileType { get; private set; }
 
-		internal SwitchedFile( string switchedPath, string switchedOriginalPath, string tempPath )
+		internal SwitchedFile( string switchedPath, string switchedOriginalPath, string tempPath, FileType fileType )
 		{
 			switchedPath.ThrowIfNull( "switchedPath" );
 			switchedOriginalPath.ThrowIfNull( "switchedOriginalPath" );
@@ -23,6 +24,7 @@ namespace Dfo.Controlling
 			SwitchedPath = switchedPath;
 			SwitchedOriginalPath = switchedOriginalPath;
 			TempPath = tempPath;
+			FileType = fileType;
 		}
 
 		/// <summary>
@@ -37,14 +39,16 @@ namespace Dfo.Controlling
 				return; // Already switched back (or tried and failed on the second move), so nothing to do here
 			}
 
+			Action<string, string> move = FileType.GetMoveFunction();
+			
 			bool firstMoveSuccessful = false;
 			try
 			{
-				File.Move( SwitchedPath, SwitchedOriginalPath );
+				move( SwitchedPath, SwitchedOriginalPath );
 				firstMoveSuccessful = true;
 				m_disposed = true;
 
-				File.Move( TempPath, SwitchedPath );
+				move( TempPath, SwitchedPath );
 			}
 			catch ( Exception ex )
 			{

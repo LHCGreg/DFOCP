@@ -102,18 +102,6 @@ namespace Dfo.ControlPanel
 				}
 			}
 
-			//if ( settings.SwitchSoundpacks.HasValue )
-			//{
-			//    if ( settings.SwitchSoundpacks.Value )
-			//    {
-			//        args.Append( " -soundswitch" );
-			//    }
-			//    else
-			//    {
-			//        args.Append( " -nosoundswitch" );
-			//    }
-			//}
-
 			if ( settings.DfoDir != null )
 			{
 				args.Append( string.Format( " \"--dfodir={0}\"", BatEscapeInQuotes( settings.DfoDir ) ) );
@@ -145,16 +133,6 @@ namespace Dfo.ControlPanel
 						switchableFile.TempFileArg, BatEscapeInQuotes( switchableFile.TempFile ) ) );
 				}
 			}
-
-			//if ( settings.CustomSoundpackDir != null )
-			//{
-			//    args.Append( string.Format( " \"--customsounddir={0}\"", BatEscapeInQuotes( settings.CustomSoundpackDir ) ) );
-			//}
-
-			//if ( settings.TempSoundpackDir != null )
-			//{
-			//    args.Append( string.Format( " \"--tempsounddir={0}\"", BatEscapeInQuotes( settings.TempSoundpackDir ) ) );
-			//}
 
 			return args.ToString();
 		}

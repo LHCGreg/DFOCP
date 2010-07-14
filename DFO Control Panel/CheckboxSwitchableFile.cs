@@ -8,7 +8,10 @@ using Dfo.Controlling;
 namespace Dfo.ControlPanel
 {
 	/// <summary>
-	/// Binds switchable file properties to a checkbox.
+	/// Binds switchable file properties to a checkbox. The Switch property is bound to the Checked and Enabled
+	/// properties of the checkbox and the checkbox will automatically check the switchability
+	/// when CustomFile, TempFile, and RelativeRoot are changed and set the checkbox's Enabled property
+	/// accordingly.
 	/// </summary>
 	class CheckboxSwitchableFile : IUiSwitchableFile
 	{
@@ -18,42 +21,38 @@ namespace Dfo.ControlPanel
 		public string WhetherToSwitchArg { get; private set; }
 		public string CustomFileArg { get; private set; }
 		public string TempFileArg { get; private set; }
-		public string SettingName { get; private set; }
 		public string DefaultCustomFile { get; private set; }
 		public string DefaultTempFile { get; private set; }
+		public FileType FileType { get; private set; }
 
 		private bool m_switchIfFilesOk;
 		public bool SwitchIfFilesOk
 		{
 			get { return m_switchIfFilesOk; }
-			set { m_switchIfFilesOk = value; Switch = value; }
+			set { m_switchIfFilesOk = value; if ( m_checkbox.Enabled ) m_checkbox.Checked = value; }
 		}
 
-		// XXX: Doing a get right after a set may not give you the same value back if the checkbox isn't enabled.
-		// That's kind of unintutive behavior.
 		public bool Switch
 		{
 			get
 			{
 				return m_checkbox.Enabled && m_checkbox.Checked;
 			}
-			set
-			{
-				if ( m_checkbox.Enabled )
-				{
-					m_checkbox.Checked = value;
-				}
-			}
 		}
 
 		private bool m_autoRefresh = true;
+		/// <summary>
+		/// The checkbox Enabled property is refreshed after setting any of the file properties or the
+		/// relative root if this property is true. You may wish to set it to false when doing several
+		/// changes at once to those properties.
+		/// </summary>
 		public bool AutoRefresh { get { return m_autoRefresh; } set { m_autoRefresh = value; } }
 
 		private string m_normalFile;
 		public string NormalFile
 		{
 			get { return m_normalFile; }
-			set { m_normalFile = value; if ( AutoRefresh ) Refresh(); }
+			private set { m_normalFile = value; if ( AutoRefresh ) Refresh(); }
 		}
 
 		private string m_customFile;
@@ -85,15 +84,18 @@ namespace Dfo.ControlPanel
 		public CheckboxSwitchableFile( CheckBox checkbox, ISwitchableFile other )
 		{
 			checkbox.ThrowIfNull( "checkbox" );
+			other.ThrowIfNull( "other" );
+
 			m_checkbox = checkbox;
 
 			AutoRefresh = false;
+
+			FileType = other.FileType;
 
 			Name = other.Name;
 			WhetherToSwitchArg = other.WhetherToSwitchArg;
 			CustomFileArg = other.CustomFileArg;
 			TempFileArg = other.TempFileArg;
-			SettingName = other.SettingName;
 			DefaultCustomFile = other.DefaultCustomFile;
 			DefaultTempFile = other.DefaultTempFile;
 			NormalFile = other.NormalFile;
@@ -101,7 +103,7 @@ namespace Dfo.ControlPanel
 			TempFile = other.TempFile;
 			RelativeRoot = other.RelativeRoot;
 
-			Switch = other.Switch;
+			//Switch = other.Switch;
 			SwitchIfFilesOk = other.Switch;
 
 			AutoRefresh = true;
@@ -115,11 +117,12 @@ namespace Dfo.ControlPanel
 		/// </summary>
 		public void Refresh()
 		{
+			Func<string, bool> exists = FileType.GetExistsFunction();
 			try
 			{
-				if ( NormalFile != null && Utilities.FileOrDirectoryExists( this.ResolveNormalFile() ) &&
-				   CustomFile != null && Utilities.FileOrDirectoryExists( this.ResolveCustomFile() ) &&
-				   TempFile != null && !Utilities.FileOrDirectoryExists( this.ResolveTempFile() ) )
+				if ( NormalFile != null && exists( this.ResolveNormalFile() ) &&
+				   CustomFile != null && exists( this.ResolveCustomFile() ) &&
+				   TempFile != null && !exists( this.ResolveTempFile() ) )
 				{
 					m_checkbox.Enabled = true;
 					if ( SwitchIfFilesOk )

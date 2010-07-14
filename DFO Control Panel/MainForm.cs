@@ -52,17 +52,6 @@ namespace Dfo.ControlPanel
 										   select file.AsFileSwitcher() );
 		}
 
-		//private bool SwitchSoundpacks
-		//{
-		//    get { return ctlSwitchSoundpacks.Checked; }
-		//    set
-		//    {
-		//        if ( ctlSwitchSoundpacks.Enabled )
-		//        {
-		//            ctlSwitchSoundpacks.Checked = value;
-		//        }
-		//    }
-		//}
 		private string Username { get { return ctlUsername.Text; } set { ctlUsername.Text = value; } }
 		private string Password { get { return ctlPassword.Text; } set { ctlPassword.Text = value; } }
 
@@ -100,77 +89,6 @@ namespace Dfo.ControlPanel
 			DfoDir = DfoLauncher.AutoDetectGameDir( Game.DFO );
 		}
 
-
-
-		//private string DefaultCustomSoundpackDir { get { return "SoundPacksCustom"; } }
-		//private string m_customSoundpackDir; // If this is a relative path, it is relative to DfoDir
-		///// <summary>
-		///// Gets the absolute path of the custom soundpack directory
-		///// </summary>
-		//private string CustomSoundpackDir
-		//{
-		//    get { return ResolveRelativeDfoPath( m_customSoundpackDir ); }
-		//}
-
-		///// <summary>
-		///// 
-		///// </summary>
-		///// <exception cref="System.ArgumentNullException">This property is attempted to be set to null.</exception>
-		///// <exception cref="System.ArgumentException">This property is attempted to be set to a path containing
-		///// invalid characters.</exception>
-		//private string CustomSoundpackDirRaw // Gets set when applying settings
-		//{
-		//    get { return m_customSoundpackDir; }
-		//    set
-		//    {
-		//        ValidatePath( value, "CustomSoundpackDirRaw" );
-		//        m_customSoundpackDir = value;
-		//    }
-		//}
-
-		//private string DefaultTempSoundpackDir { get { return "SoundPacksOriginal"; } }
-		//private string m_tempSoundpackDir; // If this is a relative path, it is relative to DfoDir
-		///// <summary>
-		///// Gets the absolute path of the temporary soundpack directory
-		///// </summary>
-		//private string TempSoundpackDir
-		//{
-		//    get { return ResolveRelativeDfoPath( m_tempSoundpackDir ); }
-		//}
-
-		///// <summary>
-		///// 
-		///// </summary>
-		///// <exception cref="System.ArgumentNullException">This property is attempted to be set to null.</exception>
-		///// <exception cref="System.ArgumentException">This property is attempted to be set to a path containing
-		///// invalid characters.</exception>
-		//private string TempSoundpackDirRaw // Gets set when applying settings
-		//{
-		//    get { return m_tempSoundpackDir; }
-		//    set
-		//    {
-		//        ValidatePath( value, "TempSoundpackDirRaw" );
-		//        m_tempSoundpackDir = value;
-		//    }
-		//}
-
-		///// <summary>
-		///// Assumes that possiblyRelativePath does not contain invalid characters.
-		///// </summary>
-		///// <param name="possiblyRelativePath"></param>
-		///// <returns></returns>
-		//private string ResolveRelativeDfoPath( string possiblyRelativePath )
-		//{
-		//    if ( Path.IsPathRooted( possiblyRelativePath ) )
-		//    {
-		//        return possiblyRelativePath;
-		//    }
-		//    else
-		//    {
-		//        return Path.Combine( DfoDir, possiblyRelativePath );
-		//    }
-		//}
-
 		/// <summary>
 		/// Throws an ArgumentException if <paramref name="path"/> contains invalid characters.
 		/// </summary>
@@ -198,13 +116,10 @@ namespace Dfo.ControlPanel
 			// than handling the "changed" events of all the relevant controls
 
 			m_launcher.Params.ClosePopup = ClosePopup;
-			//m_launcher.Params.CustomSoundpackDirRaw = CustomSoundpackDirRaw;
 			m_launcher.Params.GameDir = DfoDir;
 			m_launcher.Params.LaunchInWindowed = LaunchWindowed;
 			m_launcher.Params.Password = Password;
-			//m_launcher.Params.SwitchSoundpacks = SwitchSoundpacks;
 			m_launcher.Params.FilesToSwitch = GetFileSwitchers();
-			//m_launcher.Params.TempSoundpackDirRaw = TempSoundpackDirRaw;
 			m_launcher.Params.Username = Username;
 		}
 
@@ -267,7 +182,8 @@ namespace Dfo.ControlPanel
 
 		/// <summary>
 		/// Attempts to fix mixed-up switchable files usually caused by a system crash while the game is running.
-		/// The SwitchableFiles collection is used.
+		/// The SwitchableFiles collection is used. All switchable files are attempted to be fixed even if
+		/// they are not currently selected to be switched.
 		/// </summary>
 		private void FixSwitchableFilesIfNeeded()
 		{
@@ -304,45 +220,10 @@ namespace Dfo.ControlPanel
 			}
 		}
 
-		///// <summary>
-		///// Attempts to fix mixed-up soundpacks usually caused by a system crash while the game is running.
-		///// This function calls SetLauncherParams().
-		///// </summary>
-		//private void FixSoundpacksIfNeeded()
-		//{
-		//    Logging.Log.Info( "Checking for broken soundpacks..." );
-		//    SetLauncherParams();
-
-		//    if ( m_launcher.SoundpacksBroken() )
-		//    {
-		//        Logging.Log.Info( "Broken soundpack directories detected, attempting to fix them..." );
-		//        bool fixWorked = false;
-		//        try
-		//        {
-		//            m_launcher.FixBrokenSoundpacks();
-		//            fixWorked = true;
-		//        }
-		//        catch ( IOException ex )
-		//        {
-		//            // XXX: Should the program exit?
-		//            DisplayError( string.Format(
-		//                "Error while trying to fix broken soundpack directories. {0} I guess you'll have to fix them yourself.",
-		//                ex.Message ),
-		//                "Couldn't fix the soundpacks" );
-		//        }
-
-		//        if ( fixWorked )
-		//        {
-		//            DisplayInfo( "Your soundpack directories were detected to be mixed up (this is usually caused by a system crash). They have been fixed.",
-		//                "Soundpacks fixed" );
-		//        }
-		//    }
-		//    else
-		//    {
-		//        Logging.Log.Info( "Soundpacks are OK." );
-		//    }
-		//}
-
+		/// <summary>
+		/// Applies the command-line arguments and saved settings to the form's properties.
+		/// Command-line arguments take precedence, following by saved settings, followed by a default.
+		/// </summary>
 		private void ApplySettingsAndArguments()
 		{
 			Logging.Log.Debug( "Applying settings and arguments." );
@@ -364,7 +245,7 @@ namespace Dfo.ControlPanel
 
 			Func<string, string> validatePath = ( string dir ) =>
 			{
-				if ( LaunchParams.PathIsValid( dir ) )
+				if ( Utilities.PathIsValid( dir ) )
 				{
 					return null;
 				}
@@ -393,9 +274,6 @@ namespace Dfo.ControlPanel
 				}
 			}
 
-			//SettingsLoader.ApplySettingStruct( m_parsedArgs.Settings.SwitchSoundpacks, m_savedSettings.SwitchSoundpacks,
-			//null, "Switch soundpacks", ( bool switchSoundpacks ) => SwitchSoundpacks = switchSoundpacks,
-			//m_launcher.Params.SwitchSoundpacks, false );
 			foreach ( string switchableName in m_parsedArgs.Settings.SwitchableFiles.Keys )
 			{
 				ISwitchableFile switchableFromArgs = m_parsedArgs.Settings.SwitchableFiles[ switchableName ];
@@ -417,21 +295,10 @@ namespace Dfo.ControlPanel
 					( string tempFile ) => SwitchableFiles[ switchableName ].TempFile = tempFile,
 					switchableFromArgs.DefaultTempFile, false );
 
-				// Make sure to load the custom and temp first, because if they're still null, it interferes
-				// with the automatic checking of the checkbox
 				SettingsLoader.ApplySettingStruct( switchFromArgs, switchFromSettings, null,
 					string.Format( "Switch {0}", switchableFromArgs.NormalFile ),
 					( bool switchFile ) => SwitchableFiles[ switchableName ].SwitchIfFilesOk = switchFile, false, false );
 			}
-
-			//SettingsLoader.ApplySettingClass( m_parsedArgs.Settings.CustomSoundpackDir,
-			//    m_savedSettings.CustomSoundpackDir, validatePath, "Custom soundpack directory",
-			//    ( string customSoundDir ) => CustomSoundpackDirRaw = customSoundDir, DefaultCustomSoundpackDir,
-			//    false );
-
-			//SettingsLoader.ApplySettingClass( m_parsedArgs.Settings.TempSoundpackDir, m_savedSettings.TempSoundpackDir,
-			//    validatePath, "Temp soundpack directory", ( string tempSoundDir ) => TempSoundpackDirRaw = tempSoundDir,
-			//    DefaultTempSoundpackDir, false );
 
 			Logging.Log.Debug( "Done applying settings and arguments." );
 		}
@@ -490,12 +357,18 @@ namespace Dfo.ControlPanel
 			}
 		}
 
+		/// <summary>
+		/// Shows an "unknown progress" progress bar. Can be called outside the UI thread.
+		/// </summary>
 		private void ShowProgressBar()
 		{
 			ctlStatusStrip.BeginInvoke( () => ctlProgressBar.Visible = true );
 			ctlStatusStrip.BeginInvoke( () => ctlProgressBar.Style = ProgressBarStyle.Marquee );
 		}
 
+		/// <summary>
+		/// Hides the progress bar from ShowProgressBar(). Can be called outside the UI thread.
+		/// </summary>
 		private void HideProgressBar()
 		{
 			ctlStatusStrip.BeginInvoke( () => ctlProgressBar.Visible = false );
@@ -576,18 +449,35 @@ namespace Dfo.ControlPanel
 			Logging.Log.Debug( "End of thread." );
 		}
 
+		/// <summary>
+		/// Displays an error message.
+		/// </summary>
+		/// <param name="errorMessage"></param>
+		/// <param name="secondaryText"></param>
 		private void DisplayError( string errorMessage, string secondaryText )
 		{
 			Logging.Log.Error( errorMessage );
 			MessageBox.Show( errorMessage, secondaryText, MessageBoxButtons.OK, MessageBoxIcon.Error );
 		}
 
+		/// <summary>
+		/// Displays an informational message.
+		/// </summary>
+		/// <param name="message"></param>
+		/// <param name="secondaryText"></param>
 		private void DisplayInfo( string message, string secondaryText )
 		{
 			Logging.Log.Info( message );
 			MessageBox.Show( message, secondaryText, MessageBoxButtons.OK, MessageBoxIcon.Information );
 		}
 
+		/// <summary>
+		/// Shows the user a message and gets either an "OK" response or a "Cancel" response.
+		/// </summary>
+		/// <param name="message"></param>
+		/// <param name="secondaryText"></param>
+		/// <param name="defaultChoice"></param>
+		/// <returns></returns>
 		private bool GetOkCancel( string message, string secondaryText, bool defaultChoice )
 		{
 			MessageBoxDefaultButton defaultButton;
@@ -633,25 +523,6 @@ namespace Dfo.ControlPanel
 				Logging.Log.Debug( "Launcher thread joined." );
 			}
 
-			//StartupSettings settingsToSave = new StartupSettings();
-			//settingsToSave.ClosePopup = ClosePopup;
-			//settingsToSave.LaunchWindowed = LaunchWindowed;
-			//foreach ( IUiSwitchableFile switchableFile in SwitchableFiles )
-			//{
-			//    settingsToSave.SwitchableFiles.Add( switchableFile.Name, switchableFile );
-			//    settingsToSave.SwitchFile.Add( switchableFile.Name, switchableFile.Switch );
-			//}
-
-			//if ( RememberMe )
-			//{
-			//    settingsToSave.RememberUsername = true;
-			//    settingsToSave.Username = Username;
-			//}
-			//else
-			//{
-			//    settingsToSave.RememberUsername = false;
-			//}
-
 			SettingsLoader.Save( GetCurrentSettings() );
 		}
 
@@ -678,6 +549,10 @@ namespace Dfo.ControlPanel
 			UpdateSaveAsVisibility();
 		}
 
+		/// <summary>
+		/// Disables the "export to .bat" menu item if all required fields are not filled out or enables it
+		/// if everything required for exporting is ok.
+		/// </summary>
 		private void UpdateSaveAsVisibility()
 		{
 			if ( Username == string.Empty || Password == string.Empty )
@@ -746,14 +621,7 @@ namespace Dfo.ControlPanel
 			{
 				settings.DfoDir = DfoDir;
 			}
-			//if ( m_parsedArgs.Settings.CustomSoundpackDir != null )
-			//{
-			//    settings.CustomSoundpackDir = CustomSoundpackDir;
-			//}
-			//if ( m_parsedArgs.Settings.TempSoundpackDir != null )
-			//{
-			//    settings.CustomSoundpackDir = TempSoundpackDir;
-			//}
+
 			foreach ( IUiSwitchableFile uiBoundFile in SwitchableFiles.Values )
 			{
 				SwitchableFile switchableFile = new SwitchableFile( uiBoundFile );
@@ -771,15 +639,12 @@ namespace Dfo.ControlPanel
 
 				settings.SwitchableFiles[ switchableFile.Name ] = switchableFile;
 				settings.SwitchFile[ switchableFile.Name ] = switchableFile.Switch;
-				//settings.SwitchableFiles.Add( switchableFile.Name, switchableFile );
-				//settings.SwitchFile.Add( switchableFile.Name, switchableFile.Switch );
 			}
 
 			settings.ClosePopup = ClosePopup;
 			settings.LaunchWindowed = LaunchWindowed;
 			settings.Password = Password;
 			settings.RememberUsername = RememberMe;
-			//settings.SwitchSoundpacks = SwitchSoundpacks;
 			settings.Username = Username;
 
 			return settings;

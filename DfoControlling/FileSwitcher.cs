@@ -7,6 +7,51 @@ using System.IO;
 namespace Dfo.Controlling
 {
 	/// <summary>
+	/// Represents a kind of file system entity (regular file, directory).
+	/// </summary>
+	public enum FileType
+	{
+		/// <summary>
+		/// A normal file.
+		/// </summary>
+		RegularFile,
+
+		/// <summary>
+		/// A directory.
+		/// </summary>
+		Directory,
+	}
+
+	public static class FileTypeExtensions
+	{
+		public static Action<string, string> GetMoveFunction( this FileType fileType )
+		{
+			switch ( fileType )
+			{
+				case FileType.RegularFile:
+					return File.Move;
+				case FileType.Directory:
+					return Directory.Move;
+				default:
+					throw new Exception( "Oops, missed a file type." );
+			}
+		}
+
+		public static Func<string, bool> GetExistsFunction( this FileType fileType )
+		{
+			switch ( fileType )
+			{
+				case FileType.RegularFile:
+					return File.Exists;
+				case FileType.Directory:
+					return Directory.Exists;
+				default:
+					throw new Exception( "Oops, missed a file type." );
+			}
+		}
+	}
+
+	/// <summary>
 	/// A class for temporarily switching two files or directories.
 	/// </summary>
 	public class FileSwitcher
@@ -15,20 +60,37 @@ namespace Dfo.Controlling
 		/// The absolute path of the file to switch out.
 		/// </summary>
 		public string NormalFile { get; set; }
-		
+
 		/// <summary>
 		/// The absolute path of the file to switch in.
 		/// </summary>
 		public string CustomFile { get; set; }
-		
+
 		/// <summary>
 		/// The absolute path of the file of use as a temporary location for the file being switched out.
 		/// </summary>
 		public string TempFile { get; set; }
 
+		private FileType m_fileType = FileType.RegularFile;
+		/// <summary>
+		/// What kind of file system entity the file is supposed to be (file, directory).
+		/// </summary>
+		public FileType FileType { get { return m_fileType; } set { m_fileType = value; } }
+
 		public FileSwitcher()
 		{
 			;
+		}
+
+		public FileSwitcher Clone()
+		{
+			FileSwitcher clone = new FileSwitcher();
+			clone.NormalFile = this.NormalFile;
+			clone.CustomFile = this.CustomFile;
+			clone.TempFile = this.TempFile;
+			clone.FileType = this.FileType;
+
+			return clone;
 		}
 
 		/// <summary>
@@ -44,15 +106,17 @@ namespace Dfo.Controlling
 			CustomFile.ThrowIfNull( "FileToSwitchWith" );
 			TempFile.ThrowIfNull( "TempFile" );
 
+			Action<string, string> move = FileType.GetMoveFunction();
+
 			bool firstMoveSuccessful = false;
 			try
 			{
-				File.Move( NormalFile, TempFile );
+				move( NormalFile, TempFile );
 				firstMoveSuccessful = true;
 
-				File.Move( CustomFile, NormalFile );
+				move( CustomFile, NormalFile );
 
-				return new SwitchedFile( NormalFile, CustomFile, TempFile );
+				return new SwitchedFile( NormalFile, CustomFile, TempFile, FileType );
 			}
 			catch ( Exception ex )
 			{
@@ -63,7 +127,7 @@ namespace Dfo.Controlling
 				{
 					try
 					{
-						File.Move( TempFile, NormalFile );
+						move( TempFile, NormalFile );
 						undoSuccess = true;
 					}
 					catch ( Exception ex2 )
@@ -101,6 +165,43 @@ namespace Dfo.Controlling
 			}
 		}
 
+		// The soundpack directories go through the following states:
+
+		// normal soundpacks: soundpackDir
+		// custom soundpacks: customSoundpackDir
+
+		// Rename soundpackDir to tempSoundpackDir
+
+		// normal soundpacks: tempSoundpackDir
+		// custom soundpacks: customSoundpackDir
+
+		// Rename customSoundpackDir to soundpackDir
+
+		// normal soundpacks: tempSoundpackDir
+		// custom soundpacks: soundpackDir
+
+		// Game runs...
+		// Game stops...
+
+		// Rename soundpackDir to customSoundpackDir
+
+		// normal soundpacks: tempSoundpackDir
+		// custom soundpacks: customSoundpackDir
+
+		// Rename tempSoundpackDir to soundpackDir
+
+		// normal soundpacks: soundpackDir
+		// custom soundpacks: customSoundpackDir
+
+		// That makes the abnormal states:
+		//
+		// normal soundpacks: tempSoundpackDir
+		// custom soundpacks: customSoundpackDir
+		//
+		// (this is the common (unfortunately) case of a crash while the game is running
+		// normal soundpacks: tempSoundpackDir
+		// custom soundpacks: soundpackDir
+		
 		/// <summary>
 		/// Checks if the files of a switchable file (normal and custom) are not where they should be
 		/// (perhaps because of a crash). This only checks if it is something that can be fixed by
@@ -110,18 +211,20 @@ namespace Dfo.Controlling
 		/// ends.
 		/// </summary>
 		/// <returns>True if the files are in an abnormal state that can be fixed by
-		/// <c>FixBrokenSwitchableFiles()</c>.</returns>
+		/// <c>FixBrokenFiles()</c>.</returns>
 		public bool FilesBroken()
 		{
 			NormalFile.ThrowIfNull( "FileToSwitch" );
 			CustomFile.ThrowIfNull( "FileToSwitchWith" );
 			TempFile.ThrowIfNull( "TempFile" );
 
-			if ( Utilities.FileOrDirectoryExists( TempFile ) && Utilities.FileOrDirectoryExists( NormalFile ) )
+			Func<string, bool> exists = FileType.GetExistsFunction();
+
+			if ( exists( TempFile ) && exists( NormalFile ) )
 			{
 				return true;
 			}
-			else if ( Utilities.FileOrDirectoryExists( TempFile ) && Utilities.FileOrDirectoryExists( CustomFile ) )
+			else if ( exists( TempFile ) && exists( CustomFile ) )
 			{
 				return true;
 			}
@@ -148,12 +251,15 @@ namespace Dfo.Controlling
 				return;
 			}
 
-			if ( Utilities.FileOrDirectoryExists( TempFile ) && Utilities.FileOrDirectoryExists( NormalFile ) )
+			Action<string, string> move = FileType.GetMoveFunction();
+			Func<string, bool> exists = FileType.GetExistsFunction();
+
+			if ( exists( TempFile ) && exists( NormalFile ) )
 			{
 				// Rename FileToSwitch to FileToSwitchWith
 				try
 				{
-					File.Move( NormalFile, CustomFile );
+					move( NormalFile, CustomFile );
 				}
 				catch ( Exception ex )
 				{
@@ -164,7 +270,7 @@ namespace Dfo.Controlling
 				// Rename TempFile to FileToSwitch
 				try
 				{
-					File.Move( TempFile, NormalFile );
+					move( TempFile, NormalFile );
 				}
 				catch ( Exception ex )
 				{
@@ -172,12 +278,12 @@ namespace Dfo.Controlling
 						TempFile, NormalFile, ex.Message ) );
 				}
 			}
-			else if ( Utilities.FileOrDirectoryExists( TempFile ) && Utilities.FileOrDirectoryExists( CustomFile ) )
+			else if ( exists( TempFile ) && exists( CustomFile ) )
 			{
 				// Rename TempFile to FileToSwitch
 				try
 				{
-					File.Move( TempFile, NormalFile );
+					move( TempFile, NormalFile );
 				}
 				catch ( Exception ex )
 				{

@@ -34,12 +34,8 @@ namespace Dfo.ControlPanel
 				{ "noclosepopup", "Don't close the popup when the game is done.", argExistence => Settings.ClosePopup = !(argExistence != null) },
 				{ "window|windowed", "Launch the game in windowed mode.", argExistence => Settings.LaunchWindowed = (argExistence != null) },
 				{ "full", "Don't launch the game in windowed mode. This is the default.", argExistence => Settings.LaunchWindowed = !(argExistence != null) },
-				//{ "soundswitch", "Switch soundpacks.", argExistence => Settings.SwitchSoundpacks = (argExistence != null) },
-				//{ "nosoundswitch", "Don't switch soundpacks. This is the default.", argExistence => Settings.SwitchSoundpacks = !(argExistence != null) },
 				{ "dfodir=", "Directory where DFO is. Defaults to the autodetected DFO directory.",
 					argValue => { ThrowIfPathNotValid(argValue, "dfodir"); Settings.DfoDir = argValue; } },
-				//{ "customsounddir=", "Directory where custom soundpacks are if switching soundpacks. If a relative path is given, it is relative to dfodir. Defaults to SoundPacksCustom.", argValue => Settings.CustomSoundpackDir = argValue },
-				//{ "tempsounddir=", "Directory to rename the normal soundpack directory while the game is running if switching soundpacks. If a relative path is given, it is relative to dfodir. Defaults to SoundPacksOriginal.", argValue => Settings.TempSoundpackDir = argValue },
 				{ "<>", argValue => // Default handler - Report unrecognized arguments
 					{
 						string message = string.Format("Unrecognized command-line argument: {0}", argValue);
@@ -51,15 +47,21 @@ namespace Dfo.ControlPanel
 				}
 			};
 
-			foreach ( ISwitchableFile switchableFile in Settings.SwitchableFiles.Values )
+			// Add the arguments for all switchable files
+			foreach ( SwitchableFile switchableFile in Settings.SwitchableFiles.Values )
 			{
+				// Cannot use switchableFile.Name in the lambdas because the switchableFile
+				// variable has only one instance - so the switch and noswitch arguments
+				// for all switchables would actually be bound to the last switchable.
+				string switchableName = switchableFile.Name;
+
 				optionSet.Add( string.Format( "{0}", switchableFile.WhetherToSwitchArg ),
 					string.Format( "Switch {0}", switchableFile.NormalFile ),
-					argExistence => Settings.SwitchFile[ switchableFile.Name ] = ( argExistence != null ) );
+					argExistence => Settings.SwitchFile[ switchableName ] = ( argExistence != null ) );
 
 				optionSet.Add( string.Format( "no{0}", switchableFile.WhetherToSwitchArg ),
 					string.Format( "Don't switch {0}", switchableFile.NormalFile ),
-					argExistence => Settings.SwitchFile[ switchableFile.Name ] = !( argExistence != null ) );
+					argExistence => Settings.SwitchFile[ switchableName ] = !( argExistence != null ) );
 
 				optionSet.Add( string.Format( "{0}=", switchableFile.CustomFileArg ),
 					string.Format( "File or directory to switch {0} with. If a relative path is given, it is relative to dfodir. Defaults to {1}.",
@@ -85,7 +87,7 @@ namespace Dfo.ControlPanel
 
 		private void ThrowIfPathNotValid( string path, string optionName )
 		{
-			if ( !LaunchParams.PathIsValid( path ) )
+			if ( !Utilities.PathIsValid( path ) )
 			{
 				throw new OptionException( string.Format( "{0} is not a valid path.", path ), optionName );
 			}

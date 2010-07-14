@@ -6,20 +6,72 @@ using Dfo.Controlling;
 
 namespace Dfo.ControlPanel
 {
+	/// <summary>
+	/// Carries information about a switchable file.
+	/// </summary>
 	interface ISwitchableFile
 	{
+		/// <summary>
+		/// The Name is used to uniquely identify a switchable file. It is used in saved settings and
+		/// for the UI to know which switchable file objects to bind UI controls to.
+		/// </summary>
 		string Name { get; }
+		
+		/// <summary>
+		/// Name of the command-line argument to use for this file. The negative command-line argument is
+		/// "no{0}" where {0} is this property.
+		/// </summary>
 		string WhetherToSwitchArg { get; }
+		
+		/// <summary>
+		/// Name of the command-line argument for specifying explicitly the custom file to switch with.
+		/// </summary>
 		string CustomFileArg { get; }
+		
+		/// <summary>
+		/// Name of the command-line argument for specifying explicitly the temporary file to use when switching.
+		/// </summary>
 		string TempFileArg { get; }
-		string SettingName { get; }
+		
+		/// <summary>
+		/// The default custom file to use if it is not explicitly specified.
+		/// </summary>
 		string DefaultCustomFile { get; }
+		
+		/// <summary>
+		/// The default temp file to use if it is not explicitly specified.
+		/// </summary>
 		string DefaultTempFile { get; }
-		bool Switch { get; set; }
-		string NormalFile { get; set; }
-		string CustomFile { get; set; }
-		string TempFile { get; set; }
-		string RelativeRoot { get; set; }
+		
+		/// <summary>
+		/// Gets whether or not code using this switchable file should switch the file when launching the game.
+		/// </summary>
+		bool Switch { get; }
+		
+		/// <summary>
+		/// Gets the (possibly relative) path of the file normally used by the game.
+		/// </summary>
+		string NormalFile { get; }
+		
+		/// <summary>
+		/// Gets the (possibly relative) path of the custom file the user might want to switch in.
+		/// </summary>
+		string CustomFile { get; }
+		
+		/// <summary>
+		/// Gets the (possibly relative) path of the file to use as a temporary when switching.
+		/// </summary>
+		string TempFile { get; }
+		
+		/// <summary>
+		/// If NormalFile, CustomFile, or TempFile are relative, they are relative to this.
+		/// </summary>
+		string RelativeRoot { get; }
+		
+		/// <summary>
+		/// Type of the file to switch (file, directory).
+		/// </summary>
+		FileType FileType { get; }
 	}
 
 	static class ISwitchableFileExtensions
@@ -61,22 +113,6 @@ namespace Dfo.ControlPanel
 		public static string ResolveTempFile( this ISwitchableFile switchableFile )
 		{
 			return Utilities.ResolvePossiblyRelativePath( switchableFile.TempFile, switchableFile.RelativeRoot );
-		}
-
-		/// <summary>
-		/// Sets CustomFile and TempFile to DefaultCustomFile and DefaultTempFile if they are null.
-		/// </summary>
-		/// <param name="switchableFile"></param>
-		public static void ApplyDefaults( this ISwitchableFile switchableFile )
-		{
-			if ( switchableFile.CustomFile == null )
-			{
-				switchableFile.CustomFile = switchableFile.DefaultCustomFile;
-			}
-			if ( switchableFile.TempFile == null )
-			{
-				switchableFile.TempFile = switchableFile.DefaultTempFile;
-			}
 		}
 
 		/// <summary>
@@ -137,6 +173,7 @@ namespace Dfo.ControlPanel
 			fileSwitcher.NormalFile = switchableFile.ResolveNormalFile();
 			fileSwitcher.CustomFile = switchableFile.ResolveCustomFile();
 			fileSwitcher.TempFile = switchableFile.ResolveTempFile();
+			fileSwitcher.FileType = switchableFile.FileType;
 			return fileSwitcher;
 		}
 	}

@@ -271,6 +271,25 @@ namespace Dfo.ControlPanel
 			}
 		}
 
+		/// <summary>
+		/// Applies a setting given the command-line value if present, saved setting if present, default,
+		/// and a delegate that does the actual applying given the value to apply.
+		/// </summary>
+		/// <typeparam name="TSetting">Type of the setting.</typeparam>
+		/// <param name="cmdHas">Whether a value was specified on the command-line.</param>
+		/// <param name="fromCmd">The value from the command-line if one was specified. Otherwise
+		/// this parameter is ignored.</param>
+		/// <param name="settingsHas">Whether a value was specified in the saved settings.</param>
+		/// <param name="fromSettings">The value from the saved settings if one was specified. Otherwise
+		/// this parameter is ignored.</param>
+		/// <param name="validate">A validation function that returns a non-null error message string if
+		/// validation fails or returns null if validation succeeds.</param>
+		/// <param name="settingName">The name of the setting (used in logging).</param>
+		/// <param name="apply">A delegate that does the actual applying given a setting value.</param>
+		/// <param name="defaultValue">A default setting value to use if command-line and saved settings do
+		/// not provide a valid value.</param>
+		/// <param name="suppressValueDisplay">Do not display the value of the setting when logging
+		/// (useful for things like passwords).</param>
 		public static void ApplySetting<TSetting>( bool cmdHas, TSetting fromCmd, bool settingsHas, TSetting fromSettings, Func<TSetting, string> validate, string settingName, Action<TSetting> apply, TSetting defaultValue, bool suppressValueDisplay )
 		{
 			Logging.Log.DebugFormat( "Getting value for setting '{0}'.", settingName );
@@ -334,6 +353,18 @@ namespace Dfo.ControlPanel
 			apply( settingValue );
 		}
 
+		/// <summary>
+		/// Struct front-end to ApplySetting. A null value from command-line or settings indicates no value
+		/// was given.
+		/// </summary>
+		/// <typeparam name="TSetting"></typeparam>
+		/// <param name="fromCmd"></param>
+		/// <param name="fromSettings"></param>
+		/// <param name="validate"></param>
+		/// <param name="settingName"></param>
+		/// <param name="apply"></param>
+		/// <param name="defaultValue"></param>
+		/// <param name="suppressValueDisplay"></param>
 		public static void ApplySettingStruct<TSetting>( TSetting? fromCmd, TSetting? fromSettings, Func<TSetting, string> validate, string settingName, Action<TSetting> apply, TSetting defaultValue, bool suppressValueDisplay ) where TSetting : struct
 		{
 			ApplySetting<TSetting>( fromCmd.HasValue, fromCmd.HasValue ? fromCmd.Value : default( TSetting ),
@@ -341,6 +372,18 @@ namespace Dfo.ControlPanel
 				validate, settingName, apply, defaultValue, suppressValueDisplay );
 		}
 
+		/// <summary>
+		/// Class front-end to ApplySetting. A null value from command-line or settings indicates no value
+		/// was given.
+		/// </summary>
+		/// <typeparam name="TSetting"></typeparam>
+		/// <param name="fromCmd"></param>
+		/// <param name="fromSettings"></param>
+		/// <param name="validate"></param>
+		/// <param name="settingName"></param>
+		/// <param name="apply"></param>
+		/// <param name="defaultValue"></param>
+		/// <param name="suppressValueDisplay"></param>
 		public static void ApplySettingClass<TSetting>( TSetting fromCmd, TSetting fromSettings, Func<TSetting, string> validate, string settingName, Action<TSetting> apply, TSetting defaultValue, bool suppressValueDisplay ) where TSetting : class
 		{
 			ApplySetting<TSetting>( fromCmd != null, fromCmd, fromSettings != null, fromSettings, validate,

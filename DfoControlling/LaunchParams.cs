@@ -89,106 +89,6 @@ namespace Dfo.Controlling
 		/// Gets or sets the files that should be switched to avoid them being patched over.
 		/// </summary>
 		public ICollection<FileSwitcher> FilesToSwitch { get { return m_filesToSwitch; } set { m_filesToSwitch = value; } }
-		
-		///// <summary>
-		///// Gets or sets whether to switch soundpacks to use different sounds in the game. Only supported for DFO.
-		///// Default: false
-		///// </summary>
-		//public bool SwitchSoundpacks { get; set; }
-
-		///// <summary>
-		///// Gets the path of the directory containing the normal soundpacks. This property only makes sense for DFO.
-		///// </summary>
-		//public string SoundpackDir
-		//{
-		//    get
-		//    {
-		//        return GetFullPath( "SoundPacks" );
-		//    }
-		//}
-
-		//private string m_customSoundpackDir;
-		///// <summary>
-		///// Gets the absolute path to the directory containing the soundpacks to switch to. If
-		///// <c>SwitchSoundpacks</c> is false, this setting is not used. If <c>CustomSoundpackDirRaw</c> is set
-		///// to a relative path, it is relative to <c>GameDir</c> and the value of this property will change as
-		///// <c>GameDir</c> does.
-		///// This property only makes sense for DFO.
-		///// Default: SoundPacksCustom
-		///// </summary>
-		//public string CustomSoundpackDir
-		//{
-		//    get { return GetFullPath( m_customSoundpackDir ); }
-		//}
-
-		///// <summary>
-		///// Gets or sets the directory containing the soundpacks to switch to. If <c>SwitchSoundpacks</c> is
-		///// false, this setting is not used. If set to a relative path, <c>CustomSoundpackDir</c> will be relative
-		///// to <c>GameDir</c>. Getting this directory will return a relative path if a relative was specified,
-		///// unlike <c>CustomSoundpackDir</c> which will expand to an absolute path.
-		///// This property only makes sense for DFO.
-		///// Default: SoundPacksCustom
-		///// </summary>
-		///// <exception cref="System.ArgumentNullException">The value was attempted to be set to null.</exception>
-		///// <exception cref="System.ArgumentException">The value was attempted to be set to a path that contains
-		///// characters in <c>System.IO.Path.GetInvalidPathChars().</c></exception>
-		//public string CustomSoundpackDirRaw
-		//{
-		//    get { return m_customSoundpackDir; }
-		//    set
-		//    {
-		//        ValidatePath( value, "CustomSoundpackDirRaw" );
-		//        m_customSoundpackDir = value;
-		//    }
-		//}
-
-		///// <summary>
-		///// Gets the default custom soundpack directory. If it is a relative path, it is relative to GameDir.
-		///// This property only makes sense for DFO.
-		///// </summary>
-		//private string CustomSoundpackDirDefault { get { return "SoundPacksCustom"; } }
-
-		//private string m_tempSoundpackDir;
-		///// <summary>
-		///// Gets the absolute path to the directory to put the original soundpacks in while the game is running.
-		///// If <c>SwitchSoundpacks</c> is false, this setting is not used. If <c>TempSoundpackDirRaw</c> is set
-		///// to a relative path, it is relative to <c>GameDir</c> and the value of this property will change as
-		///// <c>GameDir</c> does.
-		///// This property only makes sense for DFO.
-		///// Default: SoundPacksCustom
-		///// </summary>
-		//public string TempSoundpackDir
-		//{
-		//    get { return GetFullPath( m_tempSoundpackDir ); }
-		//}
-
-		///// <summary>
-		///// Gets or sets the directory to put the original soundpacks in while the game is running. If
-		///// <c>SwitchSoundpacks</c> is false, this setting is not used. If set to a relative path,
-		///// <c>TempSoundpackDir</c> will be relative to <c>GameDir</c>. Getting this directory will return
-		///// a relative path if a relative was specified, unlike <c>TempSoundpackDir</c> which will expand to
-		///// an absolute path.
-		///// This property only makes sense for DFO.
-		///// Default: SoundPacksOriginal
-		///// </summary>
-		///// <exception cref="System.ArgumentNullException">The value was attempted to be set to null.</exception>
-		///// <exception cref="System.ArgumentException">The value was attempted to be set to a path that contains
-		///// characters in <c>System.IO.Path.GetInvalidPathChars().</c></exception>
-		//public string TempSoundpackDirRaw
-		//{
-		//    get { return m_tempSoundpackDir; }
-		//    set
-		//    {
-		//        ValidatePath( value, "TempSoundpackDirRaw" );
-		//        m_tempSoundpackDir = value;
-		//    }
-		//}
-
-		///// <summary>
-		///// Gets the default temporary soundpack directory as a subdirectory of GameDir. This only makes sense
-		///// for DFO.
-		///// </summary>
-		//private string TempSoundpackDirDefault { get { return "SoundPacksOriginal"; } }
 
 		/// <summary>
 		/// Gets or sets whether to kill the popup at the end of the game. Only supported for DFO.
@@ -258,9 +158,6 @@ namespace Dfo.Controlling
 			Password = null;
 			LoginTimeoutInMs = 10000;
 			GameDir = GameDirDefault;
-			//SwitchSoundpacks = false;
-			//CustomSoundpackDirRaw = CustomSoundpackDirDefault;
-			//TempSoundpackDirRaw = TempSoundpackDirDefault;
 			ClosePopup = true;
 			LaunchInWindowed = null;
 			DfoWindowClassName = "DFO";
@@ -292,10 +189,13 @@ namespace Dfo.Controlling
 			clone.Password = this.Password;
 			clone.LoginTimeoutInMs = this.LoginTimeoutInMs;
 			clone.GameDir = this.GameDir;
-			clone.FilesToSwitch = new List<FileSwitcher>( this.FilesToSwitch );
-			//clone.SwitchSoundpacks = this.SwitchSoundpacks;
-			//clone.CustomSoundpackDirRaw = this.CustomSoundpackDirRaw;
-			//clone.TempSoundpackDirRaw = this.TempSoundpackDirRaw;
+
+			clone.FilesToSwitch = new List<FileSwitcher>( this.FilesToSwitch.Count );
+			foreach ( FileSwitcher fileToSwitch in this.FilesToSwitch )
+			{
+				clone.FilesToSwitch.Add( fileToSwitch.Clone() );
+			}
+
 			clone.ClosePopup = this.ClosePopup;
 			clone.LaunchInWindowed = this.LaunchInWindowed;
 
@@ -318,7 +218,6 @@ namespace Dfo.Controlling
 
 			builder.AppendLine( string.Format( "Game: {0}", GameToLaunch ) );
 			builder.AppendLine( string.Format( "Close popup: {0}", ClosePopup ) );
-			//builder.AppendLine( string.Format( "Custom soundpack dir: {0}", CustomSoundpackDirRaw ) );
 			builder.AppendLine( string.Format( "Game dir: {0}", GameDir ) );
 			builder.AppendLine( string.Format( "DFO exe: {0}", DfoExe ) );
 			builder.AppendLine( string.Format( "DFO launcher exe: {0}", DfoLauncherExe ) );
@@ -335,9 +234,6 @@ namespace Dfo.Controlling
 					fileToSwitch.NormalFile, fileToSwitch.CustomFile, fileToSwitch.TempFile ) );
 			}
 
-			//builder.AppendLine( string.Format( "Soundpack dir: {0}", SoundpackDir ) );
-			//builder.AppendLine( string.Format( "Switch soundpacks: {0}", SwitchSoundpacks ) );
-			//builder.AppendLine( string.Format( "Temp soundpack dir: {0}", TempSoundpackDirRaw ) );
 			builder.AppendLine( string.Format( "Username present: {0}", Username != null ) );
 			builder.Append( string.Format( "Password present: {0}", Password != null ) );
 			// DO NOT include the username or password!
@@ -356,28 +252,6 @@ namespace Dfo.Controlling
 			{
 				throw new ArgumentException( string.Format(
 					"{0} contains characters that are invalid in a path.", path ) );
-			}
-		}
-
-		/// <summary>
-		/// Determines if a string is a valid path.
-		/// </summary>
-		/// <param name="path">A path.</param>
-		/// <returns>True if <paramref name="path"/> is not null and has no invalid characters.</returns>
-		public static bool PathIsValid( string path )
-		{
-			if ( path == null )
-			{
-				return false;
-			}
-			char[] invalidChars = Path.GetInvalidPathChars();
-			if ( path.IndexOfAny( invalidChars ) != -1 )
-			{
-				return false;
-			}
-			else
-			{
-				return true;
 			}
 		}
 
