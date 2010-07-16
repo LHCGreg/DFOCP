@@ -53,6 +53,7 @@ namespace Dfo.ControlPanel
 				// Cannot use switchableFile.Name in the lambdas because the switchableFile
 				// variable has only one instance - so the switch and noswitch arguments
 				// for all switchables would actually be bound to the last switchable.
+				SwitchableFile switchableFileInstance = switchableFile;
 				string switchableName = switchableFile.Name;
 
 				optionSet.Add( string.Format( "{0}", switchableFile.WhetherToSwitchArg ),
@@ -68,8 +69,8 @@ namespace Dfo.ControlPanel
 					switchableFile.NormalFile, switchableFile.DefaultCustomFile ),
 					 argValue =>
 					 {
-						 ThrowIfPathNotValid( argValue, switchableFile.CustomFileArg );
-						 switchableFile.CustomFile = argValue;
+						 ThrowIfPathNotValid( argValue, switchableFileInstance.CustomFileArg );
+						 switchableFileInstance.CustomFile = argValue;
 					 } );
 
 				optionSet.Add( string.Format( "{0}=", switchableFile.TempFileArg ),
@@ -77,8 +78,8 @@ namespace Dfo.ControlPanel
 					switchableFile.NormalFile, switchableFile.DefaultTempFile ),
 					argValue =>
 					{
-						ThrowIfPathNotValid( argValue, switchableFile.TempFileArg );
-						switchableFile.TempFile = argValue;
+						ThrowIfPathNotValid( argValue, switchableFileInstance.TempFileArg );
+						switchableFileInstance.TempFile = argValue;
 					} );
 			}
 

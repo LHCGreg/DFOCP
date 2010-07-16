@@ -15,6 +15,10 @@ namespace Dfo.ControlPanel
 	/// </summary>
 	class CheckboxSwitchableFile : IUiSwitchableFile
 	{
+		// This class remembers what the user wants so that the checkbox can be checked or unchecked when
+		// re-enabling the checkbox after discovering that the files are switchable in reality.
+		// When the checkbox is enabled, this class will set the Checked state to SwitchIfFilesOk.
+		// When the checkbox is disabled, this class will also uncheck the checkbox.
 		private CheckBox m_checkbox;
 
 		public string Name { get; private set; }
@@ -88,6 +92,26 @@ namespace Dfo.ControlPanel
 
 			m_checkbox = checkbox;
 
+			m_checkbox.CheckedChanged += ( object sender, EventArgs e ) =>
+			{
+				if ( m_checkbox.Enabled )
+				{
+					m_switchIfFilesOk = m_checkbox.Checked;
+				}
+			};
+
+			m_checkbox.EnabledChanged += ( object sender, EventArgs e ) =>
+			{
+				if ( m_checkbox.Enabled )
+				{
+					m_checkbox.Checked = SwitchIfFilesOk;
+				}
+				else
+				{
+					m_checkbox.Checked = false;
+				}
+			};
+
 			AutoRefresh = false;
 
 			FileType = other.FileType;
@@ -103,7 +127,6 @@ namespace Dfo.ControlPanel
 			TempFile = other.TempFile;
 			RelativeRoot = other.RelativeRoot;
 
-			//Switch = other.Switch;
 			SwitchIfFilesOk = other.Switch;
 
 			AutoRefresh = true;
@@ -120,34 +143,20 @@ namespace Dfo.ControlPanel
 			Func<string, bool> exists = FileType.GetExistsFunction();
 			try
 			{
-				if ( NormalFile != null && exists( this.ResolveNormalFile() ) &&
-				   CustomFile != null && exists( this.ResolveCustomFile() ) &&
-				   TempFile != null && !exists( this.ResolveTempFile() ) )
+				if ( NormalFile != null && CustomFile != null && TempFile != null &&
+					exists( this.ResolveNormalFile() ) && exists( this.ResolveCustomFile() )
+					&& !exists( this.ResolveTempFile() ) )
 				{
 					m_checkbox.Enabled = true;
-					if ( SwitchIfFilesOk )
-					{
-						m_checkbox.Checked = true;
-					}
 				}
 				else
 				{
-					if ( m_checkbox.Enabled )
-					{
-						m_switchIfFilesOk = m_checkbox.Checked;
-					}
 					m_checkbox.Enabled = false;
-					m_checkbox.Checked = false;
 				}
 			}
 			catch ( ArgumentException )
 			{
-				if ( m_checkbox.Enabled )
-				{
-					m_switchIfFilesOk = m_checkbox.Checked;
-				}
 				m_checkbox.Enabled = false;
-				m_checkbox.Checked = false;
 			}
 		}
 	}

@@ -82,11 +82,7 @@ namespace Dfo.ControlPanel
 				if ( m_parsedArgs.Settings.SwitchFile[ switchableFile.Name ].HasValue &&
 				   m_parsedArgs.Settings.SwitchFile[ switchableFile.Name ].Value )
 				{
-					FileSwitcher fileToSwitch = new FileSwitcher();
-					fileToSwitch.NormalFile = switchableFile.ResolveNormalFile();
-					fileToSwitch.CustomFile = switchableFile.ResolveCustomFile();
-					fileToSwitch.TempFile = switchableFile.ResolveTempFile();
-
+					FileSwitcher fileToSwitch = switchableFile.AsFileSwitcher();
 					m_launcher.Params.FilesToSwitch.Add( fileToSwitch );
 				}
 			}
