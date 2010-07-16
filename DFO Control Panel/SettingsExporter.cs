@@ -21,22 +21,10 @@ namespace Dfo.ControlPanel
 		/// writing to it.</exception>
 		public static void ExportToBat( StartupSettings settings, string exportPath )
 		{
-			if ( settings == null )
-			{
-				throw new ArgumentNullException( "settings" );
-			}
-			if ( exportPath == null )
-			{
-				throw new ArgumentNullException( "exportPath" );
-			}
-			if ( settings.Username == null )
-			{
-				throw new ArgumentNullException( "settings.Username" );
-			}
-			if ( settings.Password == null )
-			{
-				throw new ArgumentNullException( "settings.Password" );
-			}
+			settings.ThrowIfNull( "settings" );
+			exportPath.ThrowIfNull( "exportPath" );
+			settings.Username.ThrowIfNull( "settings.Username" );
+			settings.Password.ThrowIfNull( "settings.Password" );
 
 			StringBuilder batContent = new StringBuilder();
 			batContent.AppendLine( "@echo off" );
@@ -114,31 +102,36 @@ namespace Dfo.ControlPanel
 				}
 			}
 
-			if ( settings.SwitchSoundpacks.HasValue )
-			{
-				if ( settings.SwitchSoundpacks.Value )
-				{
-					args.Append( " -soundswitch" );
-				}
-				else
-				{
-					args.Append( " -nosoundswitch" );
-				}
-			}
-
 			if ( settings.DfoDir != null )
 			{
 				args.Append( string.Format( " \"--dfodir={0}\"", BatEscapeInQuotes( settings.DfoDir ) ) );
 			}
 
-			if ( settings.CustomSoundpackDir != null )
+			foreach ( ISwitchableFile switchableFile in settings.SwitchableFiles.Values )
 			{
-				args.Append( string.Format( " \"--customsounddir={0}\"", BatEscapeInQuotes( settings.CustomSoundpackDir ) ) );
-			}
+				if ( settings.SwitchFile[ switchableFile.Name ].HasValue )
+				{
+					if ( settings.SwitchFile[ switchableFile.Name ].Value )
+					{
+						args.Append( string.Format( " -{0}", switchableFile.WhetherToSwitchArg ) );
+					}
+					else
+					{
+						args.Append( string.Format( " -no{0}", switchableFile.WhetherToSwitchArg ) );
+					}
+				}
 
-			if ( settings.TempSoundpackDir != null )
-			{
-				args.Append( string.Format( " \"--tempsounddir={0}\"", BatEscapeInQuotes( settings.TempSoundpackDir ) ) );
+				if ( switchableFile.CustomFile != null )
+				{
+					args.Append( string.Format( " \"--{0}={1}\"",
+						switchableFile.CustomFileArg, BatEscapeInQuotes( switchableFile.CustomFile ) ) );
+				}
+
+				if ( switchableFile.TempFile != null )
+				{
+					args.Append( string.Format( " \"--{0}={1}\"",
+						switchableFile.TempFileArg, BatEscapeInQuotes( switchableFile.TempFile ) ) );
+				}
 			}
 
 			return args.ToString();

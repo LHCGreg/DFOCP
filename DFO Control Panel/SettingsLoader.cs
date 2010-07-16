@@ -10,12 +10,26 @@ namespace Dfo.ControlPanel
 {
 	static class SettingsLoader
 	{
+		// 2.0
 		// <DFOCP_Settings SettingsVersion="major.minor">
 		// Username - string
 		// RememberMe - bool
 		// ClosePopup - bool
 		// LaunchWindowed - bool
 		// SwitchSoundpacks - bool
+		// </DFOCP_Settings>
+
+		// 3.0
+		// <DFOCP_Settings SettingsVersion="major.minor">
+		// Username - string
+		// RememberMe - bool
+		// ClosePopup - bool
+		// LaunchWindowed - bool
+		//
+		// <switchable name="soundpack">
+		//   switch - bool
+		// </switchable>
+		// ...
 		// </DFOCP_Settings>
 
 		private static readonly string s_rootName = "DFOCP_Settings";
@@ -25,9 +39,12 @@ namespace Dfo.ControlPanel
 		private static readonly string s_closePopup = "ClosePopup";
 		private static readonly string s_launchWindowed = "LaunchWindowed";
 		private static readonly string s_switchSoundpacks = "SwitchSoundpacks";
+		private static readonly string s_switchableElement = "Switchable";
+		private static readonly string s_switchableNameAttr = "name";
+		private static readonly string s_switchableSwitch = "Switch";
 
 		// These are for settings format versioning, which is not the same as program versioning
-		private static readonly string s_majorVersion = "2";
+		private static readonly string s_majorVersion = "3";
 		private static readonly string s_minorVersion = "0";
 
 		// bool = 0 or 1, anything else is an error
@@ -67,15 +84,17 @@ namespace Dfo.ControlPanel
 			}
 			if ( settingsRoot == null )
 			{
-				Logging.Log.ErrorFormat( "DFOCP_Settings element not found." );
+				Logging.Log.ErrorFormat( "{0} element not found.", s_rootName );
 				return new StartupSettings();
 			}
 
 			string settingsVersion = GetAttribute( settingsRoot, s_settingsVersion );
+			string majorVersion = s_majorVersion;
+			string minorVersion = s_minorVersion;
 			if ( settingsVersion == null )
 			{
 				Logging.Log.ErrorFormat( "Settings version not found. Assuming {0}.{1}",
-					s_majorVersion, s_minorVersion );
+					majorVersion, minorVersion );
 			}
 			else
 			{
@@ -83,18 +102,18 @@ namespace Dfo.ControlPanel
 				if ( versionSplit.Length < 2 )
 				{
 					Logging.Log.ErrorFormat( "Settings version '{0}' is badly formatted. Assuming {1}.{2}.",
-						settingsVersion, s_majorVersion, s_minorVersion );
+						settingsVersion, majorVersion, minorVersion );
 				}
 				else
 				{
-					string major = versionSplit[ 0 ];
-					string minor = versionSplit[ 1 ];
+					majorVersion = versionSplit[ 0 ];
+					minorVersion = versionSplit[ 1 ];
 
-					if ( major != s_majorVersion )
+					if ( majorVersion != s_majorVersion && majorVersion != "2")
 					{
 						Logging.Log.InfoFormat(
 						"Major version of settings file format is {0}, which is different from {1}. Ignoring file and using default settings.",
-						major, s_majorVersion );
+						majorVersion, s_majorVersion );
 						return new StartupSettings();
 					}
 				}
@@ -104,7 +123,26 @@ namespace Dfo.ControlPanel
 			settings.RememberUsername = GetBool( settingsRoot, s_rememberMe );
 			settings.ClosePopup = GetBool( settingsRoot, s_closePopup );
 			settings.LaunchWindowed = GetBool( settingsRoot, s_launchWindowed );
-			settings.SwitchSoundpacks = GetBool( settingsRoot, s_switchSoundpacks );
+
+			if ( majorVersion == "2" )
+			{
+				settings.SwitchFile[ SwitchableFile.Soundpacks ] = GetBool( settingsRoot, s_switchSoundpacks );
+			}
+			else
+			{
+				var switchableCollection = settingsRoot.Elements( s_switchableElement );
+				foreach ( XElement switchable in switchableCollection )
+				{
+					string switchableName = GetAttribute( switchable, s_switchableNameAttr );
+					if ( switchableName == null )
+					{
+						continue;
+					}
+					bool? whetherToSwitch = GetBool( switchable, s_switchableSwitch );
+
+					settings.SwitchFile[ switchableName ] = whetherToSwitch;
+				}
+			}
 
 			Logging.Log.Info( "Settings loaded." );
 
@@ -168,7 +206,7 @@ namespace Dfo.ControlPanel
 
 			XElement root = new XElement( s_rootName );
 			string settingsVersion = string.Format( "{0}.{1}", s_majorVersion, s_minorVersion );
-			root.SetAttributeValue( s_settingsVersion, string.Format( "{0}.{1}", s_majorVersion, s_minorVersion ) );
+			root.SetAttributeValue( s_settingsVersion, settingsVersion );
 			if ( settings.RememberUsername == true )
 			{
 				AddElement( root, s_rememberMe, GetBoolString( settings.RememberUsername ) );
@@ -176,7 +214,13 @@ namespace Dfo.ControlPanel
 			}
 			AddElement( root, s_closePopup, GetBoolString( settings.ClosePopup ) );
 			AddElement( root, s_launchWindowed, GetBoolString( settings.LaunchWindowed ) );
-			AddElement( root, s_switchSoundpacks, GetBoolString( settings.SwitchSoundpacks ) );
+			foreach ( string switchableName in settings.SwitchFile.Keys )
+			{
+				XElement switchableElement = new XElement( s_switchableElement );
+				AddElement( switchableElement, s_switchableSwitch, GetBoolString( settings.SwitchFile[ switchableName ].Value ) );
+				switchableElement.SetAttributeValue( s_switchableNameAttr, switchableName );
+				root.Add( switchableElement );
+			}
 
 			try
 			{
@@ -227,6 +271,25 @@ namespace Dfo.ControlPanel
 			}
 		}
 
+		/// <summary>
+		/// Applies a setting given the command-line value if present, saved setting if present, default,
+		/// and a delegate that does the actual applying given the value to apply.
+		/// </summary>
+		/// <typeparam name="TSetting">Type of the setting.</typeparam>
+		/// <param name="cmdHas">Whether a value was specified on the command-line.</param>
+		/// <param name="fromCmd">The value from the command-line if one was specified. Otherwise
+		/// this parameter is ignored.</param>
+		/// <param name="settingsHas">Whether a value was specified in the saved settings.</param>
+		/// <param name="fromSettings">The value from the saved settings if one was specified. Otherwise
+		/// this parameter is ignored.</param>
+		/// <param name="validate">A validation function that returns a non-null error message string if
+		/// validation fails or returns null if validation succeeds.</param>
+		/// <param name="settingName">The name of the setting (used in logging).</param>
+		/// <param name="apply">A delegate that does the actual applying given a setting value.</param>
+		/// <param name="defaultValue">A default setting value to use if command-line and saved settings do
+		/// not provide a valid value.</param>
+		/// <param name="suppressValueDisplay">Do not display the value of the setting when logging
+		/// (useful for things like passwords).</param>
 		public static void ApplySetting<TSetting>( bool cmdHas, TSetting fromCmd, bool settingsHas, TSetting fromSettings, Func<TSetting, string> validate, string settingName, Action<TSetting> apply, TSetting defaultValue, bool suppressValueDisplay )
 		{
 			Logging.Log.DebugFormat( "Getting value for setting '{0}'.", settingName );
@@ -290,6 +353,18 @@ namespace Dfo.ControlPanel
 			apply( settingValue );
 		}
 
+		/// <summary>
+		/// Struct front-end to ApplySetting. A null value from command-line or settings indicates no value
+		/// was given.
+		/// </summary>
+		/// <typeparam name="TSetting"></typeparam>
+		/// <param name="fromCmd"></param>
+		/// <param name="fromSettings"></param>
+		/// <param name="validate"></param>
+		/// <param name="settingName"></param>
+		/// <param name="apply"></param>
+		/// <param name="defaultValue"></param>
+		/// <param name="suppressValueDisplay"></param>
 		public static void ApplySettingStruct<TSetting>( TSetting? fromCmd, TSetting? fromSettings, Func<TSetting, string> validate, string settingName, Action<TSetting> apply, TSetting defaultValue, bool suppressValueDisplay ) where TSetting : struct
 		{
 			ApplySetting<TSetting>( fromCmd.HasValue, fromCmd.HasValue ? fromCmd.Value : default( TSetting ),
@@ -297,6 +372,18 @@ namespace Dfo.ControlPanel
 				validate, settingName, apply, defaultValue, suppressValueDisplay );
 		}
 
+		/// <summary>
+		/// Class front-end to ApplySetting. A null value from command-line or settings indicates no value
+		/// was given.
+		/// </summary>
+		/// <typeparam name="TSetting"></typeparam>
+		/// <param name="fromCmd"></param>
+		/// <param name="fromSettings"></param>
+		/// <param name="validate"></param>
+		/// <param name="settingName"></param>
+		/// <param name="apply"></param>
+		/// <param name="defaultValue"></param>
+		/// <param name="suppressValueDisplay"></param>
 		public static void ApplySettingClass<TSetting>( TSetting fromCmd, TSetting fromSettings, Func<TSetting, string> validate, string settingName, Action<TSetting> apply, TSetting defaultValue, bool suppressValueDisplay ) where TSetting : class
 		{
 			ApplySetting<TSetting>( fromCmd != null, fromCmd, fromSettings != null, fromSettings, validate,

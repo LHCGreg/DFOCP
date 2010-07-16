@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using NDesk.Options;
 using System.IO;
+using Dfo.Controlling;
 
 namespace Dfo.ControlPanel
 {
@@ -33,11 +34,8 @@ namespace Dfo.ControlPanel
 				{ "noclosepopup", "Don't close the popup when the game is done.", argExistence => Settings.ClosePopup = !(argExistence != null) },
 				{ "window|windowed", "Launch the game in windowed mode.", argExistence => Settings.LaunchWindowed = (argExistence != null) },
 				{ "full", "Don't launch the game in windowed mode. This is the default.", argExistence => Settings.LaunchWindowed = !(argExistence != null) },
-				{ "soundswitch", "Switch soundpacks.", argExistence => Settings.SwitchSoundpacks = (argExistence != null) },
-				{ "nosoundswitch", "Don't switch soundpacks. This is the default.", argExistence => Settings.SwitchSoundpacks = !(argExistence != null) },
-				{ "dfodir=", "Directory where DFO is. Defaults to the autodetected DFO directory.", argValue => Settings.DfoDir = argValue },
-				{ "customsounddir=", "Directory where custom soundpacks are if switching soundpacks. If a relative path is given, it is relative to dfodir. Defaults to SoundPacksCustom.", argValue => Settings.CustomSoundpackDir = argValue },
-				{ "tempsounddir=", "Directory to rename the normal soundpack directory while the game is running if switching soundpacks. If a relative path is given, it is relative to dfodir. Defaults to SoundPacksOriginal.", argValue => Settings.TempSoundpackDir = argValue },
+				{ "dfodir=", "Directory where DFO is. Defaults to the autodetected DFO directory.",
+					argValue => { ThrowIfPathNotValid(argValue, "dfodir"); Settings.DfoDir = argValue; } },
 				{ "<>", argValue => // Default handler - Report unrecognized arguments
 					{
 						string message = string.Format("Unrecognized command-line argument: {0}", argValue);
@@ -49,7 +47,51 @@ namespace Dfo.ControlPanel
 				}
 			};
 
+			// Add the arguments for all switchable files
+			foreach ( SwitchableFile switchableFile in Settings.SwitchableFiles.Values )
+			{
+				// Cannot use switchableFile.Name in the lambdas because the switchableFile
+				// variable has only one instance - so the switch and noswitch arguments
+				// for all switchables would actually be bound to the last switchable.
+				SwitchableFile switchableFileInstance = switchableFile;
+				string switchableName = switchableFile.Name;
+
+				optionSet.Add( string.Format( "{0}", switchableFile.WhetherToSwitchArg ),
+					string.Format( "Switch {0}", switchableFile.NormalFile ),
+					argExistence => Settings.SwitchFile[ switchableName ] = ( argExistence != null ) );
+
+				optionSet.Add( string.Format( "no{0}", switchableFile.WhetherToSwitchArg ),
+					string.Format( "Don't switch {0}", switchableFile.NormalFile ),
+					argExistence => Settings.SwitchFile[ switchableName ] = !( argExistence != null ) );
+
+				optionSet.Add( string.Format( "{0}=", switchableFile.CustomFileArg ),
+					string.Format( "File or directory to switch {0} with. If a relative path is given, it is relative to dfodir. Defaults to {1}.",
+					switchableFile.NormalFile, switchableFile.DefaultCustomFile ),
+					 argValue =>
+					 {
+						 ThrowIfPathNotValid( argValue, switchableFileInstance.CustomFileArg );
+						 switchableFileInstance.CustomFile = argValue;
+					 } );
+
+				optionSet.Add( string.Format( "{0}=", switchableFile.TempFileArg ),
+					string.Format( "File or directory to move {0} to while the game is running if switching it. If a relative path is given, it is relative to dfodir. Defaults to {1}.",
+					switchableFile.NormalFile, switchableFile.DefaultTempFile ),
+					argValue =>
+					{
+						ThrowIfPathNotValid( argValue, switchableFileInstance.TempFileArg );
+						switchableFileInstance.TempFile = argValue;
+					} );
+			}
+
 			return optionSet;
+		}
+
+		private void ThrowIfPathNotValid( string path, string optionName )
+		{
+			if ( !Utilities.PathIsValid( path ) )
+			{
+				throw new OptionException( string.Format( "{0} is not a valid path.", path ), optionName );
+			}
 		}
 
 		/// <summary>
@@ -86,10 +128,17 @@ namespace Dfo.ControlPanel
 			builder.AppendLine( string.Format( "Password specified = {0}", Settings.Password != null ) ); // Don't show password for security reasons
 			builder.AppendLine( string.Format( "Close popup = {0}", Settings.ClosePopup ) );
 			builder.AppendLine( string.Format( "Launch windowed = {0}", Settings.LaunchWindowed ) );
-			builder.AppendLine( string.Format( "Switch soundpacks = {0}", Settings.SwitchSoundpacks ) );
 			builder.AppendLine( string.Format( "DFO dir = {0}", Settings.DfoDir ) );
-			builder.AppendLine( string.Format( "Custom soundpack dir = {0}", Settings.CustomSoundpackDir ) );
-			builder.Append( string.Format("Temp soundpack dir = {0}", Settings.TempSoundpackDir ));
+
+			foreach ( ISwitchableFile switchableFile in Settings.SwitchableFiles.Values )
+			{
+				builder.AppendLine( string.Format( "Switch {0} = {1}",
+					switchableFile.NormalFile, Settings.SwitchFile[switchableFile.Name] ) );
+				builder.AppendLine( string.Format( "Custom {0} file = {1}",
+					switchableFile.NormalFile, switchableFile.CustomFile ) );
+				builder.AppendLine( string.Format( "Temp {0} file = {1}",
+					switchableFile.NormalFile, switchableFile.TempFile ) );
+			}
 
 			return builder.ToString();
 		}

@@ -81,9 +81,12 @@
     <Compile Include="About.Designer.cs">
       <DependentUpon>About.cs</DependentUpon>
     </Compile>
+    <Compile Include="CheckboxSwitchableFile.cs" />
     <Compile Include="CommandLineArgs.cs" />
     <Compile Include="CommandLineEntryPoint.cs" />
     <Compile Include="ExtensionMethods.cs" />
+    <Compile Include="ISwitchableFile.cs" />
+    <Compile Include="IUiSwitchableFile.cs" />
     <Compile Include="Logging.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
@@ -92,6 +95,7 @@
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Paths.cs" />
+    <Compile Include="PlainUiSwitchableFile.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="About.resx">
@@ -123,16 +127,17 @@
     <Compile Include="SettingsLoader.cs" />
     <Compile Include="StartupSettings.cs" />
     <Compile Include="Properties\VersionInfo.cs" />
+    <Compile Include="SwitchableFile.cs" />
     <None Include="Properties\VersionInfo.template.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="AboutLogo.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DfoControlling\DfoControlling.csproj">
       <Project>{E4D06429-E4DF-486B-96F3-8279D1FAC78D}</Project>
-      <Name>DfoLogin-2008</Name>
+      <Name>DfoControlling</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="AboutLogo.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
