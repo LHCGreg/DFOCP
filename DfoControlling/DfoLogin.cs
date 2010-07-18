@@ -20,7 +20,7 @@ namespace Dfo.Controlling
 		private static string DefaultGeolocationUrl { get { return "http://dungeonfighter.nexon.net/modules/geoloc.aspx"; } }
 		private static string DefaultIni { get { return "http://download2.nexon.net/Game/DFO/ngm/DFOLauncher/version.ini"; } }
 		private static string DefaultUserAgent { get { return "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.3) Gecko/20090824 Firefox/3.5.3 (.NET CLR 3.5.30729)"; } }
-		
+
 		/// <summary>
 		/// The default timeout in milliseonds when waiting for a server response.
 		/// </summary>
@@ -98,8 +98,24 @@ namespace Dfo.Controlling
 			string authArg = GetDfoAuthArg( username, password, DefaultLoginUrl, timeoutInMs, DefaultIni );
 			args.Add( authArg );
 
-			string geolocationArg = GetGeolocationArg( DefaultGeolocationUrl, timeoutInMs );
-			args.Add( geolocationArg );
+			try
+			{
+				string geolocationArg = GetGeolocationArg( DefaultGeolocationUrl, timeoutInMs );
+				args.Add( geolocationArg );
+			}
+			catch ( Exception ex )
+			{
+				if ( ex is WebException || ex is DfoAuthenticationException )
+				{
+					// TODO: Log this error
+					; // Couldn't get geolocation arg, maybe DFO changed and doesn't use it anymore
+					  // Don't break the app in that case.
+				}
+				else
+				{
+					throw;
+				}
+			}
 
 			return args;
 		}
@@ -289,14 +305,14 @@ namespace Dfo.Controlling
 		/// <exception cref="System.ArgumentOutOfRangeException"><paramref name="timeoutInMs"/> is
 		/// less than or equal to zero and not System.Threading.Timeout.Infinite.</exception>
 		/// <exception cref="System.Net.WebException">A timeout occurred or there was an error while
-		/// doing the web request.</exception>
+		/// doing the web request (including 404 not found).</exception>
 		private static string GetWebPage( string url, int timeoutInMs )
 		{
 			WebRequest getRequestParentClass = WebRequest.Create( url );
 			HttpWebRequest getRequest = getRequestParentClass as HttpWebRequest;
 			if ( getRequest == null )
 			{
-				throw new NotSupportedException( "The URL should be http" );
+				throw new NotSupportedException( "The URL should be http." );
 			}
 
 			getRequest.Method = "GET";
@@ -312,10 +328,10 @@ namespace Dfo.Controlling
 				HttpWebResponse response = responseParentClass as HttpWebResponse;
 				if ( response == null )
 				{
-					throw new DfoAuthenticationException( "Response was not an http response" );
+					throw new DfoAuthenticationException( "Response was not an http response." );
 				}
 
-				using (Stream responseBodyStream = response.GetResponseStream())
+				using ( Stream responseBodyStream = response.GetResponseStream() )
 				using ( StreamReader responseBodyReader = new StreamReader( responseBodyStream, Encoding.UTF8 ) )
 				{
 					// XXX: Shouldn't be hardcoding UTF-8...but how to get proper encoding?
@@ -346,7 +362,7 @@ namespace Dfo.Controlling
 		private static string GetGeolocationArg( string geolocationUrl, int timeoutInMs )
 		{
 			string json = GetWebPage( geolocationUrl, timeoutInMs );
-			
+
 			Dictionary<string, string> geoKeyValuePairs;
 			try
 			{
@@ -356,7 +372,7 @@ namespace Dfo.Controlling
 			{
 				if ( ex is JsonReaderException || ex is JsonSerializationException )
 				{
-					throw new DfoAuthenticationException( "Badly formatted geolocation page" );
+					throw new DfoAuthenticationException( "Badly formatted geolocation page." );
 				}
 				else
 				{
@@ -370,7 +386,7 @@ namespace Dfo.Controlling
 			}
 			else
 			{
-				throw new DfoAuthenticationException( "'code' not present in geolocation page" );
+				throw new DfoAuthenticationException( "'code' not present in geolocation page." );
 			}
 		}
 	}
