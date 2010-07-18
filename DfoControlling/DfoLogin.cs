@@ -7,6 +7,7 @@ using System.IO;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 
 namespace Dfo.Controlling
 {
@@ -16,6 +17,7 @@ namespace Dfo.Controlling
 	public static class DfoLogin
 	{
 		private static string DefaultLoginUrl { get { return "http://passport.nexon.net/Login.aspx?nexonTheme=DungeonFighter"; } }
+		private static string DefaultGeolocationUrl { get { return "http://dungeonfighter.nexon.net/modules/geoloc.aspx"; } }
 		private static string DefaultIni { get { return "http://download2.nexon.net/Game/DFO/ngm/DFOLauncher/version.ini"; } }
 		private static string DefaultUserAgent { get { return "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.3) Gecko/20090824 Firefox/3.5.3 (.NET CLR 3.5.30729)"; } }
 		
@@ -29,8 +31,8 @@ namespace Dfo.Controlling
 		private static string FallbackViewstate { get { return "/wEPDwUKMTY2MTY3MjU1M2Rk"; } }
 
 		/// <summary>
-		/// Returns a command-line argument you can pass to DFOLauncher.exe to start the game using the given
-		/// username and password and using defaults for advanced parameters like connection timeout.
+		/// Returns one or more command-line arguments you can pass to DFOLauncher.exe to start the game
+		/// using the given username and password.
 		/// Because a connection to the web site is needed for authentication, this function blocks.
 		/// </summary>
 		/// 
@@ -41,16 +43,65 @@ namespace Dfo.Controlling
 		/// <exception cref="System.ArgumentNullException">username or password is null</exception>
 		/// <exception cref="System.ArgumentOutOfRangeException"><paramref name="timeoutInMs"/> is negative.</exception>
 		/// <exception cref="System.Security.SecurityException">The caller does not have permission to connect to the DFO
-		/// URI or a URI that the request is redirected to.</exception>
+		/// DFO website.</exception>
 		/// <exception cref="System.Net.WebException">A timeout occurred.</exception>
 		/// <exception cref="Dfo.Controlling.DfoAuthenticationException">Either the username/password is incorrect
 		/// or a change was made to the way the authentication token is given to the browser, in which case
 		/// this function will not work.</exception>
 		/// 
-		/// <returns>A command-line argument you can pass to DFOLauncher.exe to start the game as the given user</returns>
+		/// <returns>One or more arguments you can pass to DFOLauncher.exe to start the game as the given user.
+		/// This string can be directly used with Process.StartInfo.Arguments.</returns>
 		public static string GetDfoArg( string username, string password, int timeoutInMs )
 		{
-			return GetDfoArg( username, password, DefaultLoginUrl, timeoutInMs, DefaultIni );
+			// Unlike most sensible programs, DFO does not use CommandLineToArgvW/CommandLineToArgvA
+			// to parse its command-line into separate arguments. Instead it seems to simply separate
+			// the arguments by a space and double quotes are normal characters.
+			IList<string> dfoArgs = GetDfoArgs( username, password, timeoutInMs );
+			StringBuilder argString = new StringBuilder();
+			for ( int argIndex = 0; argIndex < dfoArgs.Count; argIndex++ )
+			{
+				argString.Append( dfoArgs[ argIndex ] );
+				if ( argIndex != dfoArgs.Count - 1 )
+				{
+					argString.Append( ' ' );
+				}
+			}
+
+			return argString.ToString();
+		}
+
+		/// <summary>
+		/// Returns one or more command-line arguments you can pass to DFOLauncher.exe to start the game
+		/// using the given username and password.
+		/// Because a connection to the web site is needed for authentication, this function blocks.
+		/// </summary>
+		/// 
+		/// <param name="username">Username to log in as</param>
+		/// <param name="password">Password to log in with</param>
+		/// <param name="timeoutInMs">Timeout in milliseconds to wait for a server response.</param>
+		/// 
+		/// <exception cref="System.ArgumentNullException">username or password is null</exception>
+		/// <exception cref="System.ArgumentOutOfRangeException"><paramref name="timeoutInMs"/> is negative.</exception>
+		/// <exception cref="System.Security.SecurityException">The caller does not have permission to connect to the DFO
+		/// DFO website.</exception>
+		/// <exception cref="System.Net.WebException">A timeout occurred or there was an error while
+		/// doing a web request.</exception>
+		/// <exception cref="Dfo.Controlling.DfoAuthenticationException">Either the username/password is incorrect
+		/// or a change was made to the way the authentication token is given to the browser, in which case
+		/// this function will not work.</exception>
+		/// 
+		/// <returns>One or more arguments you can pass to DFOLauncher.exe to start the game as the given user.</returns>
+		public static IList<string> GetDfoArgs( string username, string password, int timeoutInMs )
+		{
+			List<string> args = new List<string>();
+
+			string authArg = GetDfoAuthArg( username, password, DefaultLoginUrl, timeoutInMs, DefaultIni );
+			args.Add( authArg );
+
+			string geolocationArg = GetGeolocationArg( DefaultGeolocationUrl, timeoutInMs );
+			args.Add( geolocationArg );
+
+			return args;
 		}
 
 		/// <summary>
@@ -82,39 +133,10 @@ namespace Dfo.Controlling
 		/// this function will not work.</exception>
 		/// 
 		/// <returns></returns>
-		public static string GetDfoArg( string username, string password, string loginUrl, int timeoutInMs, string ini )
+		private static string GetDfoAuthArg( string username, string password, string loginUrl, int timeoutInMs, string ini )
 		{
-			if ( ini == null )
-			{
-				throw new ArgumentNullException( "ini" );
-			}
+			ini.ThrowIfNull( "ini" );
 			return GetAuthToken( username, password, loginUrl, timeoutInMs ) + "?" + ini;
-		}
-
-		/// <summary>
-		/// Returns an authentication token string for the given username using the given password, using
-		/// defaults for advanced parameters like connection timeout. Because a connection to the web site
-		/// is needed for authentication, this function blocks.
-		/// </summary>
-		/// 
-		/// <param name="username">Username to log in as.</param>
-		/// <param name="password">Password to log in with.</param>
-		/// <param name="timeoutInMs">Timeout in milliseconds. If this time expires while waiting for a
-		/// response from the server, a System.Net.WebException will be thrown.</param>
-		/// 
-		/// <exception cref="System.Security.SecurityException">The caller does not have permission to
-		/// connect to the DFO URI or a URI that the request is redirected to.</exception>
-		/// <exception cref="System.ArgumentNullException">username or password is null.</exception>
-		/// <exception cref="System.ArgumentOutOfRangeException"><paramref name="timeoutInMs"/> is negative.</exception>
-		/// <exception cref="System.Net.WebException">A timeout occurred.</exception>
-		/// <exception cref="Dfo.Controlling.DfoAuthenticationException">Either the username/password is incorrect
-		/// or a change was made to the way the authentication token is given to the browser, in which case
-		/// this function will not work.</exception>
-		/// 
-		/// <returns>An authentication token string for the given username</returns>
-		public static string GetAuthToken( string username, string password, int timeoutInMs )
-		{
-			return GetAuthToken( username, password, DefaultLoginUrl, timeoutInMs );
 		}
 
 		/// <summary>
@@ -140,16 +162,10 @@ namespace Dfo.Controlling
 		/// this function will not work.</exception>
 		/// 
 		/// <returns>An authentication token string for the given username</returns>
-		public static string GetAuthToken( string username, string password, string loginUrl, int timeoutInMs )
+		private static string GetAuthToken( string username, string password, string loginUrl, int timeoutInMs )
 		{
-			if ( username == null )
-			{
-				throw new ArgumentNullException( "username" );
-			}
-			if ( password == null )
-			{
-				throw new ArgumentNullException( "password" );
-			}
+			username.ThrowIfNull( "username" );
+			password.ThrowIfNull( "password" );
 
 			// We need to make a POST request to the login URL containing the same parameters it would have
 			// if you were sitting in front of your web browser.
@@ -227,39 +243,22 @@ namespace Dfo.Controlling
 		/// <param name="loginUrl"></param>
 		/// <param name="timeoutInMillis"></param>
 		/// <returns></returns>
+		/// <exception cref="System.NotSupportedException">The URL scheme is not http.</exception>
+		/// <exception cref="System.UriFormatException">The URI specified is not a valid URI.</exception>
+		/// <exception cref="System.Security.SecurityException">The caller does not have permission to
+		/// connect to the requested URI or a URI that the request is redirected to.</exception>
+		/// <exception cref="System.ArgumentNullException"><paramref name="url"/> is null.</exception>
+		/// <exception cref="System.ArgumentOutOfRangeException"><paramref name="timeoutInMs"/> is
+		/// less than or equal to zero and not System.Threading.Timeout.Infinite.</exception>
+		/// <exception cref="System.Net.WebException">A timeout occurred or there was an error while
+		/// doing the web request.</exception>
+		/// <exception cref="DfoAuthenticationException">Could not get the viewstate possibly due to a change
+		/// in the web site.</exception>
 		private static string GetViewstate( string loginUrl, int timeoutInMillis )
 		{
 			// Here we're sending a GET request to the login URL for the sole purpose of getting the value
 			// of the hidden form field called __VIEWSTATE
-			WebRequest loginGetRequestParentClass = WebRequest.Create( loginUrl );
-			HttpWebRequest loginGetRequest = loginGetRequestParentClass as HttpWebRequest;
-			if ( loginGetRequest == null )
-			{
-				throw new NotSupportedException( "The DFO login URL should be http" );
-			}
-
-			loginGetRequest.Method = "GET";
-			loginGetRequest.UserAgent = DefaultUserAgent;
-			loginGetRequest.Timeout = timeoutInMillis;
-			loginGetRequest.ReadWriteTimeout = timeoutInMillis;
-			loginGetRequest.KeepAlive = false;
-
-			string html;
-
-			using ( WebResponse responseParentClass = loginGetRequest.GetResponse() )
-			{
-				HttpWebResponse response = responseParentClass as HttpWebResponse;
-				if ( response == null )
-				{
-					throw new DfoAuthenticationException( "Response was not an http response" );
-				}
-
-				using ( Stream responseBodyStream = response.GetResponseStream() )
-				using ( StreamReader responseBodyReader = new StreamReader( responseBodyStream, Encoding.UTF8 ) )
-				{
-					html = responseBodyReader.ReadToEnd();
-				}
-			}
+			string html = GetWebPage( loginUrl, timeoutInMillis );
 
 			string viewstateRegexString = "<input type=\"hidden\" name=\"__VIEWSTATE\" id=\"__VIEWSTATE\" value=\"(?<viewstate>.*?)\"";
 			Regex viewstateRegex = new Regex( viewstateRegexString, RegexOptions.IgnoreCase );
@@ -277,46 +276,101 @@ namespace Dfo.Controlling
 		}
 
 		/// <summary>
-		/// Starts DFO using the given username and password. The executable should be in the DFO directory.
-		/// Because a connection to the web site is needed for authentication, this function blocks.
+		/// Gets the web page at the given URL.
 		/// </summary>
-		/// 
-		/// <param name="username">Username to log in as</param>
-		/// <param name="password">Password to log in with</param>
-		/// 
-		/// <exception cref="Dfo.Controlling.DfoLaunchException">There was an error while attempting to authenticate
-		/// or start DFO. The Message property contains an already user-friendly error message.</exception>
-		/// <exception cref="System.ArgumentNullException">username or password is null.</exception>
-		public static void StartDfo( string username, string password )
+		/// <param name="url"></param>
+		/// <param name="timeoutInMs"></param>
+		/// <returns></returns>
+		/// <exception cref="System.NotSupportedException">The URL scheme is not http.</exception>
+		/// <exception cref="System.UriFormatException">The URI specified is not a valid URI.</exception>
+		/// <exception cref="System.Security.SecurityException">The caller does not have permission to
+		/// connect to the requested URI or a URI that the request is redirected to.</exception>
+		/// <exception cref="System.ArgumentNullException"><paramref name="url"/> is null.</exception>
+		/// <exception cref="System.ArgumentOutOfRangeException"><paramref name="timeoutInMs"/> is
+		/// less than or equal to zero and not System.Threading.Timeout.Infinite.</exception>
+		/// <exception cref="System.Net.WebException">A timeout occurred or there was an error while
+		/// doing the web request.</exception>
+		private static string GetWebPage( string url, int timeoutInMs )
 		{
-			string dfoLauncherPath = ""; // assignment to shut the compiler up. I know that if Win32Exception is thrown, this has been set.
+			WebRequest getRequestParentClass = WebRequest.Create( url );
+			HttpWebRequest getRequest = getRequestParentClass as HttpWebRequest;
+			if ( getRequest == null )
+			{
+				throw new NotSupportedException( "The URL should be http" );
+			}
+
+			getRequest.Method = "GET";
+			getRequest.UserAgent = DefaultUserAgent;
+			getRequest.Timeout = timeoutInMs;
+			getRequest.ReadWriteTimeout = timeoutInMs;
+			getRequest.KeepAlive = false;
+
+			string html;
+
+			using ( WebResponse responseParentClass = getRequest.GetResponse() )
+			{
+				HttpWebResponse response = responseParentClass as HttpWebResponse;
+				if ( response == null )
+				{
+					throw new DfoAuthenticationException( "Response was not an http response" );
+				}
+
+				using (Stream responseBodyStream = response.GetResponseStream())
+				using ( StreamReader responseBodyReader = new StreamReader( responseBodyStream, Encoding.UTF8 ) )
+				{
+					// XXX: Shouldn't be hardcoding UTF-8...but how to get proper encoding?
+					html = responseBodyReader.ReadToEnd();
+				}
+			}
+
+			return html;
+		}
+
+		/// <summary>
+		/// Gets the geolocation argument that should be passed to DFO.
+		/// </summary>
+		/// <param name="geolocationUrl"></param>
+		/// <param name="timeoutInMs"></param>
+		/// <returns></returns>
+		/// <exception cref="System.NotSupportedException">The URL scheme is not http.</exception>
+		/// <exception cref="System.UriFormatException">The URI specified is not a valid URI.</exception>
+		/// <exception cref="System.Security.SecurityException">The caller does not have permission to
+		/// connect to the requested URI or a URI that the request is redirected to.</exception>
+		/// <exception cref="System.ArgumentNullException"><paramref name="geolocationUrl"/> is null.</exception>
+		/// <exception cref="System.ArgumentOutOfRangeException"><paramref name="timeoutInMs"/> is
+		/// less than or equal to zero and not System.Threading.Timeout.Infinite.</exception>
+		/// <exception cref="System.Net.WebException">A timeout occurred or there was an error while
+		/// doing the web request.</exception>
+		/// <exception cref="Dfo.Controlling.DfoAuthenticationException">Could not get the geolocation arg because
+		/// of getting bad data from the other site.</exception>
+		private static string GetGeolocationArg( string geolocationUrl, int timeoutInMs )
+		{
+			string json = GetWebPage( geolocationUrl, timeoutInMs );
+			
+			Dictionary<string, string> geoKeyValuePairs;
 			try
 			{
-				string dfoArg = GetDfoArg( username, password, DfoLogin.DefaultTimeoutInMillis );
-				Process dfo = new Process();
-				dfoLauncherPath = Path.Combine( AppDomain.CurrentDomain.BaseDirectory, "DFOLauncher.exe" );
-				dfo.StartInfo.FileName = dfoLauncherPath;
-				dfo.StartInfo.Arguments = dfoArg;
-				dfo.StartInfo.UseShellExecute = true;
-				dfo.StartInfo.ErrorDialog = true; // pop up that very helpful message box when DFOLaucher.exe can't be run
-				dfo.Start();
-				dfo.Dispose(); // This doesn't kill the process. What it does is release the OS handle to the process since we don't need it.
+				geoKeyValuePairs = JsonConvert.DeserializeObject<Dictionary<string, string>>( json );
 			}
-			catch ( WebException ex )
+			catch ( Exception ex )
 			{
-				throw new DfoLaunchException( string.Format(
-					"There was a problem connecting. Check your Internet connection. Details: {0}", ex.Message ), ex );
+				if ( ex is JsonReaderException || ex is JsonSerializationException )
+				{
+					throw new DfoAuthenticationException( "Badly formatted geolocation page" );
+				}
+				else
+				{
+					throw;
+				}
 			}
-			catch ( DfoAuthenticationException ex )
+
+			if ( geoKeyValuePairs.ContainsKey( "code" ) )
 			{
-				throw new DfoLaunchException( string.Format(
-					"Error while authenticating: {0}", ex.Message ), ex );
+				return geoKeyValuePairs[ "code" ];
 			}
-			catch ( Win32Exception ex )
+			else
 			{
-				throw new DfoLaunchException( string.Format(
-					"Error while starting DFO using {0}: {1} (Did you forget to put this program in the DFO directory?)",
-					dfoLauncherPath, ex.Message ), ex );
+				throw new DfoAuthenticationException( "'code' not present in geolocation page" );
 			}
 		}
 	}

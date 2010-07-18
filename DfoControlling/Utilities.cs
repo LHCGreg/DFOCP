@@ -71,5 +71,71 @@ namespace Dfo.Controlling
 				return true;
 			}
 		}
+
+		// Taken from a comment on
+		// http://msdn.microsoft.com/en-us/library/system.diagnostics.processstartinfo.arguments%28VS.90%29.aspx
+		/// <summary>
+		/// Translates a number of string command-line arguments into a single string that can be passed to
+		/// Process.StartInfo.Arguments. Windows only. Note that Windows programs are responsible for picking
+		/// out the arguments from one argument string. If you specify "-o output.txt     ", that's exactly
+		/// what the program sees. It's up to the program to break that into the args "-o" and "output.txt".
+		/// Most sensible programs will use the Windows function CommandLineToArgvW/CommandLineToArgvA.
+		/// 
+		/// DFO is not a sensible program.
+		/// 
+		/// The rules that CommandLineToArgvW uses involving quoting and backslashes are quite odd.
+		/// A backslash has no special meaning unless it is part of a series of backslashes before a
+		/// double quote. In that case, 2 backslashes translates to 1 backslash and a backslash followed by
+		/// a double quote translates into a literal double quote (instead of a quote enclosing an argument).
+		/// 
+		/// The string returned by this method quotes the arguments in a form suitable for
+		/// CommandLineToArgvW.
+		/// </summary>
+		/// <param name="args"></param>
+		/// <returns></returns>
+		public static string ArgvToCommandLine( IEnumerable<string> args )
+		{
+			StringBuilder sb = new StringBuilder();
+			foreach ( string s in args )
+			{
+				sb.Append( '"' );
+				// Escape double quotes (") and backslashes (\).
+				int searchIndex = 0;
+				while ( true )
+				{
+					// Put this test first to support zero length strings.
+					if ( searchIndex >= s.Length )
+					{
+						break;
+					}
+					int quoteIndex = s.IndexOf( '"', searchIndex );
+					if ( quoteIndex < 0 )
+					{
+						break;
+					}
+					sb.Append( s, searchIndex, quoteIndex - searchIndex );
+					EscapeBackslashes( sb, s, quoteIndex - 1 );
+					sb.Append( '\\' );
+					sb.Append( '"' );
+					searchIndex = quoteIndex + 1;
+				}
+				sb.Append( s, searchIndex, s.Length - searchIndex );
+				EscapeBackslashes( sb, s, s.Length - 1 );
+				sb.Append( @""" " );
+			}
+			return sb.ToString( 0, Math.Max( 0, sb.Length - 1 ) );
+		}
+		private static void EscapeBackslashes( StringBuilder sb, string s, int lastSearchIndex )
+		{
+			// Backslashes must be escaped if and only if they precede a double quote.
+			for ( int i = lastSearchIndex; i >= 0; i-- )
+			{
+				if ( s[ i ] != '\\' )
+				{
+					break;
+				}
+				sb.Append( '\\' );
+			}
+		}
 	}
 }
