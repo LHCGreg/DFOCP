@@ -1,18 +1,11 @@
-2.2:
-Icon, spiffier GUI (Corpsecrank) - maintain a permanent GUI branch and keep the vanilla GUI in the trunk.
-Minimizing to tray instead of taskbar?
+Minimizing to tray instead of taskbar
+Icon
 Disable login button when username or password is blank
-Option to leave program open after game is done (GUI only, makes no sense with command-line)
-Stop as soon as game is up if not closing popup or switching soundpacks
-Keep logs for more than one session! - Roll logs based on size, check for old logs on startup and delete them? Give log a "unique" name on startup, delete old logs?
+Keep logs for more than one session! - Give log a "unique" name on startup, delete "old" logs
 Add logging to Dfo.Controlling
-
-
-2.3
 Resizing DFO window
-Detect when Nexon is forcing a password change
-
-
-
-2.3:
+Option for killing news popups?
+Cancel button?
+Option to leave program open after game is done (GUI only, makes no sense with command-line)?
+Stop as soon as game is up if not closing popup or switching soundpacks?
 DnF, Arad Senki support
