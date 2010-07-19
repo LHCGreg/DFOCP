@@ -18,6 +18,7 @@
 				m_launcher.Dispose();
 				m_launcherThreadCanceledEvent.Close();
 				m_stateBecameNoneEvent.Close();
+				m_notifyIcon.Dispose();
 
 				components.Dispose();
 			}

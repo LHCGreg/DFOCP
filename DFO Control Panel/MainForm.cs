@@ -14,6 +14,9 @@ namespace Dfo.ControlPanel
 {
 	public partial class ctlMainForm : Form
 	{
+		private NotifyIcon m_notifyIcon = new NotifyIcon();
+		private FormWindowState m_stateToRestoreTo = FormWindowState.Normal;
+		
 		private DfoLauncher m_launcher = new DfoLauncher();
 		private string m_stateNoneText = "Ready"; // So the text for this only needs to be changed in one place.
 		private Thread m_launcherThread = null;
@@ -134,6 +137,10 @@ namespace Dfo.ControlPanel
 		{
 			Logging.Log.Debug( "Creating main window." );
 			InitializeComponent();
+
+			m_notifyIcon.Icon = this.Icon;
+			m_notifyIcon.DoubleClick += ( object sender, EventArgs e ) => this.WindowState = m_stateToRestoreTo;
+			m_notifyIcon.Text = "DFO Control Panel";
 
 			exportToolStripMenuItem.ToolTipText = s_exportDisabledTooltip;
 
@@ -524,6 +531,22 @@ namespace Dfo.ControlPanel
 			}
 
 			SettingsLoader.Save( GetCurrentSettings() );
+		}
+
+		protected override void OnSizeChanged( EventArgs e )
+		{
+			if ( this.WindowState == FormWindowState.Minimized )
+			{
+				m_notifyIcon.Visible = true;
+				this.ShowInTaskbar = false;
+			}
+			else
+			{
+				this.ShowInTaskbar = true;
+				m_notifyIcon.Visible = false;
+				m_stateToRestoreTo = this.WindowState;
+			}
+			base.OnSizeChanged( e );
 		}
 
 		private void exitToolStripMenuItem_Click( object sender, EventArgs e )
