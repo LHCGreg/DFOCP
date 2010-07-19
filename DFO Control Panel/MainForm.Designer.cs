@@ -32,6 +32,7 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
+			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager( typeof( ctlMainForm ) );
 			this.ctlUsername = new System.Windows.Forms.TextBox();
 			this.ctlPassword = new System.Windows.Forms.TextBox();
 			this.lblUsername = new System.Windows.Forms.Label();
@@ -302,6 +303,7 @@
 			this.Controls.Add( this.ctlOptionsBox );
 			this.Controls.Add( this.ctlLoginInfoBox );
 			this.Controls.Add( this.ctlLaunch );
+			this.Icon = ( (System.Drawing.Icon)( resources.GetObject( "$this.Icon" ) ) );
 			this.MainMenuStrip = this.ctlMenuStrip;
 			this.Name = "ctlMainForm";
 			this.Text = "DFO Control Panel";
