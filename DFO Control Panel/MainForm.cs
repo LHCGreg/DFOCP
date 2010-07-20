@@ -16,6 +16,26 @@ namespace Dfo.ControlPanel
 	{
 		private NotifyIcon m_notifyIcon = new NotifyIcon();
 		private FormWindowState m_stateToRestoreTo = FormWindowState.Normal;
+
+		private bool m_preventLaunch = false;
+		/// <summary>
+		/// Use to prevent the user from launching the game after they start launching
+		/// to prevent multiple launch attempts.
+		/// </summary>
+		private bool PreventLaunch { get { return m_preventLaunch; } set { m_preventLaunch = value;  UpdateLaunchVisibility(); } }
+
+		// Thread-safe
+		private void UpdateLaunchVisibility()
+		{
+			if ( PreventLaunch )
+			{
+				ctlLaunch.InvokeIfRequiredAsync( () => ctlLaunch.Enabled = false );
+			}
+			else
+			{
+				ctlLaunch.InvokeIfRequiredAsync( () => ctlLaunch.Enabled = ( Username != "" && Password != "" ) );
+			}
+		}
 		
 		private DfoLauncher m_launcher = new DfoLauncher();
 		private string m_stateNoneText = "Ready"; // So the text for this only needs to be changed in one place.
@@ -147,6 +167,7 @@ namespace Dfo.ControlPanel
 				};
 
 			exportToolStripMenuItem.ToolTipText = s_exportDisabledTooltip;
+			UpdateLaunchVisibility();
 
 			m_parsedArgs = parsedArgs;
 
@@ -396,7 +417,7 @@ namespace Dfo.ControlPanel
 
 		private void ctlLaunch_Click( object sender, EventArgs e )
 		{
-			ctlLaunch.Enabled = false;
+			PreventLaunch = true;
 
 			SetLauncherParams();
 
@@ -454,7 +475,7 @@ namespace Dfo.ControlPanel
 				Logging.Log.Debug( "Launcher object reset." );
 			}
 
-			ctlLaunch.BeginInvoke( () => ctlLaunch.Enabled = true );
+			PreventLaunch = false;
 
 			lock ( m_syncHandle )
 			{
@@ -577,16 +598,18 @@ namespace Dfo.ControlPanel
 		private void ctlUsername_TextChanged( object sender, EventArgs e )
 		{
 			UpdateSaveAsVisibility();
+			UpdateLaunchVisibility();
 		}
 
 		private void ctlPassword_TextChanged( object sender, EventArgs e )
 		{
 			UpdateSaveAsVisibility();
+			UpdateLaunchVisibility();
 		}
 
 		/// <summary>
 		/// Disables the "export to .bat" menu item if all required fields are not filled out or enables it
-		/// if everything required for exporting is ok.
+		/// if everything required for exporting is ok. NOT THREAD-SAFE.
 		/// </summary>
 		private void UpdateSaveAsVisibility()
 		{

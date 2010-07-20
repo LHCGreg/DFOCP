@@ -14,6 +14,35 @@ namespace Dfo.ControlPanel
 		{
 			return control.BeginInvoke( func );
 		}
+
+		public static void Invoke( this Control control, ThreadStart func )
+		{
+			control.Invoke( func );
+		}
+
+		public static void InvokeIfRequiredAsync( this Control control, ThreadStart func )
+		{
+			if ( control.InvokeRequired )
+			{
+				control.BeginInvoke( func );
+			}
+			else
+			{
+				func();
+			}
+		}
+
+		public static void InvokeIfRequiredSync( this Control control, ThreadStart func )
+		{
+			if ( control.InvokeRequired )
+			{
+				control.Invoke( func );
+			}
+			else
+			{
+				func();
+			}
+		}
 	}
 }
 

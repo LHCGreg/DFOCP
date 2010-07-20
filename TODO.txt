@@ -1,4 +1,3 @@
-Disable login button when username or password is blank
 Keep logs for more than one session! - Give log a "unique" name on startup, delete "old" logs
 Add logging to Dfo.Controlling
 Resizing DFO window
