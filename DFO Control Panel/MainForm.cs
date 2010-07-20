@@ -139,8 +139,12 @@ namespace Dfo.ControlPanel
 			InitializeComponent();
 
 			m_notifyIcon.Icon = this.Icon;
-			m_notifyIcon.DoubleClick += ( object sender, EventArgs e ) => this.WindowState = m_stateToRestoreTo;
 			m_notifyIcon.Text = "DFO Control Panel";
+			m_notifyIcon.DoubleClick += ( object sender, EventArgs e ) =>
+				{
+					this.ShowInTaskbar = true;
+					this.WindowState = m_stateToRestoreTo;
+				};
 
 			exportToolStripMenuItem.ToolTipText = s_exportDisabledTooltip;
 
@@ -337,6 +341,13 @@ namespace Dfo.ControlPanel
 			{
 				case LaunchState.None:
 					ctlStatusStrip.BeginInvoke( () => ctlStatusLabel.Text = m_stateNoneText );
+					lock ( m_syncHandle )
+					{
+						if ( !m_closeWhenDone )
+						{
+							this.BeginInvoke( () => this.WindowState = m_stateToRestoreTo );
+						}
+					}
 					m_stateBecameNoneEvent.Set();
 					break;
 				case LaunchState.Login:
@@ -344,6 +355,7 @@ namespace Dfo.ControlPanel
 					break;
 				case LaunchState.Launching:
 					ctlStatusStrip.BeginInvoke( () => ctlStatusLabel.Text = "Launching..." );
+					this.BeginInvoke( () => this.WindowState = FormWindowState.Minimized );
 					break;
 				case LaunchState.GameInProgress:
 					ctlStatusStrip.BeginInvoke( () => ctlStatusLabel.Text = "Game in progress" );

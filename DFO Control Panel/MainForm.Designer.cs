@@ -13,14 +13,23 @@
 		/// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
 		protected override void Dispose( bool disposing )
 		{
-			if ( disposing && ( components != null ) )
+			if ( disposing )
 			{
 				m_launcher.Dispose();
 				m_launcherThreadCanceledEvent.Close();
 				m_stateBecameNoneEvent.Close();
-				m_notifyIcon.Dispose();
 
-				components.Dispose();
+				if ( m_notifyIcon != null )
+				{
+					m_notifyIcon.Visible = false;
+					m_notifyIcon.Dispose();
+					m_notifyIcon = null;
+				}
+
+				if ( components != null )
+				{
+					components.Dispose();
+				}
 			}
 			base.Dispose( disposing );
 		}
