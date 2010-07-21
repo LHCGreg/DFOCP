@@ -31,10 +31,6 @@ namespace Dfo.ControlPanel
 					}
 				};
 
-			Logging.Log.InfoFormat( "{0} version {1} started.", VersionInfo.AssemblyTitle, VersionInfo.AssemblyVersion );
-			Logging.Log.DebugFormat( "CLR Version: {0}", Environment.Version );
-			Logging.Log.DebugFormat( "Operating System: {0}", Environment.OSVersion );
-			Logging.Log.DebugFormat( "Number of processors: {0}", Environment.ProcessorCount );
 			Logging.Log.DebugFormat( "Checking .NET framework version..." );
 
 			// Code before this point must not use any .NET 3.5 SP1 features that are not in .NET 3.5.
