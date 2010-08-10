@@ -3,17 +3,20 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using log4net2common;
 
 namespace Dfo.ControlPanel
 {
 	static class Logging
 	{
-		public static log4net.ILog Log { get; set; }
+		public static Common.Logging.ILog Log { get; set; }
 		private static TimeSpan MaxLogAge { get { return new TimeSpan( 7, 0, 0, 0 ); } } // 7 days
 
 		public static void SetUpLogging()
 		{
-			Log = log4net.LogManager.GetLogger( "Main logger" );
+			log4net.ILog log4netlog = log4net.LogManager.GetLogger( "Main logger" );
+			Log = new Log4NetCommonLogger( log4netlog );
+
 			SetUpFileLogger();
 			WriteLogPrologue();
 			RemoveOldLogFiles();
