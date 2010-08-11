@@ -24,6 +24,8 @@ namespace Dfo.ControlPanel
 			// Order is important - don't log anything to console until we're sure a console exists
 			// or that it will never exist, because logging to console before it exists makes later
 			// writes to the console not work for some reason.
+
+			Dfo.Controlling.Logging.Log = Log;
 		}
 
 		private static void WriteLogPrologue()
