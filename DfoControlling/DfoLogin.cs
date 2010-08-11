@@ -56,6 +56,9 @@ namespace Dfo.Controlling
 			// Unlike most sensible programs, DFO does not use CommandLineToArgvW/CommandLineToArgvA
 			// to parse its command-line into separate arguments. Instead it seems to simply separate
 			// the arguments by a space and double quotes are normal characters.
+			//
+			// On the other hand, given how complicated it is to properly quote arguments, maybe it is
+			// pretty sensible.
 			IList<string> dfoArgs = GetDfoArgs( username, password, timeoutInMs );
 			StringBuilder argString = new StringBuilder();
 			for ( int argIndex = 0; argIndex < dfoArgs.Count; argIndex++ )
