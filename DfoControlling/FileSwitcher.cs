@@ -22,9 +22,14 @@ namespace Dfo.Controlling
 		Directory,
 	}
 
-	public static class FileTypeExtensions
+	internal static class FileTypeExtensions
 	{
-		public static Action<string, string> GetMoveFunction( this FileType fileType )
+		/// <summary>
+		/// Gets either File.Move or Directory.Move depending on fileType.
+		/// </summary>
+		/// <param name="fileType"></param>
+		/// <returns></returns>
+		internal static Action<string, string> GetMoveFunction( this FileType fileType )
 		{
 			switch ( fileType )
 			{
@@ -37,7 +42,12 @@ namespace Dfo.Controlling
 			}
 		}
 
-		public static Func<string, bool> GetExistsFunction( this FileType fileType )
+		/// <summary>
+		/// Gets either File.Exists or Directory.Exists depending on fileType.
+		/// </summary>
+		/// <param name="fileType"></param>
+		/// <returns></returns>
+		internal static Func<string, bool> GetExistsFunction( this FileType fileType )
 		{
 			switch ( fileType )
 			{
@@ -57,31 +67,39 @@ namespace Dfo.Controlling
 	public class FileSwitcher
 	{
 		/// <summary>
-		/// The absolute path of the file to switch out.
+		/// Gets or sets the absolute path of the file to switch out.
 		/// </summary>
 		public string NormalFile { get; set; }
 
 		/// <summary>
-		/// The absolute path of the file to switch in.
+		/// Gets or sets the absolute path of the file to switch in.
 		/// </summary>
 		public string CustomFile { get; set; }
 
 		/// <summary>
-		/// The absolute path of the file of use as a temporary location for the file being switched out.
+		/// Gets or sets the absolute path of the file of use as a temporary location for the file being switched out.
 		/// </summary>
 		public string TempFile { get; set; }
 
 		private FileType m_fileType = FileType.RegularFile;
 		/// <summary>
-		/// What kind of file system entity the file is supposed to be (file, directory).
+		/// Gets or sets what kind of file system entity the file is supposed to be (file, directory).
 		/// </summary>
 		public FileType FileType { get { return m_fileType; } set { m_fileType = value; } }
 
+		/// <summary>
+		/// Creates a FileSwitcher object. You must set values for NormalFile, CustomFile, TempFile, and
+		/// FileType.
+		/// </summary>
 		public FileSwitcher()
 		{
 			;
 		}
 
+		/// <summary>
+		/// Creates a copy of this object.
+		/// </summary>
+		/// <returns></returns>
 		public FileSwitcher Clone()
 		{
 			FileSwitcher clone = new FileSwitcher();
@@ -97,7 +115,7 @@ namespace Dfo.Controlling
 		/// Moves FileToSwitch to TempFile and FileToSwitchWith to FileToSwitch. If the second move fails,
 		/// the first move is attempted to be undone.
 		/// </summary>
-		/// <returns>A SwitchedFile object you can use to switch back by calling Dispose() on it.</returns>
+		/// <returns>A SwitchedFile object you can use to switch back by calling SwitchBack() on it.</returns>
 		/// <exception cref="System.ArgumentNullExcepton">One of the properties is null.</exception>
 		/// <exception cref="System.IO.IOException">The file could not be switched.</exception>
 		public SwitchedFile Switch()

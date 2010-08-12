@@ -388,14 +388,17 @@ namespace Dfo.Controlling
 		{
 			if ( Params.LaunchInWindowed.HasValue )
 			{
-				string magicWindowModeDirectory = "zo3mo4";
+				string magicWindowModeDirectoryName = "zo3mo4";
+				string magicWindowModeDirectoryPath = Path.Combine( Params.GameDir, magicWindowModeDirectoryName );
 				Exception error = null;
 
 				if ( Params.LaunchInWindowed.Value )
 				{
+					Logging.Log.DebugFormat( "Forcing window mode by creating directory {0}.", magicWindowModeDirectoryPath );
 					try
 					{
 						Directory.CreateDirectory( Path.Combine( Params.GameDir, magicWindowModeDirectory ) );
+						Logging.Log.DebugFormat( "{0} created.", magicWindowModeDirectoryPath );
 					}
 					catch ( Exception ex )
 					{
@@ -415,13 +418,16 @@ namespace Dfo.Controlling
 				}
 				else
 				{
+					Logging.Log.DebugFormat( "Forcing full-screen mode by deleting directory {0}.", magicWindowModeDirectoryPath );
 					try
 					{
 						Directory.Delete( Path.Combine( Params.GameDir, magicWindowModeDirectory ), true );
+						Logging.Log.DebugFormat( "{0} removed.", magicWindowModeDirectoryPath );
 					}
 					catch ( DirectoryNotFoundException )
 					{
-						; // It's ok if the directory doesn't exist
+						// It's ok if the directory doesn't exist
+						Logging.Log.DebugFormat( "{0} does not exist.", magicWindowModeDirectoryPath );
 					}
 					catch ( Exception ex )
 					{
@@ -442,6 +448,7 @@ namespace Dfo.Controlling
 
 				if ( error != null )
 				{
+					// Don't log things that calling code could log if it wanted to.
 					CancelErrorEventArgs e = new CancelErrorEventArgs( error );
 					OnWindowModeFailed( e );
 					if ( e.Cancel )

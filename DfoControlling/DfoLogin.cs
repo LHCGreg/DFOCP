@@ -56,6 +56,7 @@ namespace Dfo.Controlling
 			// Unlike most sensible programs, DFO does not use CommandLineToArgvW/CommandLineToArgvA
 			// to parse its command-line into separate arguments. Instead it seems to simply separate
 			// the arguments by a space and double quotes are normal characters.
+			Logging.Log.Debug( "Getting argument string to pass to DFO." );
 			IList<string> dfoArgs = GetDfoArgs( username, password, timeoutInMs );
 			StringBuilder argString = new StringBuilder();
 			for ( int argIndex = 0; argIndex < dfoArgs.Count; argIndex++ )
@@ -66,6 +67,9 @@ namespace Dfo.Controlling
 					argString.Append( ' ' );
 				}
 			}
+
+			Logging.Log.DebugFormat( "Argument string is {0}",
+				Logging.GetSensitiveDataString( SensitiveData.LoginCookies, argString.ToString() ) );
 
 			return argString.ToString();
 		}
@@ -93,6 +97,7 @@ namespace Dfo.Controlling
 		/// <returns>One or more arguments you can pass to DFOLauncher.exe to start the game as the given user.</returns>
 		public static IList<string> GetDfoArgs( string username, string password, int timeoutInMs )
 		{
+			Logging.Log.DebugFormat( "Getting arguments to pass to DFO." );
 			List<string> args = new List<string>();
 
 			string authArg = GetDfoAuthArg( username, password, DefaultLoginUrl, timeoutInMs, DefaultIni );
@@ -103,18 +108,33 @@ namespace Dfo.Controlling
 				string geolocationArg = GetGeolocationArg( DefaultGeolocationUrl, timeoutInMs );
 				args.Add( geolocationArg );
 			}
-			catch ( Exception ex )
+			catch ( WebException ex )
 			{
-				if ( ex is WebException || ex is DfoAuthenticationException )
+				// Couldn't get geolocation arg, maybe DFO changed and doesn't use it anymore
+				// Don't break the app in that case.
+				Logging.Log.ErrorFormat( "Couldn't get the geolocation argument: {0} Proceeding without geolocation information.", ex.Message );
+				Logging.Log.Debug( "Exception details: {0}", ex );
+			}
+			catch ( GeolocationFormatException ex )
+			{
+				Logging.Log.ErrorFormat( "Couldn't get the geolocation argument because the data from the server was bad. Proceeding without geolocation information." );
+				Logging.Log.DebugFormat( "Exception details: {0}", ex );
+				Logging.Log.DebugFormat( "Geolocation page contents: {0}", ex.GeolocationData );
+			}
+
+			if ( Logging.Log.IsDebugEnabled )
+			{
+				StringBuilder argString = new StringBuilder();
+				for ( int argIndex = 0; argIndex < dfoArgs.Count; argIndex++ )
 				{
-					// TODO: Log this error
-					; // Couldn't get geolocation arg, maybe DFO changed and doesn't use it anymore
-					  // Don't break the app in that case.
+					argString.Append( dfoArgs[ argIndex ] );
+					if ( argIndex != dfoArgs.Count - 1 )
+					{
+						argString.Append( ' ' );
+					}
 				}
-				else
-				{
-					throw;
-				}
+
+				Logging.Log.DebugFormat( "Arguments to pass to DFO are: {0}", argString.ToString() );
 			}
 
 			return args;
@@ -180,6 +200,11 @@ namespace Dfo.Controlling
 		/// <returns>An authentication token string for the given username</returns>
 		private static string GetAuthToken( string username, string password, string loginUrl, int timeoutInMs )
 		{
+			Logging.Log.DebugFormat( "Getting DFO authentication token using username '{0}', password '{1}', URL {2}, timeout of {3} ms.",
+				Logging.GetSensitiveDataString(SensitiveData.Usernames, username),
+				Logging.GetSensitiveDataString(SensitiveData.Passwords, password),
+				loginUrl, timeoutInMs );
+
 			username.ThrowIfNull( "username" );
 			password.ThrowIfNull( "password" );
 
@@ -208,9 +233,11 @@ namespace Dfo.Controlling
 			{
 				viewstate = GetViewstate( loginUrl, timeoutInMs ); // Getting a fresh viewstate may be more likely to succeed. Using a hardcoded viewstate would probably work, but the time taken for an extra connection is not a concern here.
 			}
-			catch ( DfoAuthenticationException )
+			catch ( DfoAuthenticationException ex )
 			{
-				viewstate = FallbackViewstate; // Couldn't parse the viewstate, try an already obtained viewstate.
+				Logging.Log.WarnFormat( "Could not get a viewstate from {0}. Trying a fallback viewstate '{1}'.",
+					loginUrl, FallbackViewstate );
+				viewstate = FallbackViewstate;
 			}
 
 			postData.Append( "__VIEWSTATE=" ).Append( viewstate ).Append( "&" );
@@ -218,6 +245,10 @@ namespace Dfo.Controlling
 			postData.Append( DefaultPasswordField ).Append( "=" ).Append( HttpUtility.UrlEncode( password ) ).Append( "&" );
 			postData.Append( DefaultButtonField ).Append( "=" ).Append( "&" );
 			postData.Append( "__EVENTTARGET=&__EVENTARGUMENT=" );
+
+			Logging.Log.DebugFormat( "POST data is '{0}'",
+				Logging.GetSensitiveDataString( SensitiveData.Usernames | SensitiveData.Passwords,
+				postData.ToString() ) );
 
 			// Not sure if MemoryStreams and StreamWriters need to be Disposed() of, but they do implement IDisposable even if it's only because of a parent class
 			using ( MemoryStream postBytes = new MemoryStream() ) // Now we need to convert the post data string to raw bytes, because we need to set the content-length to the number of bytes, not number of chars.
@@ -234,8 +265,11 @@ namespace Dfo.Controlling
 				}
 			}
 
+			Logging.Log.DebugFormat( "Request written." );
+
 			using ( WebResponse responseParentClass = loginPostRequest.GetResponse() )
 			{
+				Logging.Log.DebugFormat( "Got response." );
 				HttpWebResponse response = responseParentClass as HttpWebResponse;
 				if ( response == null )
 				{
@@ -249,6 +283,8 @@ namespace Dfo.Controlling
 				}
 
 				string authToken = authTokenCookie.Value;
+				Logging.Log.DebugFormat( "Got authentication token: '{0}'",
+					Logging.GetSensitiveDataString( SensitiveData.LoginCookies, authToken ) );
 				return authToken;
 			}
 		}
@@ -268,12 +304,13 @@ namespace Dfo.Controlling
 		/// less than or equal to zero and not System.Threading.Timeout.Infinite.</exception>
 		/// <exception cref="System.Net.WebException">A timeout occurred or there was an error while
 		/// doing the web request.</exception>
-		/// <exception cref="DfoAuthenticationException">Could not get the viewstate possibly due to a change
+		/// <exception cref="Dfo.Controlling.DfoAuthenticationException">Could not get the viewstate possibly due to a change
 		/// in the web site.</exception>
 		private static string GetViewstate( string loginUrl, int timeoutInMillis )
 		{
 			// Here we're sending a GET request to the login URL for the sole purpose of getting the value
 			// of the hidden form field called __VIEWSTATE
+			Logging.Log.DebugFormat("Getting viewstate from {0}", loginUrl);
 			string html = GetWebPage( loginUrl, timeoutInMillis );
 
 			string viewstateRegexString = "<input type=\"hidden\" name=\"__VIEWSTATE\" id=\"__VIEWSTATE\" value=\"(?<viewstate>.*?)\"";
@@ -287,6 +324,7 @@ namespace Dfo.Controlling
 			else
 			{
 				string viewstate = match.Groups[ "viewstate" ].Value;
+				Logging.Log.DebugFormat( "Got viewstate: {0}", viewstate );
 				return viewstate;
 			}
 		}
@@ -308,6 +346,8 @@ namespace Dfo.Controlling
 		/// doing the web request (including 404 not found).</exception>
 		private static string GetWebPage( string url, int timeoutInMs )
 		{
+			Logging.Log.DebugFormat( "Getting web page at {0}", url );
+
 			WebRequest getRequestParentClass = WebRequest.Create( url );
 			HttpWebRequest getRequest = getRequestParentClass as HttpWebRequest;
 			if ( getRequest == null )
@@ -325,6 +365,8 @@ namespace Dfo.Controlling
 
 			using ( WebResponse responseParentClass = getRequest.GetResponse() )
 			{
+				Logging.Log.DebugFormat( "Got response." );
+
 				HttpWebResponse response = responseParentClass as HttpWebResponse;
 				if ( response == null )
 				{
@@ -338,7 +380,7 @@ namespace Dfo.Controlling
 					html = responseBodyReader.ReadToEnd();
 				}
 			}
-
+			Logging.Log.Trace( html );
 			return html;
 		}
 
@@ -357,10 +399,12 @@ namespace Dfo.Controlling
 		/// less than or equal to zero and not System.Threading.Timeout.Infinite.</exception>
 		/// <exception cref="System.Net.WebException">A timeout occurred or there was an error while
 		/// doing the web request.</exception>
-		/// <exception cref="Dfo.Controlling.DfoAuthenticationException">Could not get the geolocation arg because
+		/// <exception cref="Dfo.Controlling.GeolocationFormatException">Could not get the geolocation arg because
 		/// of getting bad data from the other site.</exception>
 		private static string GetGeolocationArg( string geolocationUrl, int timeoutInMs )
 		{
+			Logging.Log.DebugFormat( "Getting geolocation argument to pass to DFO from {0}", geolocationUrl );
+
 			string json = GetWebPage( geolocationUrl, timeoutInMs );
 
 			Dictionary<string, string> geoKeyValuePairs;
@@ -372,7 +416,7 @@ namespace Dfo.Controlling
 			{
 				if ( ex is JsonReaderException || ex is JsonSerializationException )
 				{
-					throw new DfoAuthenticationException( "Badly formatted geolocation page." );
+					throw new GeolocationFormatException( json, "Badly formatted geolocation page." );
 				}
 				else
 				{
@@ -382,11 +426,13 @@ namespace Dfo.Controlling
 
 			if ( geoKeyValuePairs.ContainsKey( "code" ) )
 			{
+				string geolocationArg = geoKeyValuePairs[ "code" ];
+				Logging.Log.DebugFormat( "Geolocation arg is '{0}'", geolocationArg );
 				return geoKeyValuePairs[ "code" ];
 			}
 			else
 			{
-				throw new DfoAuthenticationException( "'code' not present in geolocation page." );
+				throw new GeolocationFormatException( json, "'code' not present in geolocation page." );
 			}
 		}
 	}
