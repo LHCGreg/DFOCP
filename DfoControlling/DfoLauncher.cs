@@ -690,26 +690,19 @@ namespace Dfo.Controlling
 						using ( ManagementObjectSearcher dfoProcessSearcher = new ManagementObjectSearcher( scope, dfoProcessQuery ) )
 						using ( ManagementObjectCollection dfoProcessCollection = dfoProcessSearcher.Get() )
 						{
-							if ( dfoProcessCollection.Count == 0 )
+							foreach ( ManagementObject dfoProcess in dfoProcessCollection )
 							{
-								OnPopupKillFailed( new ErrorEventArgs( new ManagementException( "No DFO processes found." ) ) );
-							}
-							else
-							{
-								foreach ( ManagementObject dfoProcess in dfoProcessCollection )
+								try
 								{
-									try
+									using ( dfoProcess )
 									{
-										using ( dfoProcess )
-										{
-											object ret = dfoProcess.InvokeMethod( "Terminate", new object[] { } );
-										}
+										object ret = dfoProcess.InvokeMethod( "Terminate", new object[] { } );
 									}
-									catch ( ManagementException ex )
-									{
-										OnPopupKillFailed( new ErrorEventArgs( new ManagementException( string.Format(
-											"Could not kill {0}: {1}", Path.GetFileName( copiedParams.DfoExe ), ex.Message ), ex ) ) );
-									}
+								}
+								catch ( ManagementException ex )
+								{
+									OnPopupKillFailed( new ErrorEventArgs( new ManagementException( string.Format(
+										"Could not kill {0}: {1}", Path.GetFileName( copiedParams.DfoExe ), ex.Message ), ex ) ) );
 								}
 							}
 						}
