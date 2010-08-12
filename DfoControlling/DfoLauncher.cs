@@ -131,6 +131,11 @@ namespace Dfo.Controlling
 			{
 				currentDelegate( this, e );
 			}
+			else
+			{
+				Logging.Log.ErrorFormat( "Error while applying the window mode setting: {0}", e.Error.Message );
+				Logging.Log.DebugFormat( "Exception detail: ", e.Error );
+			}
 		}
 		#endregion
 
@@ -153,7 +158,7 @@ namespace Dfo.Controlling
 		private EventHandler<ErrorEventArgs> m_FileSwitchFailedDelegate;
 
 		/// <summary>
-		/// Raises the <c>SoundpackSwitchFailed</c> event.
+		/// Raises the <c>FileSwitchFailed</c> event.
 		/// </summary>
 		/// <param name="e">An <c>ErrorEventArgs</c> that contains the event data.</param>
 		protected virtual void OnFileSwitchFailed( ErrorEventArgs e )
@@ -166,6 +171,11 @@ namespace Dfo.Controlling
 			if ( currentDelegate != null )
 			{
 				currentDelegate( this, e );
+			}
+			else
+			{
+				Logging.Log.ErrorFormat( "Error while switching files: {0}", e.Error.Message );
+				Logging.Log.DebugFormat( "Exception details: ", e.Error );
 			}
 		}
 		#endregion
@@ -203,6 +213,11 @@ namespace Dfo.Controlling
 			{
 				currentDelegate( this, e );
 			}
+			else
+			{
+				Logging.Log.WarnFormat( "Error while trying to kill the ad popup: {0}", e.Error.Message );
+				Logging.Log.DebugFormat( "Exception details: ", e.Error );
+			}
 		}
 		#endregion
 
@@ -226,11 +241,16 @@ namespace Dfo.Controlling
 			private set
 			{
 				bool stateChanged = false;
+				LaunchState oldState = LaunchState.None;
+				LaunchState newState = LaunchState.None;
 
 				lock ( m_syncHandle )
 				{
 					if ( m_state != value )
 					{
+						oldState = m_state;
+						newState = value;
+						
 						m_state = value;
 						stateChanged = true;
 					}
@@ -238,6 +258,8 @@ namespace Dfo.Controlling
 
 				if ( stateChanged )
 				{
+					// Do logging outside of the lock
+					Logging.Log.DebugFormat( "State change from {0} to {1}.", oldState, newState );
 					OnLaunchStateChanged( EventArgs.Empty );
 				}
 			}
@@ -271,6 +293,7 @@ namespace Dfo.Controlling
 		/// <exception cref="System.ObjectDisposedException">This object has been Disposed of.</exception>
 		public void Launch()
 		{
+			Logging.Log.DebugFormat( "Starting game." );
 			if ( State != LaunchState.None )
 			{
 				throw new InvalidOperationException( "The game has already been launched" );
@@ -318,6 +341,7 @@ namespace Dfo.Controlling
 			bool ok = EnforceWindowedSetting();
 			if ( !ok )
 			{
+				Logging.Log.DebugFormat( "Error while applying window mode setting; aborting launch." );
 				return;
 			}
 
@@ -342,6 +366,12 @@ namespace Dfo.Controlling
 				m_launcherProcess.StartInfo.Arguments = dfoArg; // This argument contains the authentication token we got from logging in
 				m_launcherProcess.EnableRaisingEvents = true;
 				m_launcherProcess.Exited += LauncherProcessExitedHandler; // Use async notification instead of synchronous waiting so we can cancel while the launcher process is going
+
+				Logging.Log.DebugFormat( "Starting game process '{0}' with arguments '{1}'",
+					m_launcherProcess.StartInfo.FileName,
+					Logging.GetSensitiveDataString( SensitiveData.LoginCookies, m_launcherProcess.StartInfo.Arguments )
+					);
+				
 				m_launcherProcess.Start();
 
 				lock ( m_syncHandle )
@@ -351,6 +381,7 @@ namespace Dfo.Controlling
 					m_dfoMonitorThread.IsBackground = true;
 					m_dfoMonitorThread.Name = "DFO monitor";
 
+					Logging.Log.DebugFormat( "Starting monitor thread." );
 					// Give it a copy of the launch params so the caller can change the Params property while
 					// the game is running with no effects for the next time they launch
 					m_dfoMonitorThread.Start( Params.Clone() );
@@ -386,6 +417,7 @@ namespace Dfo.Controlling
 		/// tell us to stop.</returns>
 		private bool EnforceWindowedSetting()
 		{
+			Logging.Log.DebugFormat( "Applying window mode setting." );
 			if ( Params.LaunchInWindowed.HasValue )
 			{
 				string magicWindowModeDirectoryName = "zo3mo4";
@@ -397,7 +429,7 @@ namespace Dfo.Controlling
 					Logging.Log.DebugFormat( "Forcing window mode by creating directory {0}.", magicWindowModeDirectoryPath );
 					try
 					{
-						Directory.CreateDirectory( Path.Combine( Params.GameDir, magicWindowModeDirectory ) );
+						Directory.CreateDirectory( magicWindowModeDirectoryPath );
 						Logging.Log.DebugFormat( "{0} created.", magicWindowModeDirectoryPath );
 					}
 					catch ( Exception ex )
@@ -408,7 +440,7 @@ namespace Dfo.Controlling
 						{
 							error = new IOException( string.Format(
 								"Error while trying to create directory {0}: {1}",
-								magicWindowModeDirectory, ex.Message ), ex );
+								magicWindowModeDirectoryPath, ex.Message ), ex );
 						}
 						else
 						{
@@ -421,7 +453,7 @@ namespace Dfo.Controlling
 					Logging.Log.DebugFormat( "Forcing full-screen mode by deleting directory {0}.", magicWindowModeDirectoryPath );
 					try
 					{
-						Directory.Delete( Path.Combine( Params.GameDir, magicWindowModeDirectory ), true );
+						Directory.Delete( magicWindowModeDirectoryPath, true );
 						Logging.Log.DebugFormat( "{0} removed.", magicWindowModeDirectoryPath );
 					}
 					catch ( DirectoryNotFoundException )
@@ -437,7 +469,7 @@ namespace Dfo.Controlling
 						{
 							error = new IOException( string.Format(
 								"Error while trying to remove directory {0}: {1}",
-								magicWindowModeDirectory, ex.Message ), ex );
+								magicWindowModeDirectoryPath, ex.Message ), ex );
 						}
 						else
 						{
@@ -448,7 +480,6 @@ namespace Dfo.Controlling
 
 				if ( error != null )
 				{
-					// Don't log things that calling code could log if it wanted to.
 					CancelErrorEventArgs e = new CancelErrorEventArgs( error );
 					OnWindowModeFailed( e );
 					if ( e.Cancel )
@@ -476,21 +507,28 @@ namespace Dfo.Controlling
 		/// </summary>
 		public void Reset()
 		{
+			Logging.Log.DebugFormat( "Resetting to an unattached state." );
+
 			if ( m_disposed )
 			{
+				Logging.Log.DebugFormat( "Already disposed so already unattached." );
 				return;
 			}
 
 			// Send cancel signal to monitor thread if it's running and wait for it to finish terminating
 			if ( MonitorThreadIsRunning() )
 			{
+				Logging.Log.DebugFormat( "Monitor thread is running, sending it a reset signal and waiting for it to finish." );
 				m_monitorCancelEvent.Set();
 				m_monitorFinishedEvent.WaitOne();
 				// m_dfoMonitorThread got set to null as it was terminating itself
 				// m_launcherProcess got disposed of and set to null as monitor thread was exiting if it hadn't done it already
+
+				Logging.Log.DebugFormat( "Monitor thread reported completion." );
 			}
 			else
 			{
+				Logging.Log.DebugFormat( "Monitor thread not running. Setting state to None." );
 				// If an exception happened while launching but before the monitor thread is started,
 				// we need to set the state back to None. Normally the monitor thread does that as it's exiting.
 				State = LaunchState.None;
@@ -501,10 +539,13 @@ namespace Dfo.Controlling
 				// Need to set m_launcherProcess to null if there was an exception while launching.
 				if ( m_launcherProcess != null )
 				{
+					Logging.Log.DebugFormat( "Disposing of the launcher process." );
 					m_launcherProcess.Dispose();
 					m_launcherProcess = null;
 				}
 			}
+
+			Logging.Log.DebugFormat( "Reset complete." );
 		}
 
 		private bool MonitorThreadIsRunning()
@@ -546,6 +587,8 @@ namespace Dfo.Controlling
 
 		private void BackgroundThreadEntryPoint( LaunchParams copiedParams )
 		{
+			Logging.Log.DebugFormat( "Monitor thread started." );
+			
 			// Once this thread is created, it has full control over the State property. No other thread can
 			// change it until this thread sets it back to None.
 
@@ -553,6 +596,7 @@ namespace Dfo.Controlling
 			// in the Set state.
 			bool canceled = false;
 
+			Logging.Log.DebugFormat( "Waiting for the game launcher process to stop or a cancel signal." );
 			// Wait for launcher process to end or a cancel notice
 			// We have a process handle to the launcher process and if we get an async notification that it completed,
 			// m_launcherDoneEvent is set. Better than polling. :)
@@ -566,7 +610,12 @@ namespace Dfo.Controlling
 
 			if ( setHandleIndex == 1 ) // canceled
 			{
+				Logging.Log.DebugFormat( "Got cancel signal." );
 				canceled = true;
+			}
+			else
+			{
+				Logging.Log.DebugFormat( "Launcher process ended." );
 			}
 
 			List<SwitchedFile> switchedFiles = new List<SwitchedFile>();
@@ -582,6 +631,7 @@ namespace Dfo.Controlling
 			IntPtr dfoMainWindowHandle = IntPtr.Zero;
 			if ( !canceled )
 			{
+				Logging.Log.DebugFormat( "Waiting for DFO window to be created AND be visible, the DFO process to not exist, or a cancel notice." );
 				// Wait for DFO window to be created AND be visible, the DFO process to not exist, or a cancel notice.
 				Pair<IntPtr, bool> pollResults = PollUntilCanceled<IntPtr>( copiedParams.GameWindowCreatedPollingIntervalInMs,
 					() =>
@@ -617,6 +667,22 @@ namespace Dfo.Controlling
 						}
 					} );
 
+				if ( pollResults.Second )
+				{
+					Logging.Log.DebugFormat( "Received a cancel signal." );
+				}
+				else
+				{
+					if ( pollResults.First != IntPtr.Zero )
+					{
+						Logging.Log.DebugFormat( "Game window created and visible." );
+					}
+					else
+					{
+						Logging.Log.DebugFormat( "Game process does not exist." );
+					}
+				}
+
 				canceled = pollResults.Second;
 				if ( !canceled )
 				{
@@ -633,6 +699,7 @@ namespace Dfo.Controlling
 				// Game is up.
 				State = LaunchState.GameInProgress;
 
+				Logging.Log.DebugFormat( "Waiting for the main game window to not exist or to not be visible, or for a cancel signal." );
 				// Wait for DFO game window to be closed or a cancel notice
 				// Note that there is a distinction between a window existing and a window being visible.
 				// When the popup is displayed, the DFO window still "exists", but it is hidden
@@ -657,6 +724,22 @@ namespace Dfo.Controlling
 						}
 					} );
 
+				if ( pollResults.Second )
+				{
+					Logging.Log.DebugFormat( "Received a cancel signal." );
+				}
+				else
+				{
+					if ( pollResults.First != IntPtr.Zero )
+					{
+						Logging.Log.DebugFormat( "Game window exists but is not visible." );
+					}
+					else
+					{
+						Logging.Log.DebugFormat( "Game window does not exist." );
+					}
+				}
+
 				canceled = pollResults.Second;
 			}
 
@@ -665,6 +748,7 @@ namespace Dfo.Controlling
 				if ( copiedParams.ClosePopup )
 				{
 					// Kill the DFO process to kill the popup.
+					Logging.Log.DebugFormat( "Killing the game process to kill the popup." );
 
 					// A normal Process.Kill gets a Win32Exception with "Access is denied", possibly because
 					// of HackShield.
@@ -699,6 +783,7 @@ namespace Dfo.Controlling
 									{
 										using ( dfoProcess )
 										{
+											Logging.Log.DebugFormat( "Killing a game process." );
 											object ret = dfoProcess.InvokeMethod( "Terminate", new object[] { } );
 										}
 									}
@@ -716,6 +801,8 @@ namespace Dfo.Controlling
 						OnPopupKillFailed( new ErrorEventArgs( new ManagementException( string.Format(
 							"Error while doing WMI stuff: {0}", ex.Message ), ex ) ) );
 					}
+
+					Logging.Log.DebugFormat( "Done killing popup." );
 				}
 			}
 
@@ -725,15 +812,20 @@ namespace Dfo.Controlling
 			{
 				// Wait for DFO process to end, otherwise the OS won't let us move the files that are used by the game
 
+				string gameProcessName = Path.GetFileNameWithoutExtension( copiedParams.DfoExe );
+				Logging.Log.DebugFormat( "Waiting for there to be no processes called '{0}' so that switched files can be switched back.", gameProcessName );
+
 				Process[] dfoProcesses;
 				do
 				{
-					dfoProcesses = Process.GetProcessesByName( Path.GetFileNameWithoutExtension( copiedParams.DfoExe ) );
+					dfoProcesses = Process.GetProcessesByName( gameProcessName );
 					if ( dfoProcesses.Length > 0 )
 					{
 						Thread.Sleep( copiedParams.GameDeadPollingIntervalInMs );
 					}
 				} while ( dfoProcesses.Length > 0 );
+
+				Logging.Log.DebugFormat( "No more proccesses called '{0}'; switching files back now.", gameProcessName );
 
 				foreach ( SwitchedFile switchedFile in switchedFiles )
 				{
@@ -749,6 +841,8 @@ namespace Dfo.Controlling
 			State = LaunchState.None;
 
 			m_monitorFinishedEvent.Set();
+
+			Logging.Log.DebugFormat( "Monitor thread exiting." );
 		}
 
 		/// <summary>
@@ -802,6 +896,12 @@ namespace Dfo.Controlling
 			return IsWindowVisible( dfoWindowHandle );
 		}
 
+		/// <summary>
+		/// Switches the given FileSwitcher. Returns the resulting SwitchedFile on success, calls
+		/// OnFileSwitchFailed() and returns null on failure.
+		/// </summary>
+		/// <param name="fileToSwitch"></param>
+		/// <returns></returns>
 		private SwitchedFile SwitchFile( FileSwitcher fileToSwitch )
 		{
 			if ( fileToSwitch == null )
@@ -839,12 +939,23 @@ namespace Dfo.Controlling
 
 		private void LauncherProcessExitedHandler( object sender, EventArgs e )
 		{
+			bool launcherDoneSet = false;
 			lock ( m_syncHandle )
 			{
 				if ( m_launcherProcess == sender )
 				{
 					m_launcherDoneEvent.Set();
+					launcherDoneSet = true;
 				}
+			}
+
+			if ( launcherDoneSet )
+			{
+				Logging.Log.DebugFormat( "Launcher process exited, launcher done event set." );
+			}
+			else
+			{
+				Logging.Log.DebugFormat( "A launcher process exited but does not match the saved launcher process." );
 			}
 		}
 
@@ -858,13 +969,21 @@ namespace Dfo.Controlling
 		/// </summary>
 		public void Dispose()
 		{
+			Logging.Log.DebugFormat( "Disposing a DfoLauncher object." );
 			if ( !m_disposed )
 			{
 				Reset();
+
+				Logging.Log.DebugFormat( "Disposing of synchronization objects." );
 				m_monitorCancelEvent.Close();
 				m_monitorFinishedEvent.Close();
 				m_launcherDoneEvent.Close();
 				m_disposed = true;
+				Logging.Log.DebugFormat( "DfoLauncher Dispose complete." );
+			}
+			else
+			{
+				Logging.Log.DebugFormat("Already disposed.");
 			}
 		}
 
@@ -890,6 +1009,8 @@ namespace Dfo.Controlling
 				throw new Exception( "Oops, missed a game." );
 			}
 
+			Logging.Log.DebugFormat( "Detecting {0} directory by getting registry value '{1}' in registry key '{2}'",
+				game, valueName, keyName );
 			try
 			{
 				gameRoot = Registry.GetValue( keyName, valueName, null );
@@ -911,6 +1032,7 @@ namespace Dfo.Controlling
 			string gameRootDir = gameRoot.ToString();
 			if ( Utilities.PathIsValid( gameRootDir ) )
 			{
+				Logging.Log.DebugFormat( "Game directory is {0}", gameRootDir );
 				return gameRootDir;
 			}
 			else

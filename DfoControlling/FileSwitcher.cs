@@ -22,14 +22,14 @@ namespace Dfo.Controlling
 		Directory,
 	}
 
-	internal static class FileTypeExtensions
+	public static class FileTypeExtensions
 	{
 		/// <summary>
 		/// Gets either File.Move or Directory.Move depending on fileType.
 		/// </summary>
 		/// <param name="fileType"></param>
 		/// <returns></returns>
-		internal static Action<string, string> GetMoveFunction( this FileType fileType )
+		public static Action<string, string> GetMoveFunction( this FileType fileType )
 		{
 			switch ( fileType )
 			{
@@ -47,7 +47,7 @@ namespace Dfo.Controlling
 		/// </summary>
 		/// <param name="fileType"></param>
 		/// <returns></returns>
-		internal static Func<string, bool> GetExistsFunction( this FileType fileType )
+		public static Func<string, bool> GetExistsFunction( this FileType fileType )
 		{
 			switch ( fileType )
 			{

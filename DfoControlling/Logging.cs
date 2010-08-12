@@ -38,7 +38,7 @@ namespace Dfo.Controlling
 		/// <summary>
 		/// All sensitive data.
 		/// </summary>
-		All = 0xFFFFFFFF
+		All = LoginCookies | Usernames | Passwords
 	}
 
 	public static class Logging

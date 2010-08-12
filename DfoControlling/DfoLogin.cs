@@ -125,10 +125,10 @@ namespace Dfo.Controlling
 			if ( Logging.Log.IsDebugEnabled )
 			{
 				StringBuilder argString = new StringBuilder();
-				for ( int argIndex = 0; argIndex < dfoArgs.Count; argIndex++ )
+				for ( int argIndex = 0; argIndex < args.Count; argIndex++ )
 				{
-					argString.Append( dfoArgs[ argIndex ] );
-					if ( argIndex != dfoArgs.Count - 1 )
+					argString.Append( args[ argIndex ] );
+					if ( argIndex != args.Count - 1 )
 					{
 						argString.Append( ' ' );
 					}
@@ -233,7 +233,7 @@ namespace Dfo.Controlling
 			{
 				viewstate = GetViewstate( loginUrl, timeoutInMs ); // Getting a fresh viewstate may be more likely to succeed. Using a hardcoded viewstate would probably work, but the time taken for an extra connection is not a concern here.
 			}
-			catch ( DfoAuthenticationException ex )
+			catch ( DfoAuthenticationException )
 			{
 				Logging.Log.WarnFormat( "Could not get a viewstate from {0}. Trying a fallback viewstate '{1}'.",
 					loginUrl, FallbackViewstate );
