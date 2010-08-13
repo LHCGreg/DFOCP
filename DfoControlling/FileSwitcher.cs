@@ -124,6 +124,9 @@ namespace Dfo.Controlling
 			CustomFile.ThrowIfNull( "FileToSwitchWith" );
 			TempFile.ThrowIfNull( "TempFile" );
 
+			Logging.Log.DebugFormat( "Switching {0} with {1} using {2} as a temporary.",
+				NormalFile, CustomFile, TempFile );
+
 			Action<string, string> move = FileType.GetMoveFunction();
 
 			bool firstMoveSuccessful = false;
@@ -131,8 +134,11 @@ namespace Dfo.Controlling
 			{
 				move( NormalFile, TempFile );
 				firstMoveSuccessful = true;
+				Logging.Log.DebugFormat( "Moved {0} to {1}.", NormalFile, TempFile );
 
 				move( CustomFile, NormalFile );
+				Logging.Log.DebugFormat( "Moved {0} to {1}.", CustomFile, NormalFile );
+				Logging.Log.DebugFormat( "Switch successful." );
 
 				return new SwitchedFile( NormalFile, CustomFile, TempFile, FileType );
 			}
@@ -236,18 +242,24 @@ namespace Dfo.Controlling
 			CustomFile.ThrowIfNull( "FileToSwitchWith" );
 			TempFile.ThrowIfNull( "TempFile" );
 
+			Logging.Log.DebugFormat( "Checking if switchable ('{0}', '{1}', '{2}') is broken.",
+				NormalFile, CustomFile, TempFile );
+
 			Func<string, bool> exists = FileType.GetExistsFunction();
 
 			if ( exists( TempFile ) && exists( NormalFile ) )
 			{
+				Logging.Log.DebugFormat( "Normal and temp both exist, switchable is broken." );
 				return true;
 			}
 			else if ( exists( TempFile ) && exists( CustomFile ) )
 			{
+				Logging.Log.DebugFormat( "Custom and temp both exist, switchable is broken." );
 				return true;
 			}
 			else
 			{
+				Logging.Log.DebugFormat( "Not broken." );
 				return false;
 			}
 		}
@@ -264,22 +276,30 @@ namespace Dfo.Controlling
 			CustomFile.ThrowIfNull( "FileToSwitchWith" );
 			TempFile.ThrowIfNull( "TempFile" );
 
-			if ( !FilesBroken() )
-			{
-				return;
-			}
+			Logging.Log.DebugFormat( "Repairing switchable ('{0}', '{1}', '{2}').",
+				NormalFile, CustomFile, TempFile );
+
+			//if ( !FilesBroken() )
+			//{
+			//    Logging.Log.DebugFormat( "Not broken, nothing to repair." );
+			//    return;
+			//}
 
 			Action<string, string> move = FileType.GetMoveFunction();
 			Func<string, bool> exists = FileType.GetExistsFunction();
 
 			if ( exists( TempFile ) && exists( NormalFile ) )
 			{
+				Logging.Log.DebugFormat( "Normal and temp exist." );
+				
 				// Rename FileToSwitch to FileToSwitchWith
 				try
 				{
 					move( NormalFile, CustomFile );
+					Logging.Log.DebugFormat( "Moved file at normal location {0} to custom location {1}",
+						NormalFile, CustomFile );
 				}
-				catch ( Exception ex )
+				catch ( Exception ex ) // XXX: Catch specific exceptions
 				{
 					throw new IOException( string.Format( "Could not move {0} to {1}. {2}",
 						NormalFile, CustomFile, ex.Message ) );
@@ -289,8 +309,11 @@ namespace Dfo.Controlling
 				try
 				{
 					move( TempFile, NormalFile );
+					Logging.Log.DebugFormat( "Moved file at temp location {0} to normal location {1}",
+						TempFile, NormalFile );
+					Logging.Log.DebugFormat( "Repair complete." );
 				}
-				catch ( Exception ex )
+				catch ( Exception ex ) // XXX: Catch specific exceptions
 				{
 					throw new IOException( string.Format( "Could not move {0} to {1}. {2}",
 						TempFile, NormalFile, ex.Message ) );
@@ -298,10 +321,13 @@ namespace Dfo.Controlling
 			}
 			else if ( exists( TempFile ) && exists( CustomFile ) )
 			{
+				Logging.Log.DebugFormat( "Custom and temp exist." );
 				// Rename TempFile to FileToSwitch
 				try
 				{
 					move( TempFile, NormalFile );
+					Logging.Log.DebugFormat( "Moved file at temp location {0} to normal location {1}",
+						TempFile, NormalFile );
 				}
 				catch ( Exception ex )
 				{
@@ -311,6 +337,7 @@ namespace Dfo.Controlling
 			}
 			else
 			{
+				Logging.Log.DebugFormat( "Not broken, nothing to repair." );
 				return;
 			}
 		}
