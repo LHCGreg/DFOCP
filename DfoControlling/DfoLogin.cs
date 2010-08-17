@@ -69,7 +69,7 @@ namespace Dfo.Controlling
 			}
 
 			Logging.Log.DebugFormat( "Argument string is {0}",
-				Logging.GetSensitiveDataString( SensitiveData.LoginCookies, argString.ToString() ) );
+				argString.ToString().HideSensitiveData( SensitiveData.LoginCookies ) );
 
 			return argString.ToString();
 		}
@@ -201,8 +201,8 @@ namespace Dfo.Controlling
 		private static string GetAuthToken( string username, string password, string loginUrl, int timeoutInMs )
 		{
 			Logging.Log.DebugFormat( "Getting DFO authentication token using username '{0}', password '{1}', URL {2}, timeout of {3} ms.",
-				Logging.GetSensitiveDataString(SensitiveData.Usernames, username),
-				Logging.GetSensitiveDataString(SensitiveData.Passwords, password),
+				username.HideSensitiveData( SensitiveData.Usernames ),
+				password.HideSensitiveData( SensitiveData.Passwords ),
 				loginUrl, timeoutInMs );
 
 			username.ThrowIfNull( "username" );
@@ -247,8 +247,7 @@ namespace Dfo.Controlling
 			postData.Append( "__EVENTTARGET=&__EVENTARGUMENT=" );
 
 			Logging.Log.DebugFormat( "POST data is '{0}'",
-				Logging.GetSensitiveDataString( SensitiveData.Usernames | SensitiveData.Passwords,
-				postData.ToString() ) );
+				postData.ToString().HideSensitiveData( SensitiveData.Usernames | SensitiveData.Passwords ) );
 
 			// Not sure if MemoryStreams and StreamWriters need to be Disposed() of, but they do implement IDisposable even if it's only because of a parent class
 			using ( MemoryStream postBytes = new MemoryStream() ) // Now we need to convert the post data string to raw bytes, because we need to set the content-length to the number of bytes, not number of chars.
@@ -284,7 +283,7 @@ namespace Dfo.Controlling
 
 				string authToken = authTokenCookie.Value;
 				Logging.Log.DebugFormat( "Got authentication token: '{0}'",
-					Logging.GetSensitiveDataString( SensitiveData.LoginCookies, authToken ) );
+					authToken.HideSensitiveData( SensitiveData.LoginCookies ) );
 				return authToken;
 			}
 		}
@@ -310,7 +309,7 @@ namespace Dfo.Controlling
 		{
 			// Here we're sending a GET request to the login URL for the sole purpose of getting the value
 			// of the hidden form field called __VIEWSTATE
-			Logging.Log.DebugFormat("Getting viewstate from {0}", loginUrl);
+			Logging.Log.DebugFormat( "Getting viewstate from {0}", loginUrl );
 			string html = GetWebPage( loginUrl, timeoutInMillis );
 
 			string viewstateRegexString = "<input type=\"hidden\" name=\"__VIEWSTATE\" id=\"__VIEWSTATE\" value=\"(?<viewstate>.*?)\"";

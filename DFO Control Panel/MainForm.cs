@@ -22,7 +22,7 @@ namespace Dfo.ControlPanel
 		/// Use to prevent the user from launching the game after they start launching
 		/// to prevent multiple launch attempts.
 		/// </summary>
-		private bool PreventLaunch { get { return m_preventLaunch; } set { m_preventLaunch = value;  UpdateLaunchVisibility(); } }
+		private bool PreventLaunch { get { return m_preventLaunch; } set { m_preventLaunch = value; UpdateLaunchVisibility(); } }
 
 		// Thread-safe
 		private void UpdateLaunchVisibility()
@@ -36,7 +36,7 @@ namespace Dfo.ControlPanel
 				ctlLaunch.InvokeIfRequiredAsync( () => ctlLaunch.Enabled = ( Username != "" && Password != "" ) );
 			}
 		}
-		
+
 		private DfoLauncher m_launcher = new DfoLauncher();
 		private string m_stateNoneText = "Ready"; // So the text for this only needs to be changed in one place.
 		private Thread m_launcherThread = null;
@@ -199,7 +199,7 @@ namespace Dfo.ControlPanel
 				{
 					// Hmmm...No UI binding for a switchable file. Add it as a switchable file and let
 					// setting/command-line behavior take effect.
-					SwitchableFiles.Add( switchableFile.Name, new PlainUiSwitchableFile(switchableFile) );
+					SwitchableFiles.Add( switchableFile.Name, new PlainUiSwitchableFile( switchableFile ) );
 				}
 			}
 
@@ -219,6 +219,8 @@ namespace Dfo.ControlPanel
 		/// </summary>
 		private void FixSwitchableFilesIfNeeded()
 		{
+			Logging.Log.DebugFormat( "Checking all switchable files." );
+			
 			bool anyFailed = false;
 			bool anyFixed = false;
 			foreach ( IUiSwitchableFile switchableFile in SwitchableFiles.Values )
@@ -250,6 +252,8 @@ namespace Dfo.ControlPanel
 				DisplayInfo( "Some switchable files were detected to be mixed up (this is usually caused by a system crash). They have been fixed.",
 						"Switchable files fixed" );
 			}
+
+			Logging.Log.DebugFormat( "Done checking switchable files." );
 		}
 
 		/// <summary>
@@ -261,19 +265,20 @@ namespace Dfo.ControlPanel
 			Logging.Log.Debug( "Applying settings and arguments." );
 
 			SettingsLoader.ApplySettingStruct( m_parsedArgs.Settings.ClosePopup, m_savedSettings.ClosePopup, null,
-				"Close popup", ( bool closePopup ) => ClosePopup = closePopup, m_launcher.Params.ClosePopup, false );
+				"Close popup", ( bool closePopup ) => ClosePopup = closePopup, m_launcher.Params.ClosePopup,
+				SensitiveData.None );
 
 			SettingsLoader.ApplySettingStruct( m_parsedArgs.Settings.LaunchWindowed, m_savedSettings.LaunchWindowed, null,
-				"Launch windowed", ( bool windowed ) => LaunchWindowed = windowed, false, false );
+				"Launch windowed", ( bool windowed ) => LaunchWindowed = windowed, false, SensitiveData.None );
 
 			SettingsLoader.ApplySettingStruct( null, m_savedSettings.RememberUsername, null, "Remember username",
-				( bool remember ) => RememberMe = remember, false, false );
+				( bool remember ) => RememberMe = remember, false, SensitiveData.None );
 
 			SettingsLoader.ApplySettingClass( m_parsedArgs.Settings.Username, m_savedSettings.Username, null,
-				"Username", ( string user ) => Username = user, "", true );
+				"Username", ( string user ) => Username = user, "", SensitiveData.Usernames );
 
 			SettingsLoader.ApplySettingClass( m_parsedArgs.Settings.Password, m_savedSettings.Password, null,
-				"Password", ( string pass ) => Password = pass, "", true );
+				"Password", ( string pass ) => Password = pass, "", SensitiveData.Passwords );
 
 			Func<string, string> validatePath = ( string dir ) =>
 			{
@@ -288,15 +293,14 @@ namespace Dfo.ControlPanel
 			};
 
 			SettingsLoader.ApplySettingClass( m_parsedArgs.Settings.DfoDir, m_savedSettings.DfoDir, validatePath,
-				"DFO directory", ( string dfodir ) => { if ( dfodir != null ) DfoDir = dfodir; }, null, false );
+				"DFO directory", ( string dfodir ) => { if ( dfodir != null ) DfoDir = dfodir; }, null,
+				SensitiveData.None );
 
 			if ( DfoDir == null )
 			{
 				try
 				{
-					Logging.Log.Info( "Autodetecting the DFO directory..." );
 					AutoDetectDfoDir();
-					Logging.Log.InfoFormat( "DFO directory detected to be {0}", DfoDir );
 				}
 				catch ( IOException ex )
 				{
@@ -319,17 +323,18 @@ namespace Dfo.ControlPanel
 					validatePath,
 					string.Format( "Custom file for {0}", switchableFromArgs.NormalFile ),
 					( string customFile ) => SwitchableFiles[ switchableName ].CustomFile = customFile,
-					switchableFromArgs.DefaultCustomFile, false );
+					switchableFromArgs.DefaultCustomFile, SensitiveData.None );
 
 				SettingsLoader.ApplySettingClass( switchableFromArgs.TempFile, switchableFromSettings.TempFile,
 					validatePath,
 					string.Format( "Temp file for {0}", switchableFromArgs.NormalFile ),
 					( string tempFile ) => SwitchableFiles[ switchableName ].TempFile = tempFile,
-					switchableFromArgs.DefaultTempFile, false );
+					switchableFromArgs.DefaultTempFile, SensitiveData.None );
 
 				SettingsLoader.ApplySettingStruct( switchFromArgs, switchFromSettings, null,
 					string.Format( "Switch {0}", switchableFromArgs.NormalFile ),
-					( bool switchFile ) => SwitchableFiles[ switchableName ].SwitchIfFilesOk = switchFile, false, false );
+					( bool switchFile ) => SwitchableFiles[ switchableName ].SwitchIfFilesOk = switchFile,
+					false, SensitiveData.None );
 			}
 
 			Logging.Log.Debug( "Done applying settings and arguments." );
@@ -356,7 +361,7 @@ namespace Dfo.ControlPanel
 		private void StateChangedHandler( object sender, EventArgs e )
 		{
 			LaunchState currentState = ( (DfoLauncher)sender ).State;
-			Logging.Log.DebugFormat( "State change to {0}.", currentState );
+			Logging.Log.DebugFormat( "Handling state change to {0}.", currentState );
 
 			switch ( currentState )
 			{
@@ -417,17 +422,18 @@ namespace Dfo.ControlPanel
 
 		private void ctlLaunch_Click( object sender, EventArgs e )
 		{
+			Logging.Log.DebugFormat( "Launch button clicked." );
 			PreventLaunch = true;
 
 			SetLauncherParams();
-
-			Logging.Log.DebugFormat( "Launching. Launch parameters:{0}{1}", Environment.NewLine, m_launcher.Params );
 
 			m_launcherThreadCanceledEvent.Reset();
 
 			m_launcherThread = new Thread( LaunchThreadStart );
 			m_launcherThread.IsBackground = true;
 			m_launcherThread.Name = "Launcher";
+
+			Logging.Log.DebugFormat( "Starting launch thread." );
 			m_launcherThread.Start();
 		}
 
@@ -464,11 +470,11 @@ namespace Dfo.ControlPanel
 					new WaitHandle[] { m_stateBecameNoneEvent, m_launcherThreadCanceledEvent } );
 				if ( conditionIndex == 0 )
 				{
-					Logging.Log.Debug( "State became None." );
+					Logging.Log.Debug( "State became None, done waiting." );
 				}
 				else
 				{
-					Logging.Log.Debug( "Canceled." );
+					Logging.Log.Debug( "Canceled, done waiting." );
 				}
 
 				m_launcher.Reset();
@@ -486,7 +492,7 @@ namespace Dfo.ControlPanel
 				}
 			}
 
-			Logging.Log.Debug( "End of thread." );
+			Logging.Log.Debug( "End of launch thread." );
 		}
 
 		/// <summary>
@@ -568,13 +574,16 @@ namespace Dfo.ControlPanel
 
 		protected override void OnSizeChanged( EventArgs e )
 		{
+			// Tray icon housekeeping
 			if ( this.WindowState == FormWindowState.Minimized )
 			{
+				// Minimize to tray
 				m_notifyIcon.Visible = true;
 				this.ShowInTaskbar = false;
 			}
 			else
 			{
+				// Remove from tray when not minimized
 				this.ShowInTaskbar = true;
 				m_notifyIcon.Visible = false;
 				m_stateToRestoreTo = this.WindowState;

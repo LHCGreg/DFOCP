@@ -48,9 +48,9 @@ namespace Dfo.Controlling
 		//
 		// Because calling code might also want to modify properties of the logger, the underlying
 		// logger must be thread-safe.
-		private static object logLock = new object();
-		private static ILog log = new NoOpLogger();
-		private static SensitiveData sensitiveDataToLog = SensitiveData.None;
+		private static object s_logLock = new object();
+		private static ILog s_log = new NoOpLogger();
+		private static SensitiveData s_sensitiveDataToLog = SensitiveData.None;
 
 		/// <summary>
 		/// Gets or sets the logger that the Dfo.Controlling library should use. Logging can ease
@@ -62,25 +62,25 @@ namespace Dfo.Controlling
 		{
 			get
 			{
-				lock ( logLock )
+				lock ( s_logLock )
 				{
-					return log;
+					return s_log;
 				}
 			}
 			set
 			{
 				if ( value == null )
 				{
-					lock ( logLock )
+					lock ( s_logLock )
 					{
-						log = new NoOpLogger();
+						s_log = new NoOpLogger();
 					}
 				}
 				else
 				{
-					lock ( logLock )
+					lock ( s_logLock )
 					{
-						log = value;
+						s_log = value;
 					}
 				}
 			}
@@ -94,23 +94,31 @@ namespace Dfo.Controlling
 		{
 			get
 			{
-				lock ( logLock )
+				lock ( s_logLock )
 				{
-					return sensitiveDataToLog;
+					return s_sensitiveDataToLog;
 				}
 			}
 			set
 			{
-				lock ( logLock )
+				lock ( s_logLock )
 				{
-					sensitiveDataToLog = value;
+					s_sensitiveDataToLog = value;
 				}
 			}
 		}
+	}
 
-		internal static string GetSensitiveDataString( SensitiveData kindOfData, string dataString )
+	public static class DfoControllingLogHelpers
+	{
+		public static string HideSensitiveData( this string dataString, SensitiveData kindOfData, SensitiveData kindsToLog )
 		{
-			return ( ( Logging.SensitiveDataToLog & kindOfData ) == kindOfData ) ? dataString : "(withheld)";
+			return ( ( kindsToLog & kindOfData ) == kindOfData ) ? dataString : "(hidden)";
+		}
+
+		internal static string HideSensitiveData( this string dataString, SensitiveData kindOfData )
+		{
+			return dataString.HideSensitiveData( kindOfData, Logging.SensitiveDataToLog );
 		}
 	}
 }

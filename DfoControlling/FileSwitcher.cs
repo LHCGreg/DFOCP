@@ -229,7 +229,7 @@ namespace Dfo.Controlling
 		/// <summary>
 		/// Checks if the files of a switchable file (normal and custom) are not where they should be
 		/// (perhaps because of a crash). This only checks if it is something that can be fixed by
-		/// <c>FixBrokenSwitchableFiles()</c>. For example, a completely missing soundpack directory with no
+		/// <c>FixBrokenFiles()</c>. For example, a completely missing soundpack directory with no
 		/// temp soundpack directory is not considered to be "broken". Note that if the files are currently
 		/// switched, this method will report them as "broken" even if they will be switched back when the game
 		/// ends.
@@ -238,12 +238,14 @@ namespace Dfo.Controlling
 		/// <c>FixBrokenFiles()</c>.</returns>
 		public bool FilesBroken()
 		{
-			NormalFile.ThrowIfNull( "FileToSwitch" );
-			CustomFile.ThrowIfNull( "FileToSwitchWith" );
-			TempFile.ThrowIfNull( "TempFile" );
-
 			Logging.Log.DebugFormat( "Checking if switchable ('{0}', '{1}', '{2}') is broken.",
 				NormalFile, CustomFile, TempFile );
+
+			if ( NormalFile == null || CustomFile == null || TempFile == null )
+			{
+				Logging.Log.DebugFormat( "A file is not, so not \"broken\"." );
+				return false;
+			}
 
 			Func<string, bool> exists = FileType.GetExistsFunction();
 
@@ -270,8 +272,26 @@ namespace Dfo.Controlling
 		/// and fail.
 		/// </summary>
 		/// <exception cref="System.IO.IOException">Something went wrong while trying to fix the mixup.</exception>
+		/// <exception cref="System.ArgumentNullException">One of the properties is null.</exception>
 		public void FixBrokenFiles()
 		{
+			bool wereBroken;
+			FixBrokenFiles( out wereBroken );
+		}
+		
+		/// <summary>
+		/// Fixes switchable file mixups usually caused by a system or DFOCP crash. Does nothing if no problems
+		/// are detected. Note if the game is running with switched files, this method will try to "fix" them
+		/// and fail.
+		/// </summary>
+		/// <param name="wereBroken">Set to true if the files were broken and were fixed. Set to false if
+		/// the files were not broken.</param>
+		/// <exception cref="System.IO.IOException">Something went wrong while trying to fix the mixup.</exception>
+		/// <exception cref="System.ArgumentNullException">One of the properties is null.</exception>
+		public void FixBrokenFiles(out bool wereBroken)
+		{
+			wereBroken = false;
+
 			NormalFile.ThrowIfNull( "FileToSwitch" );
 			CustomFile.ThrowIfNull( "FileToSwitchWith" );
 			TempFile.ThrowIfNull( "TempFile" );
@@ -279,17 +299,12 @@ namespace Dfo.Controlling
 			Logging.Log.DebugFormat( "Repairing switchable ('{0}', '{1}', '{2}').",
 				NormalFile, CustomFile, TempFile );
 
-			//if ( !FilesBroken() )
-			//{
-			//    Logging.Log.DebugFormat( "Not broken, nothing to repair." );
-			//    return;
-			//}
-
 			Action<string, string> move = FileType.GetMoveFunction();
 			Func<string, bool> exists = FileType.GetExistsFunction();
 
 			if ( exists( TempFile ) && exists( NormalFile ) )
 			{
+				wereBroken = true;
 				Logging.Log.DebugFormat( "Normal and temp exist." );
 				
 				// Rename FileToSwitch to FileToSwitchWith
@@ -321,7 +336,9 @@ namespace Dfo.Controlling
 			}
 			else if ( exists( TempFile ) && exists( CustomFile ) )
 			{
+				wereBroken = true;
 				Logging.Log.DebugFormat( "Custom and temp exist." );
+
 				// Rename TempFile to FileToSwitch
 				try
 				{

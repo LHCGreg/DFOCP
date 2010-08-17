@@ -12,6 +12,17 @@ namespace Dfo.ControlPanel
 		public static Common.Logging.ILog Log { get; set; }
 		private static TimeSpan MaxLogAge { get { return new TimeSpan( 7, 0, 0, 0 ); } } // 7 days
 
+		private static Dfo.Controlling.SensitiveData s_sensitiveDataToLog = Dfo.Controlling.SensitiveData.None;
+		public static Dfo.Controlling.SensitiveData SensitiveDataToLog
+		{
+			get { return s_sensitiveDataToLog; }
+			set
+			{
+				s_sensitiveDataToLog = value;
+				Dfo.Controlling.Logging.SensitiveDataToLog = value;
+			}
+		}
+
 		public static void SetUpLogging()
 		{
 			log4net.ILog log4netlog = log4net.LogManager.GetLogger( "Main logger" );
@@ -90,7 +101,7 @@ namespace Dfo.ControlPanel
 		/// </summary>
 		private static void RemoveOldLogFiles()
 		{
-			Logging.Log.DebugFormat( "Checking for log files older than {0}...", MaxLogAge );
+			Logging.Log.InfoFormat( "Checking for log files older than {0}...", MaxLogAge );
 
 			DateTime nowUtc = DateTime.Now.ToUniversalTime();
 
@@ -148,7 +159,16 @@ namespace Dfo.ControlPanel
 				}
 			}
 
-			Logging.Log.Debug( "Done checking for old log files." );
+			Logging.Log.Info( "Done checking for old log files." );
+		}
+	}
+
+	static class DfoControlPanelLogHelpers
+	{
+		internal static string HideSensitiveData( this string dataString, Dfo.Controlling.SensitiveData kindOfData )
+		{
+			return Dfo.Controlling.DfoControllingLogHelpers.HideSensitiveData( dataString, kindOfData,
+				Logging.SensitiveDataToLog );
 		}
 	}
 }

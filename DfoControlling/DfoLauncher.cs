@@ -250,7 +250,7 @@ namespace Dfo.Controlling
 					{
 						oldState = m_state;
 						newState = value;
-						
+
 						m_state = value;
 						stateChanged = true;
 					}
@@ -293,7 +293,8 @@ namespace Dfo.Controlling
 		/// <exception cref="System.ObjectDisposedException">This object has been Disposed of.</exception>
 		public void Launch()
 		{
-			Logging.Log.DebugFormat( "Starting game." );
+			Logging.Log.DebugFormat( "Starting game. Launch parameters:{0}{1}",
+					Environment.NewLine, Params );
 			if ( State != LaunchState.None )
 			{
 				throw new InvalidOperationException( "The game has already been launched" );
@@ -369,9 +370,8 @@ namespace Dfo.Controlling
 
 				Logging.Log.DebugFormat( "Starting game process '{0}' with arguments '{1}'",
 					m_launcherProcess.StartInfo.FileName,
-					Logging.GetSensitiveDataString( SensitiveData.LoginCookies, m_launcherProcess.StartInfo.Arguments )
-					);
-				
+					m_launcherProcess.StartInfo.Arguments.HideSensitiveData( SensitiveData.LoginCookies ) );
+
 				m_launcherProcess.Start();
 
 				lock ( m_syncHandle )
@@ -588,7 +588,7 @@ namespace Dfo.Controlling
 		private void BackgroundThreadEntryPoint( LaunchParams copiedParams )
 		{
 			Logging.Log.DebugFormat( "Monitor thread started." );
-			
+
 			// Once this thread is created, it has full control over the State property. No other thread can
 			// change it until this thread sets it back to None.
 
@@ -983,7 +983,7 @@ namespace Dfo.Controlling
 			}
 			else
 			{
-				Logging.Log.DebugFormat("Already disposed.");
+				Logging.Log.DebugFormat( "Already disposed." );
 			}
 		}
 

@@ -109,7 +109,7 @@ namespace Dfo.ControlPanel
 					majorVersion = versionSplit[ 0 ];
 					minorVersion = versionSplit[ 1 ];
 
-					if ( majorVersion != s_majorVersion && majorVersion != "2")
+					if ( majorVersion != s_majorVersion && majorVersion != "2" )
 					{
 						Logging.Log.InfoFormat(
 						"Major version of settings file format is {0}, which is different from {1}. Ignoring file and using default settings.",
@@ -288,9 +288,8 @@ namespace Dfo.ControlPanel
 		/// <param name="apply">A delegate that does the actual applying given a setting value.</param>
 		/// <param name="defaultValue">A default setting value to use if command-line and saved settings do
 		/// not provide a valid value.</param>
-		/// <param name="suppressValueDisplay">Do not display the value of the setting when logging
-		/// (useful for things like passwords).</param>
-		public static void ApplySetting<TSetting>( bool cmdHas, TSetting fromCmd, bool settingsHas, TSetting fromSettings, Func<TSetting, string> validate, string settingName, Action<TSetting> apply, TSetting defaultValue, bool suppressValueDisplay )
+		/// <param name="dataSensitivity">The sensitivity level of the setting.</param>
+		public static void ApplySetting<TSetting>( bool cmdHas, TSetting fromCmd, bool settingsHas, TSetting fromSettings, Func<TSetting, string> validate, string settingName, Action<TSetting> apply, TSetting defaultValue, Dfo.Controlling.SensitiveData dataSensitivity )
 		{
 			Logging.Log.DebugFormat( "Getting value for setting '{0}'.", settingName );
 			TSetting settingValue = default( TSetting );
@@ -306,11 +305,11 @@ namespace Dfo.ControlPanel
 					error = validate( fromCmd );
 				}
 
-				string valueString = suppressValueDisplay ? "(hidden)" : fromCmd.ToString();
+				string valueString = string.Format( "{0}", fromCmd ).HideSensitiveData( dataSensitivity );
 				if ( error == null )
 				{
-					Logging.Log.DebugFormat( "{0} = {1} (from command-line)", settingName, valueString );
 					settingValue = fromCmd;
+					Logging.Log.DebugFormat( "{0} = {1} (from command-line)", settingName, valueString );
 					valueFound = true;
 				}
 				else
@@ -329,7 +328,7 @@ namespace Dfo.ControlPanel
 					error = validate( fromSettings );
 				}
 
-				string valueString = suppressValueDisplay ? "(hidden)" : fromSettings.ToString();
+				string valueString = string.Format( "{0}", fromSettings ).HideSensitiveData( dataSensitivity );
 				if ( error == null )
 				{
 					Logging.Log.DebugFormat( "{0} = {1} (from settings file)", settingName, valueString );
@@ -344,7 +343,7 @@ namespace Dfo.ControlPanel
 
 			if ( !valueFound )
 			{
-				string valueString = suppressValueDisplay ? "(hidden)" : string.Format( "{0}", defaultValue ); // defaultValue can be null, so can't use defaultValue.ToString()
+				string valueString = string.Format( "{0}", defaultValue ).HideSensitiveData( dataSensitivity );
 				settingValue = defaultValue;
 				valueFound = true;
 				Logging.Log.DebugFormat( "{0} = {1} (default)", settingName, valueString );
@@ -365,11 +364,15 @@ namespace Dfo.ControlPanel
 		/// <param name="apply"></param>
 		/// <param name="defaultValue"></param>
 		/// <param name="suppressValueDisplay"></param>
-		public static void ApplySettingStruct<TSetting>( TSetting? fromCmd, TSetting? fromSettings, Func<TSetting, string> validate, string settingName, Action<TSetting> apply, TSetting defaultValue, bool suppressValueDisplay ) where TSetting : struct
+		public static void ApplySettingStruct<TSetting>( TSetting? fromCmd, TSetting? fromSettings,
+			Func<TSetting, string> validate, string settingName, Action<TSetting> apply,
+			TSetting defaultValue, Dfo.Controlling.SensitiveData dataSensitivity )
+			
+			where TSetting : struct
 		{
 			ApplySetting<TSetting>( fromCmd.HasValue, fromCmd.HasValue ? fromCmd.Value : default( TSetting ),
 				fromSettings.HasValue, fromSettings.HasValue ? fromSettings.Value : default( TSetting ),
-				validate, settingName, apply, defaultValue, suppressValueDisplay );
+				validate, settingName, apply, defaultValue, dataSensitivity );
 		}
 
 		/// <summary>
@@ -383,11 +386,15 @@ namespace Dfo.ControlPanel
 		/// <param name="settingName"></param>
 		/// <param name="apply"></param>
 		/// <param name="defaultValue"></param>
-		/// <param name="suppressValueDisplay"></param>
-		public static void ApplySettingClass<TSetting>( TSetting fromCmd, TSetting fromSettings, Func<TSetting, string> validate, string settingName, Action<TSetting> apply, TSetting defaultValue, bool suppressValueDisplay ) where TSetting : class
+		/// <param name="dataSensitivity"></param>
+		public static void ApplySettingClass<TSetting>( TSetting fromCmd, TSetting fromSettings,
+			Func<TSetting, string> validate, string settingName, Action<TSetting> apply,
+			TSetting defaultValue, Dfo.Controlling.SensitiveData dataSensitivity )
+			
+			where TSetting : class
 		{
 			ApplySetting<TSetting>( fromCmd != null, fromCmd, fromSettings != null, fromSettings, validate,
-				settingName, apply, defaultValue, suppressValueDisplay );
+				settingName, apply, defaultValue, dataSensitivity );
 		}
 	}
 }
