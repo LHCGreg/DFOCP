@@ -148,6 +148,7 @@ namespace Dfo.ControlPanel
 			StringBuilder builder = new StringBuilder();
 			builder.AppendLine( string.Format( "Show help = {0}", ShowHelp ) );
 			builder.AppendLine( string.Format( "Show version = {0}", ShowVersion ) );
+			builder.AppendLine( string.Format( "Sensitive data to log = {0}", Logging.SensitiveDataToLog ) );
 			builder.AppendLine( string.Format( "Use GUI = {0}", Gui ) );
 			builder.AppendLine( string.Format( "Username specified = {0}", Settings.Username != null ) );
 			builder.AppendLine( string.Format( "Username = {0}",

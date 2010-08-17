@@ -231,6 +231,7 @@ namespace Dfo.ControlPanel
 					switchableFile.FixBrokenFilesIfNeeded( out wasBroken );
 					if ( wasBroken )
 					{
+						switchableFile.Refresh();
 						anyFixed = true;
 					}
 				}
@@ -238,13 +239,13 @@ namespace Dfo.ControlPanel
 				{
 					// XXX: Should the program exit?
 					anyFailed = true;
+					switchableFile.Refresh();
 					DisplayError( string.Format(
 						"Error while trying to fix switchable files. {0} I guess you'll have to fix them yourself.",
 						ex.Message ),
 						"Couldn't fix switchable files" );
+					
 				}
-
-				switchableFile.Refresh();
 			}
 
 			if ( anyFixed && !anyFailed )
