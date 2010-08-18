@@ -1,4 +1,5 @@
 Resizing DFO window
+Bug: DFOCP thinks the game has ended when the game patches. DFOCP assumes that DFO.exe should be running after the DFOLauncher.exe ends, but LauncherUpdator.exe might be running instead.
 More user-friendly error messages
 Option for killing news popups?
 Cancel button?
