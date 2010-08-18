@@ -52,10 +52,21 @@ namespace Dfo.Controlling
 
 		private bool m_disposed = false;
 
+		private LaunchParams m_params = new LaunchParams();
 		/// <summary>
-		/// Gets or sets the parameters to use when launching the game. Changes will not effect an existing launch.
+		/// Gets or sets the parameters to use when launching the game.
+		/// Changes will not effect an existing launch.
 		/// </summary>
-		public LaunchParams Params { get; set; }
+		/// <exception cref="ArgumentNullException">Attempted to set the value to null.</exception>
+		public LaunchParams Params
+		{
+			get { return m_params; }
+			set
+			{
+				value.ThrowIfNull( "Params" );
+				m_params = value;
+			}
+		}
 
 		/// <summary>
 		/// Raised when the State property changes. The event may be raised inside a method called by the caller or
@@ -270,8 +281,7 @@ namespace Dfo.Controlling
 		/// </summary>
 		public DfoLauncher()
 		{
-			// Set defaults for properties
-			Params = new LaunchParams();
+			;
 		}
 
 		/// <summary>
@@ -315,7 +325,7 @@ namespace Dfo.Controlling
 		/// <summary>
 		/// Launches DFO.
 		/// </summary>
-		/// <exception cref="System.ArgumentNullException">Username, Password, or Params was null.</exception>
+		/// <exception cref="System.ArgumentNullException">Params.Username or Params.Password was null.</exception>
 		/// <exception cref="System.ArgumentOutOfRangeException">Params.LoginTimeoutInMs was negative.</exception>
 		/// <exception cref="System.Security.SecurityException">The caller does not have permission to connect to the DFO
 		/// URI.</exception>
@@ -331,12 +341,12 @@ namespace Dfo.Controlling
 			{
 				throw new ObjectDisposedException( "DfoLauncher" );
 			}
-			Params.ThrowIfNull( "Params" );
 			if ( Params.LoginTimeoutInMs < 0 )
 			{
 				throw new ArgumentOutOfRangeException( "LoginTimeoutInMs cannot be negative." );
 			}
 			Params.Username.ThrowIfNull( "Params.Username" );
+			Params.Password.ThrowIfNull( "Params.Password" );
 			Params.FilesToSwitch.ThrowIfNull( "Params.FilesToSwitch" );
 
 			bool ok = EnforceWindowedSetting();
@@ -771,27 +781,20 @@ namespace Dfo.Controlling
 						using ( ManagementObjectSearcher dfoProcessSearcher = new ManagementObjectSearcher( scope, dfoProcessQuery ) )
 						using ( ManagementObjectCollection dfoProcessCollection = dfoProcessSearcher.Get() )
 						{
-							if ( dfoProcessCollection.Count == 0 )
+							foreach ( ManagementObject dfoProcess in dfoProcessCollection )
 							{
-								OnPopupKillFailed( new ErrorEventArgs( new ManagementException( "No DFO processes found." ) ) );
-							}
-							else
-							{
-								foreach ( ManagementObject dfoProcess in dfoProcessCollection )
+								try
 								{
-									try
+									using ( dfoProcess )
 									{
-										using ( dfoProcess )
-										{
-											Logging.Log.DebugFormat( "Killing a game process." );
-											object ret = dfoProcess.InvokeMethod( "Terminate", new object[] { } );
-										}
+										Logging.Log.DebugFormat( "Killing a game process." );
+										object ret = dfoProcess.InvokeMethod( "Terminate", new object[] { } );
 									}
-									catch ( ManagementException ex )
-									{
-										OnPopupKillFailed( new ErrorEventArgs( new ManagementException( string.Format(
-											"Could not kill {0}: {1}", Path.GetFileName( copiedParams.DfoExe ), ex.Message ), ex ) ) );
-									}
+								}
+								catch ( ManagementException ex )
+								{
+									OnPopupKillFailed( new ErrorEventArgs( new ManagementException( string.Format(
+										"Could not kill {0}: {1}", Path.GetFileName( copiedParams.DfoExe ), ex.Message ), ex ) ) );
 								}
 							}
 						}

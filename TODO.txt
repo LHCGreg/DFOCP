@@ -1,5 +1,6 @@
 Add logging to Dfo.Controlling
 Resizing DFO window
+More user-friendly error messages
 Option for killing news popups?
 Cancel button?
 Option to leave program open after game is done (GUI only, makes no sense with command-line)?
