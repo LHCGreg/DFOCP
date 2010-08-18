@@ -21,20 +21,17 @@ namespace Dfo.ControlPanel
 
 			AppDomain.CurrentDomain.UnhandledException += ( object sender, UnhandledExceptionEventArgs e ) =>
 				{
+					Logging.Log.FatalFormat( "{0} has crashed. :( Please file a bug report." );
 					if ( e.ExceptionObject is Exception )
 					{
-						Logging.Log.Fatal( "FATAL UNCAUGHT EXCEPTION.", (Exception)e.ExceptionObject );
+						Logging.Log.Debug( "Exception details: ", (Exception)e.ExceptionObject );
 					}
 					else
 					{
-						Logging.Log.Fatal( "FATAL UNCAUGHT EXCEPTION." );
+						Logging.Log.Debug( "No exception details available." );
 					}
 				};
 
-			Logging.Log.InfoFormat( "{0} version {1} started.", VersionInfo.AssemblyTitle, VersionInfo.AssemblyVersion );
-			Logging.Log.DebugFormat( "CLR Version: {0}", Environment.Version );
-			Logging.Log.DebugFormat( "Operating System: {0}", Environment.OSVersion );
-			Logging.Log.DebugFormat( "Number of processors: {0}", Environment.ProcessorCount );
 			Logging.Log.DebugFormat( "Checking .NET framework version..." );
 
 			// Code before this point must not use any .NET 3.5 SP1 features that are not in .NET 3.5.
@@ -57,10 +54,10 @@ namespace Dfo.ControlPanel
 			}
 			else
 			{
-				Logging.Log.InfoFormat( ".NET 3.5 SP1 or better detected." );
+				Logging.Log.DebugFormat( ".NET 3.5 SP1 or better detected." );
 			}
 
-			Logging.Log.Debug( "Parsing command-line arguments." );
+			Logging.Log.Info( "Parsing command-line arguments." );
 
 			CommandLineArgs parsedArgs = null;
 			try
@@ -76,8 +73,20 @@ namespace Dfo.ControlPanel
 				return 1;
 			}
 
-			Logging.Log.DebugFormat( "Command line parsed. Argument dump:{0}{1}", Environment.NewLine, parsedArgs );
+			Logging.Log.InfoFormat( "Command line parsed. Argument dump:{0}{1}", Environment.NewLine, parsedArgs );
 
+			if ( !parsedArgs.Gui )
+			{
+				EnsureConsoleExists();
+			}
+
+			foreach ( string message in parsedArgs.Messages )
+			{
+				Logging.Log.Warn( message );
+				// Doing the log in the arg handler and a Console.WriteLine here causes anything written
+				// to the console to not show up, wtf?
+			}
+			
 			if ( parsedArgs.Gui )
 			{
 				Logging.Log.Info( "Starting GUI." );
@@ -88,15 +97,6 @@ namespace Dfo.ControlPanel
 			}
 			else
 			{
-				EnsureConsoleExists();
-
-				foreach ( string message in parsedArgs.Messages )
-				{
-					Logging.Log.Warn( message );
-					// Doing the log in the arg handler and a Console.WriteLine here causes anything written
-					// to the console to not show up, wtf?
-				}
-
 				Logging.Log.Info( "Starting command-line launcher." );
 
 				using ( CommandLineEntryPoint cmd = new CommandLineEntryPoint( parsedArgs ) )

@@ -211,7 +211,7 @@ namespace Dfo.Controlling
 		/// Creates a string representation of this object for debugging.
 		/// </summary>
 		/// <returns>A dump of all properties, including internal properties. <c>Username</c> and <c>Password</c>
-		/// are not shown for security purposes, but it does say if they are set or not.</returns>
+		/// are shown only if Logging.SensitiveDataToShow allows.</returns>
 		public override string ToString()
 		{
 			StringBuilder builder = new StringBuilder();
@@ -235,8 +235,9 @@ namespace Dfo.Controlling
 			}
 
 			builder.AppendLine( string.Format( "Username present: {0}", Username != null ) );
-			builder.Append( string.Format( "Password present: {0}", Password != null ) );
-			// DO NOT include the username or password!
+			builder.AppendLine( string.Format( "Username: {0}", Username.HideSensitiveData( SensitiveData.Usernames ) ) );
+			builder.AppendLine( string.Format( "Password present: {0}", Password != null ) );
+			builder.Append( string.Format( "Password: {0}", Password.HideSensitiveData( SensitiveData.Passwords ) ) );
 
 			return builder.ToString();
 		}

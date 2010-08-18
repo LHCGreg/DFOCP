@@ -132,30 +132,15 @@ namespace Dfo.ControlPanel
 		/// does nothing.
 		/// </summary>
 		/// <param name="switchableFile"></param>
-		/// <param name="wasBroken">Set to true if the files were in an inconsistent state.</param>
+		/// <param name="wereBroken">Set to true if the files were in an inconsistent state.</param>
 		/// <exception cref="System.IO.IOException">There was an error while fixing the files.</exception>
 		/// <exception cref="System.ArgumentException">NormalFile, CustomFile, or TempFile contain invalid
 		/// characters.</exception>
 		/// <exception cref="System.ArgumentNullException">NormalFile, CustomFile, or TempFile are null.</exception>
-		public static void FixBrokenFilesIfNeeded( this ISwitchableFile switchableFile, out bool wasBroken )
+		public static void FixBrokenFilesIfNeeded( this ISwitchableFile switchableFile, out bool wereBroken )
 		{
-			wasBroken = false;
-			Logging.Log.InfoFormat( "Checking integrity of switchable file {0}.", switchableFile.NormalFile );
-
 			FileSwitcher files = switchableFile.AsFileSwitcher();
-
-			if ( files.FilesBroken() )
-			{
-				wasBroken = true;
-				Logging.Log.Info( "Mixed up files detected, attempting to fix them..." );
-
-				files.FixBrokenFiles();
-				Logging.Log.Info( "Fixed." );
-			}
-			else
-			{
-				Logging.Log.InfoFormat( "{0} is ok.", switchableFile.NormalFile );
-			}
+			files.FixBrokenFiles(out wereBroken);
 		}
 
 		/// <summary>

@@ -36,6 +36,31 @@ namespace Dfo.ControlPanel
 				{ "full", "Don't launch the game in windowed mode. This is the default.", argExistence => Settings.LaunchWindowed = !(argExistence != null) },
 				{ "dfodir=", "Directory where DFO is. Defaults to the autodetected DFO directory.",
 					argValue => { ThrowIfPathNotValid(argValue, "dfodir"); Settings.DfoDir = argValue; } },
+				{ "logcookies", "Log authentication cookies. Only useful for debugging.", argExistence =>
+					{
+						if(argExistence != null)
+						{
+							Logging.SensitiveDataToLog |= SensitiveData.LoginCookies;
+						}
+						else
+						{
+							Logging.SensitiveDataToLog ^= SensitiveData.LoginCookies;
+						}
+					}
+				},
+				{ "logall", "Log all sensitive data, including usernames and passwords. Only useful for debugging.",
+					argExistence =>
+					{
+						if(argExistence != null)
+						{
+							Logging.SensitiveDataToLog = SensitiveData.All;
+						}
+						else
+						{
+							Logging.SensitiveDataToLog = SensitiveData.None;
+						}
+					}
+				},
 				{ "<>", argValue => // Default handler - Report unrecognized arguments
 					{
 						string message = string.Format("Unrecognized command-line argument: {0}", argValue);
@@ -98,7 +123,7 @@ namespace Dfo.ControlPanel
 		/// 
 		/// </summary>
 		/// <param name="args"></param>
-		/// <exception cref="Ndesk.Options.OptionException">Badly-formatted arguments?</exception>
+		/// <exception cref="Ndesk.Options.OptionException">Badly-formatted arguments</exception>
 		public CommandLineArgs( string[] args )
 		{
 			if ( args.Length == 0 )
@@ -123,9 +148,14 @@ namespace Dfo.ControlPanel
 			StringBuilder builder = new StringBuilder();
 			builder.AppendLine( string.Format( "Show help = {0}", ShowHelp ) );
 			builder.AppendLine( string.Format( "Show version = {0}", ShowVersion ) );
+			builder.AppendLine( string.Format( "Sensitive data to log = {0}", Logging.SensitiveDataToLog ) );
 			builder.AppendLine( string.Format( "Use GUI = {0}", Gui ) );
-			builder.AppendLine( string.Format( "Username specified = {0}", Settings.Username != null ) ); // Don't show username for security reasons
-			builder.AppendLine( string.Format( "Password specified = {0}", Settings.Password != null ) ); // Don't show password for security reasons
+			builder.AppendLine( string.Format( "Username specified = {0}", Settings.Username != null ) );
+			builder.AppendLine( string.Format( "Username = {0}",
+				Settings.Username.HideSensitiveData( SensitiveData.Usernames ) ) );
+			builder.AppendLine( string.Format( "Password specified = {0}", Settings.Password != null ) );
+			builder.AppendLine( string.Format( "Password = {0}",
+				Settings.Password.HideSensitiveData( SensitiveData.Passwords ) ) );
 			builder.AppendLine( string.Format( "Close popup = {0}", Settings.ClosePopup ) );
 			builder.AppendLine( string.Format( "Launch windowed = {0}", Settings.LaunchWindowed ) );
 			builder.AppendLine( string.Format( "DFO dir = {0}", Settings.DfoDir ) );

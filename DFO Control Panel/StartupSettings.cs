@@ -19,7 +19,7 @@ namespace Dfo.ControlPanel
 		public string DfoDir { get; set; }
 		public IDictionary<string, SwitchableFile> SwitchableFiles { get; set; }
 		public IDictionary<string, bool?> SwitchFile { get; set; } // options in StartupSettings must be nullable to indicate preference for the default
-
+		
 		public StartupSettings()
 		{
 			SwitchableFiles = new Dictionary<string, SwitchableFile>();

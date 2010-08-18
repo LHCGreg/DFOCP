@@ -109,8 +109,7 @@ namespace Dfo.ControlPanel
 
 			try
 			{
-				Logging.Log.DebugFormat( "Launching. Launch parameters:{0}{1}",
-					Environment.NewLine, m_launcher.Params );
+				Logging.Log.InfoFormat( "Launching." );
 				m_launcher.Launch();
 
 				Logging.Log.DebugFormat( "Waiting for state to become None." );
@@ -159,8 +158,6 @@ namespace Dfo.ControlPanel
 
 		private void StateChangedHandler( object sender, EventArgs e )
 		{
-			Logging.Log.DebugFormat( "State change to {0}.", m_launcher.State );
-
 			switch ( m_launcher.State )
 			{
 				case LaunchState.None:

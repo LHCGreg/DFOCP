@@ -140,6 +140,8 @@ namespace Dfo.ControlPanel
 		/// </summary>
 		public void Refresh()
 		{
+			Logging.Log.DebugFormat( "Refreshing checkbox for switchable {0} with ('{1}', '{2}', '{3}')",
+				Name, NormalFile, CustomFile, TempFile );
 			Func<string, bool> exists = FileType.GetExistsFunction();
 			try
 			{
@@ -147,15 +149,18 @@ namespace Dfo.ControlPanel
 					exists( this.ResolveNormalFile() ) && exists( this.ResolveCustomFile() )
 					&& !exists( this.ResolveTempFile() ) )
 				{
+					Logging.Log.DebugFormat( "Enabling checkbox." );
 					m_checkbox.Enabled = true;
 				}
 				else
 				{
+					Logging.Log.DebugFormat( "Disabling checkbox." );
 					m_checkbox.Enabled = false;
 				}
 			}
 			catch ( ArgumentException )
 			{
+				Logging.Log.DebugFormat( "Disabling checkbox." );
 				m_checkbox.Enabled = false;
 			}
 		}

@@ -32,6 +32,19 @@ namespace Dfo.Controlling
 		  System.Runtime.Serialization.StreamingContext context )
 			: base( info, context ) { }
 	}
+
+	[Serializable]
+	internal class GeolocationFormatException : Exception
+	{
+		public string GeolocationData { get; private set; }
+
+		public GeolocationFormatException( string geolocationData, string message ) : base( message ) { GeolocationData = geolocationData; }
+		public GeolocationFormatException( string geolocationData, string message, Exception inner ) : base( message, inner ) { GeolocationData = geolocationData; }
+		protected GeolocationFormatException(
+		  System.Runtime.Serialization.SerializationInfo info,
+		  System.Runtime.Serialization.StreamingContext context )
+			: base( info, context ) { }
+	}
 }
 
 /*

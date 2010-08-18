@@ -3,18 +3,48 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using log4net2common;
 
 namespace Dfo.ControlPanel
 {
 	static class Logging
 	{
-		public static log4net.ILog Log { get; set; }
+		public static Common.Logging.ILog Log { get; set; }
+		private static TimeSpan MaxLogAge { get { return new TimeSpan( 7, 0, 0, 0 ); } } // 7 days
+
+		private static Dfo.Controlling.SensitiveData s_sensitiveDataToLog = Dfo.Controlling.SensitiveData.None;
+		public static Dfo.Controlling.SensitiveData SensitiveDataToLog
+		{
+			get { return s_sensitiveDataToLog; }
+			set
+			{
+				s_sensitiveDataToLog = value;
+				Dfo.Controlling.Logging.SensitiveDataToLog = value;
+			}
+		}
 
 		public static void SetUpLogging()
 		{
-			Log = log4net.LogManager.GetLogger( "Main logger" );
-			SetUpConsoleLogger();
+			log4net.ILog log4netlog = log4net.LogManager.GetLogger( "Main logger" );
+			Log = new Log4NetCommonLogger( log4netlog );
+
 			SetUpFileLogger();
+			WriteLogPrologue();
+			RemoveOldLogFiles();
+			SetUpConsoleLogger();
+			// Order is important - don't log anything to console until we're sure a console exists
+			// or that it will never exist, because logging to console before it exists makes later
+			// writes to the console not work for some reason.
+
+			Dfo.Controlling.Logging.Log = Log;
+		}
+
+		private static void WriteLogPrologue()
+		{
+			Logging.Log.InfoFormat( "{0} version {1} started.", VersionInfo.AssemblyTitle, VersionInfo.AssemblyVersion );
+			Logging.Log.DebugFormat( "CLR Version: {0}", Environment.Version );
+			Logging.Log.DebugFormat( "Operating System: {0}", Environment.OSVersion );
+			Logging.Log.DebugFormat( "Number of processors: {0}", Environment.ProcessorCount );
 		}
 
 		private static void SetUpConsoleLogger()
@@ -64,6 +94,81 @@ namespace Dfo.ControlPanel
 			log4net.Repository.Hierarchy.Logger root = ( (log4net.Repository.Hierarchy.Hierarchy)log4net.LogManager.GetRepository() ).Root;
 			root.AddAppender( fileAppender );
 			root.Repository.Configured = true;
+		}
+
+		/// <summary>
+		/// Deletes all log files with last write times mores than MaxLogAge ago.
+		/// </summary>
+		private static void RemoveOldLogFiles()
+		{
+			Logging.Log.InfoFormat( "Checking for log files older than {0}...", MaxLogAge );
+
+			DateTime nowUtc = DateTime.Now.ToUniversalTime();
+
+			string[] logFilePaths;
+			try
+			{
+				logFilePaths = Directory.GetFiles( Paths.LogDir, "*.log", SearchOption.TopDirectoryOnly );
+			}
+			catch ( Exception ex )
+			{
+				if ( ex is IOException || ex is UnauthorizedAccessException || ex is DirectoryNotFoundException )
+				{
+					Logging.Log.WarnFormat( "Could not get a list of files in {0}: {1}", Paths.LogDir, ex.Message );
+					return;
+				}
+				else
+				{
+					throw;
+				}
+			}
+
+			foreach ( string logFilePath in logFilePaths )
+			{
+				DateTime lastWriteTimeUtc;
+				try
+				{
+					lastWriteTimeUtc = File.GetLastWriteTimeUtc( logFilePath );
+				}
+				catch ( UnauthorizedAccessException ex )
+				{
+					Logging.Log.WarnFormat( "Could not get timestamp for {0}: {1}", logFilePath, ex.Message );
+					continue;
+				}
+
+				TimeSpan fileAge = nowUtc - lastWriteTimeUtc;
+				if ( fileAge > MaxLogAge )
+				{
+					try
+					{
+						File.Delete( logFilePath );
+						Logging.Log.DebugFormat( "Deleted old log file {0}", logFilePath );
+					}
+					catch ( Exception ex )
+					{
+						if ( ex is DirectoryNotFoundException || ex is IOException || ex is UnauthorizedAccessException )
+						{
+							Logging.Log.WarnFormat( "Could not delete old log file {0}: {1}", logFilePath, ex.Message );
+							continue;
+						}
+						else
+						{
+							throw;
+						}
+					}
+				}
+			}
+
+			Logging.Log.Info( "Done checking for old log files." );
+		}
+	}
+
+	static class DfoControlPanelLogHelpers
+	{
+		internal static string HideSensitiveData( this string dataString, Dfo.Controlling.SensitiveData kindOfData )
+		{
+			return Dfo.Controlling.DfoControllingLogHelpers.HideSensitiveData( dataString, kindOfData,
+				Logging.SensitiveDataToLog );
 		}
 	}
 }

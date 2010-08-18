@@ -34,8 +34,11 @@ namespace Dfo.Controlling
 		/// the file moves may have been done.</exception>
 		public void SwitchBack()
 		{
+			Logging.Log.DebugFormat( "Switching back ('{0}', '{1}', '{2}').",
+				SwitchedPath, SwitchedOriginalPath, TempPath );
 			if ( m_disposed )
 			{
+				Logging.Log.DebugFormat( "Already switched back." );
 				return; // Already switched back (or tried and failed on the second move), so nothing to do here
 			}
 
@@ -47,8 +50,10 @@ namespace Dfo.Controlling
 				move( SwitchedPath, SwitchedOriginalPath );
 				firstMoveSuccessful = true;
 				m_disposed = true;
+				Logging.Log.DebugFormat( "Moved {0} to {1}", SwitchedPath, SwitchedOriginalPath );
 
 				move( TempPath, SwitchedPath );
+				Logging.Log.DebugFormat( "Moved {0} to {1}", TempPath, SwitchedPath );
 			}
 			catch ( Exception ex )
 			{
