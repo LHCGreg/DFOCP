@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Management;
 using Microsoft.Win32;
+using System.ComponentModel;
 
 namespace Dfo.Controlling
 {
@@ -51,6 +52,29 @@ namespace Dfo.Controlling
 		private Process m_launcherProcess = null;
 
 		private bool m_disposed = false;
+
+		private LaunchParams m_workingParams = null;
+		/// <summary>
+		/// Gets or sets m_workingParams in a thread-safe manner. Properties of WorkingParams should not be set.
+		/// It should be treated as read-only.
+		/// </summary>
+		private LaunchParams WorkingParams
+		{
+			get
+			{
+				lock ( m_syncHandle )
+				{
+					return m_workingParams;
+				}
+			}
+			set
+			{
+				lock ( m_syncHandle )
+				{
+					m_workingParams = value;
+				}
+			}
+		}
 
 		private LaunchParams m_params = new LaunchParams();
 		/// <summary>
@@ -394,7 +418,8 @@ namespace Dfo.Controlling
 					Logging.Log.DebugFormat( "Starting monitor thread." );
 					// Give it a copy of the launch params so the caller can change the Params property while
 					// the game is running with no effects for the next time they launch
-					m_dfoMonitorThread.Start( Params.Clone() );
+					WorkingParams = Params.Clone();
+					m_dfoMonitorThread.Start();
 				}
 			}
 			catch ( System.Security.SecurityException ex )
@@ -542,6 +567,7 @@ namespace Dfo.Controlling
 				// If an exception happened while launching but before the monitor thread is started,
 				// we need to set the state back to None. Normally the monitor thread does that as it's exiting.
 				State = LaunchState.None;
+				WorkingParams = null;
 			}
 
 			lock ( m_syncHandle )
@@ -579,15 +605,6 @@ namespace Dfo.Controlling
 
 		//}
 
-		/// <summary>
-		/// Entry point for the monitor thread
-		/// </summary>
-		/// <param name="threadArgs">A <c>LaunchParams</c> object containing a copy of the Params property.</param>
-		private void BackgroundThreadEntryPoint( object threadArgs )
-		{
-			BackgroundThreadEntryPoint( (LaunchParams)threadArgs );
-		}
-
 		[DllImport( "user32.dll", SetLastError = true )]
 		static extern IntPtr FindWindow( string lpClassName, string lpWindowName );
 
@@ -595,9 +612,14 @@ namespace Dfo.Controlling
 		[return: MarshalAs( UnmanagedType.Bool )]
 		static extern bool IsWindowVisible( IntPtr hWnd );
 
-		private void BackgroundThreadEntryPoint( LaunchParams copiedParams )
+		/// <summary>
+		/// Entry point for the monitor thread.
+		/// </summary>
+		private void BackgroundThreadEntryPoint()
 		{
 			Logging.Log.DebugFormat( "Monitor thread started." );
+
+			LaunchParams copiedParams = WorkingParams;
 
 			// Once this thread is created, it has full control over the State property. No other thread can
 			// change it until this thread sets it back to None.
@@ -646,7 +668,7 @@ namespace Dfo.Controlling
 				Pair<IntPtr, bool> pollResults = PollUntilCanceled<IntPtr>( copiedParams.GameWindowCreatedPollingIntervalInMs,
 					() =>
 					{
-						IntPtr dfoWindowHandle = GetDfoWindowHandle( copiedParams );
+						IntPtr dfoWindowHandle = GetGameWindowHandle( copiedParams.GameToLaunch );
 						if ( dfoWindowHandle != IntPtr.Zero )
 						{
 							if ( DfoWindowIsOpen( dfoWindowHandle ) )
@@ -716,7 +738,7 @@ namespace Dfo.Controlling
 				Pair<IntPtr, bool> pollResults = PollUntilCanceled<IntPtr>( copiedParams.GameDonePollingIntervalInMs,
 					() =>
 					{
-						IntPtr dfoWindowHandle = GetDfoWindowHandle( copiedParams );
+						IntPtr dfoWindowHandle = GetGameWindowHandle( copiedParams.GameToLaunch );
 						if ( dfoWindowHandle == IntPtr.Zero )
 						{
 							return new Pair<IntPtr, bool>( dfoWindowHandle, true ); // Window does not exist, done polling
@@ -841,7 +863,10 @@ namespace Dfo.Controlling
 			{
 				m_dfoMonitorThread = null;
 			}
+
 			State = LaunchState.None;
+
+			WorkingParams = null;
 
 			m_monitorFinishedEvent.Set();
 
@@ -888,10 +913,38 @@ namespace Dfo.Controlling
 			}
 		}
 
-		private IntPtr GetDfoWindowHandle( LaunchParams copiedParams )
+		/// <summary>
+		/// Gets a window handle to the window of the given game.
+		/// </summary>
+		/// <param name="game"></param>
+		/// <returns></returns>
+		private IntPtr GetGameWindowHandle( Game game )
 		{
-			return FindWindow( copiedParams.DfoWindowClassName, null );
-			//return FindWindow( null, "DFO" ); // DEBUG
+			switch ( game )
+			{
+				case Game.DFO:
+					return FindWindow( "DFO", null );
+				//return FindWindow( null, "DFO" ); // DEBUG
+				default:
+					throw new Exception( "Oops, missed a game type." );
+			}
+		}
+
+		/// <summary>
+		/// Gets the window handle for the currently attached game or IntPtr.Zero if the game window does
+		/// not exist.
+		/// </summary>
+		/// <returns></returns>
+		/// <exception cref="System.InvalidOperationException">This object is not currently attached to
+		/// a game instance.</exception>
+		private IntPtr GetGameWindowHandle()
+		{
+			LaunchParams workingParams = WorkingParams;
+			if ( workingParams == null )
+			{
+				throw new InvalidOperationException( "Not currently attached to a game instance." );
+			}
+			return GetGameWindowHandle( workingParams.GameToLaunch );
 		}
 
 		private bool DfoWindowIsOpen( IntPtr dfoWindowHandle )
@@ -962,10 +1015,84 @@ namespace Dfo.Controlling
 			}
 		}
 
-		//public void ResizeDfoWindow( int x, int y )
-		//{
-		//    // TODO
-		//}
+		[DllImport( "user32.dll", SetLastError = true )]
+		[return: MarshalAs( UnmanagedType.Bool )]
+		static extern bool SetWindowPos( IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy,
+			uint uFlags );
+
+		static readonly IntPtr HWND_TOPMOST = new IntPtr( -1 );
+		static readonly IntPtr HWND_NOTOPMOST = new IntPtr( -2 );
+		static readonly IntPtr HWND_TOP = new IntPtr( 0 );
+		static readonly IntPtr HWND_BOTTOM = new IntPtr( 1 );
+
+		const UInt32 SWP_NOSIZE = 0x0001;
+		const UInt32 SWP_NOMOVE = 0x0002;
+		const UInt32 SWP_NOZORDER = 0x0004;
+		const UInt32 SWP_NOREDRAW = 0x0008;
+		const UInt32 SWP_NOACTIVATE = 0x0010;
+		const UInt32 SWP_FRAMECHANGED = 0x0020;  /* The frame changed: send WM_NCCALCSIZE */
+		const UInt32 SWP_DRAWFRAME = 0x0020;
+		const UInt32 SWP_SHOWWINDOW = 0x0040;
+		const UInt32 SWP_HIDEWINDOW = 0x0080;
+		const UInt32 SWP_NOCOPYBITS = 0x0100;
+		const UInt32 SWP_NOREPOSITION = 0x0200;
+		const UInt32 SWP_NOOWNERZORDER = 0x0200;  /* Don't do owner Z ordering */
+		const UInt32 SWP_NOSENDCHANGING = 0x0400;  /* Don't send WM_WINDOWPOSCHANGING */
+		const UInt32 SWP_DEFERERASE = 0x2000;
+		const UInt32 SWP_ASYNCWINDOWPOS = 0x4000;
+
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="x"></param>
+		/// <param name="y"></param>
+		/// <exception cref="System.ArgumentOutOfRangeException"><paramref name="x"/> or <paramref name="y"/>
+		/// is not a positive number.</exception>
+		/// <exception cref="System.InvalidOperationException">This object is not currently attached to a
+		/// game instance (State is not GameInProgress) or the game window does not exist.</exception>
+		/// <exception cref="System.ComponentModel.Win32Exception">The resize operation failed.</exception>
+		public void ResizeDfoWindow( int x, int y )
+		{
+			Logging.Log.DebugFormat( "Resizing game window to size ({0}, {1}).", x, y );
+
+			if ( x <= 0 )
+			{
+				throw new ArgumentOutOfRangeException( "x", "Window width must be positive." );
+			}
+			if ( y <= 0 )
+			{
+				throw new ArgumentOutOfRangeException( "y", "Window height must be positive." );
+			}
+
+			IntPtr gameWindowHandle = GetGameWindowHandle();
+			if ( gameWindowHandle == IntPtr.Zero )
+			{
+				throw new InvalidOperationException( "The game window does not exist." );
+			}
+
+			ResizeWindow( gameWindowHandle, x, y );
+
+			Logging.Log.DebugFormat( "Game window resized." );
+		}
+
+		/// <summary>
+		/// Resizes the window with the given window handle to the given size. Arguments are not checked.
+		/// </summary>
+		/// <param name="windowHandle"></param>
+		/// <param name="x"></param>
+		/// <param name="y"></param>
+		/// <exception cref="System.ComponentModel.Win32Exception">The resize operation failed.</exception>
+		private void ResizeWindow( IntPtr windowHandle, int x, int y )
+		{
+			// TODO: center window
+			bool success = SetWindowPos( windowHandle, IntPtr.Zero, 0, 0, x, y,
+				SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER );
+			if ( !success )
+			{
+				throw new Win32Exception(); // Magically gets the Windows error message from the SetWindowPos call
+			}
+		}
 
 		/// <summary>
 		/// Frees unmanaged resources. This function may block.

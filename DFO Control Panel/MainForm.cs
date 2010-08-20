@@ -717,6 +717,32 @@ namespace Dfo.ControlPanel
 
 			return settings;
 		}
+
+		private void ctlResize_Click( object sender, EventArgs e )
+		{
+			int x;
+			int y;
+			if ( !int.TryParse( ctlResizeX.Text, out x ) )
+			{
+				return;
+			}
+			if ( !int.TryParse( ctlResizeY.Text, out y ) )
+			{
+				return;
+			}
+
+			try
+			{
+				m_launcher.ResizeDfoWindow( x, y );
+			}
+			catch ( Exception ex )
+			{
+				if ( ex is ArgumentOutOfRangeException || ex is InvalidOperationException || ex is Win32Exception )
+				{
+					DisplayError( ex.Message, "Could not resize the game window" );
+				}
+			}
+		}
 	}
 }
 

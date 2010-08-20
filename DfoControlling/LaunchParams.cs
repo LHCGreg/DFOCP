@@ -104,11 +104,6 @@ namespace Dfo.Controlling
 		public bool? LaunchInWindowed { get; set; }
 
 		/// <summary>
-		/// Gets or sets the window class name of the main DFO window.
-		/// </summary>
-		internal string DfoWindowClassName { get; set; }
-
-		/// <summary>
 		/// Gets the path of the DFO launcher program.
 		/// </summary>
 		internal string DfoLauncherExe
@@ -160,7 +155,6 @@ namespace Dfo.Controlling
 			GameDir = GameDirDefault;
 			ClosePopup = true;
 			LaunchInWindowed = null;
-			DfoWindowClassName = "DFO";
 			GameDonePollingIntervalInMs = 250;
 			GameWindowCreatedPollingIntervalInMs = 100;
 			GameDeadPollingIntervalInMs = 100;
@@ -199,7 +193,6 @@ namespace Dfo.Controlling
 			clone.ClosePopup = this.ClosePopup;
 			clone.LaunchInWindowed = this.LaunchInWindowed;
 
-			clone.DfoWindowClassName = this.DfoWindowClassName;
 			clone.GameDonePollingIntervalInMs = this.GameDonePollingIntervalInMs;
 			clone.GameWindowCreatedPollingIntervalInMs = this.GameWindowCreatedPollingIntervalInMs;
 			clone.GameDeadPollingIntervalInMs = this.GameDeadPollingIntervalInMs;
@@ -221,7 +214,6 @@ namespace Dfo.Controlling
 			builder.AppendLine( string.Format( "Game dir: {0}", GameDir ) );
 			builder.AppendLine( string.Format( "DFO exe: {0}", DfoExe ) );
 			builder.AppendLine( string.Format( "DFO launcher exe: {0}", DfoLauncherExe ) );
-			builder.AppendLine( string.Format( "DFO window class name: {0}", DfoWindowClassName ) );
 			builder.AppendLine( string.Format( "Game dead polling interval: {0}", GameDeadPollingIntervalInMs ) );
 			builder.AppendLine( string.Format( "Game done polling interval: {0}", GameDonePollingIntervalInMs ) );
 			builder.AppendLine( string.Format( "Game window created polling interval: {0}", GameWindowCreatedPollingIntervalInMs ) );

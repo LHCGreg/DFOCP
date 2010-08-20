@@ -65,6 +65,11 @@
 			this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.ctlResizeX = new System.Windows.Forms.TextBox();
+			this.ctlResizeY = new System.Windows.Forms.TextBox();
+			this.lblResizeX = new System.Windows.Forms.Label();
+			this.lblResizeY = new System.Windows.Forms.Label();
+			this.ctlResize = new System.Windows.Forms.Button();
 			this.ctlLoginInfoBox.SuspendLayout();
 			this.ctlOptionsBox.SuspendLayout();
 			this.ctlStatusStrip.SuspendLayout();
@@ -302,12 +307,59 @@
 			this.aboutToolStripMenuItem.Text = "&About...";
 			this.aboutToolStripMenuItem.Click += new System.EventHandler( this.aboutToolStripMenuItem_Click );
 			// 
+			// ctlResizeX
+			// 
+			this.ctlResizeX.Location = new System.Drawing.Point( 46, 179 );
+			this.ctlResizeX.Name = "ctlResizeX";
+			this.ctlResizeX.Size = new System.Drawing.Size( 63, 20 );
+			this.ctlResizeX.TabIndex = 14;
+			// 
+			// ctlResizeY
+			// 
+			this.ctlResizeY.Location = new System.Drawing.Point( 46, 214 );
+			this.ctlResizeY.Name = "ctlResizeY";
+			this.ctlResizeY.Size = new System.Drawing.Size( 62, 20 );
+			this.ctlResizeY.TabIndex = 15;
+			// 
+			// lblResizeX
+			// 
+			this.lblResizeX.AutoSize = true;
+			this.lblResizeX.Location = new System.Drawing.Point( 26, 182 );
+			this.lblResizeX.Name = "lblResizeX";
+			this.lblResizeX.Size = new System.Drawing.Size( 14, 13 );
+			this.lblResizeX.TabIndex = 16;
+			this.lblResizeX.Text = "X";
+			// 
+			// lblResizeY
+			// 
+			this.lblResizeY.AutoSize = true;
+			this.lblResizeY.Location = new System.Drawing.Point( 26, 217 );
+			this.lblResizeY.Name = "lblResizeY";
+			this.lblResizeY.Size = new System.Drawing.Size( 14, 13 );
+			this.lblResizeY.TabIndex = 17;
+			this.lblResizeY.Text = "Y";
+			// 
+			// ctlResize
+			// 
+			this.ctlResize.Location = new System.Drawing.Point( 8, 244 );
+			this.ctlResize.Name = "ctlResize";
+			this.ctlResize.Size = new System.Drawing.Size( 101, 32 );
+			this.ctlResize.TabIndex = 18;
+			this.ctlResize.Text = "Resize!";
+			this.ctlResize.UseVisualStyleBackColor = true;
+			this.ctlResize.Click += new System.EventHandler( this.ctlResize_Click );
+			// 
 			// ctlMainForm
 			// 
 			this.AcceptButton = this.ctlLaunch;
 			this.AutoScaleDimensions = new System.Drawing.SizeF( 6F, 13F );
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size( 497, 309 );
+			this.Controls.Add( this.ctlResize );
+			this.Controls.Add( this.lblResizeY );
+			this.Controls.Add( this.lblResizeX );
+			this.Controls.Add( this.ctlResizeY );
+			this.Controls.Add( this.ctlResizeX );
 			this.Controls.Add( this.ctlStatusStrip );
 			this.Controls.Add( this.ctlMenuStrip );
 			this.Controls.Add( this.ctlOptionsBox );
@@ -356,6 +408,11 @@
 		private System.Windows.Forms.ToolStripMenuItem exportToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
 		private System.Windows.Forms.CheckBox ctlSwitchAudioXml;
+		private System.Windows.Forms.TextBox ctlResizeX;
+		private System.Windows.Forms.TextBox ctlResizeY;
+		private System.Windows.Forms.Label lblResizeX;
+		private System.Windows.Forms.Label lblResizeY;
+		private System.Windows.Forms.Button ctlResize;
 	}
 }
 
