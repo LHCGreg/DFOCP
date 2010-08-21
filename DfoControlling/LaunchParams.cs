@@ -91,17 +91,61 @@ namespace Dfo.Controlling
 		public ICollection<FileSwitcher> FilesToSwitch { get { return m_filesToSwitch; } set { m_filesToSwitch = value; } }
 
 		/// <summary>
-		/// Gets or sets whether to kill the popup at the end of the game. Only supported for DFO.
+		/// Gets or sets whether to kill the popup at the end of the game.
 		/// Default: true
 		/// </summary>
 		public bool ClosePopup { get; set; }
 
+		private bool m_launchInWindowed = false;
 		/// <summary>
-		/// Gets or sets whether to launch in windowed mode. null means "don't care" and will use
-		/// whatever the user is already configured for. Only supported for DFO.
-		/// Default: null
+		/// Gets or sets whether to launch in windowed mode.
+		/// Default: false
 		/// </summary>
-		public bool? LaunchInWindowed { get; set; }
+		public bool LaunchInWindowed { get { return m_launchInWindowed; } set { m_launchInWindowed = value; } }
+
+		private int? m_windowWidth = null;
+		/// <summary>
+		/// Gets or sets the width to set the game window to immediately after launch. If both WindowWidth and
+		/// WindowHeight are null, the default window size is used. If only one is null, the null value is
+		/// determined by keeping the same aspect ratio as the default window size. This property only has
+		/// meaning when LaunchInWindowed is set to true.
+		/// </summary>
+		/// <exception cref="System.ArgumentOutOfRangeException">The value was attempted to be set to a
+		/// non-positive number.</exception>
+		public int? WindowWidth
+		{
+			get { return m_windowWidth; }
+			set
+			{
+				if ( value <= 0 )
+				{
+					throw new ArgumentOutOfRangeException( "WindowWidth", "Window width must be a positive number." );
+				}
+				m_windowWidth = value;
+			}
+		}
+
+		private int? m_windowHeight = null;
+		/// <summary>
+		/// Gets or sets the height to set the game window to immediately after launch. If both WindowWidth and
+		/// WindowHeight are null, the default window size is used. If only one is null, the null value is
+		/// determined by keeping the same aspect ratio as the default window size. This property only has
+		/// meaning when LaunchInWindowed is set to true.
+		/// </summary>
+		/// <exception cref="System.ArgumentOutOfRangeException">The value was attempted to be set to a
+		/// non-positive number.</exception>
+		public int? WindowHeight
+		{
+			get { return m_windowHeight; }
+			set
+			{
+				if ( value <= 0 )
+				{
+					throw new ArgumentOutOfRangeException( "WindowHeight", "Window height must be a positive number." );
+				}
+				m_windowHeight = value;
+			}
+		}
 
 		/// <summary>
 		/// Gets the path of the DFO launcher program.
@@ -154,7 +198,6 @@ namespace Dfo.Controlling
 			LoginTimeoutInMs = 10000;
 			GameDir = GameDirDefault;
 			ClosePopup = true;
-			LaunchInWindowed = null;
 			GameDonePollingIntervalInMs = 250;
 			GameWindowCreatedPollingIntervalInMs = 100;
 			GameDeadPollingIntervalInMs = 100;
@@ -192,6 +235,8 @@ namespace Dfo.Controlling
 
 			clone.ClosePopup = this.ClosePopup;
 			clone.LaunchInWindowed = this.LaunchInWindowed;
+			clone.WindowWidth = this.WindowWidth;
+			clone.WindowHeight = this.WindowHeight;
 
 			clone.GameDonePollingIntervalInMs = this.GameDonePollingIntervalInMs;
 			clone.GameWindowCreatedPollingIntervalInMs = this.GameWindowCreatedPollingIntervalInMs;
@@ -218,6 +263,8 @@ namespace Dfo.Controlling
 			builder.AppendLine( string.Format( "Game done polling interval: {0}", GameDonePollingIntervalInMs ) );
 			builder.AppendLine( string.Format( "Game window created polling interval: {0}", GameWindowCreatedPollingIntervalInMs ) );
 			builder.AppendLine( string.Format( "Launch in windowed: {0}", LaunchInWindowed ) );
+			builder.AppendLine( string.Format( "Window width: {0}", WindowWidth ) );
+			builder.AppendLine( string.Format( "Window height: {0}", WindowHeight ) );
 			builder.AppendLine( string.Format( "Login timeout: {0}", LoginTimeoutInMs ) );
 
 			foreach ( FileSwitcher fileToSwitch in FilesToSwitch )

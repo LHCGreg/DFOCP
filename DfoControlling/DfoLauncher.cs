@@ -76,6 +76,26 @@ namespace Dfo.Controlling
 			}
 		}
 
+		private IntPtr m_gameWindowHandle = IntPtr.Zero;
+
+		private IntPtr GameWindowHandle
+		{
+			get
+			{
+				lock ( m_syncHandle )
+				{
+					return m_gameWindowHandle;
+				}
+			}
+			set
+			{
+				lock ( m_syncHandle )
+				{
+					m_gameWindowHandle = value;
+				}
+			}
+		}
+
 		private LaunchParams m_params = new LaunchParams();
 		/// <summary>
 		/// Gets or sets the parameters to use when launching the game.
@@ -453,87 +473,80 @@ namespace Dfo.Controlling
 		private bool EnforceWindowedSetting()
 		{
 			Logging.Log.DebugFormat( "Applying window mode setting." );
-			if ( Params.LaunchInWindowed.HasValue )
+			string magicWindowModeDirectoryName = "zo3mo4";
+			string magicWindowModeDirectoryPath = Path.Combine( Params.GameDir, magicWindowModeDirectoryName );
+			Exception error = null;
+
+			if ( Params.LaunchInWindowed )
 			{
-				string magicWindowModeDirectoryName = "zo3mo4";
-				string magicWindowModeDirectoryPath = Path.Combine( Params.GameDir, magicWindowModeDirectoryName );
-				Exception error = null;
-
-				if ( Params.LaunchInWindowed.Value )
+				Logging.Log.DebugFormat( "Forcing window mode by creating directory {0}.", magicWindowModeDirectoryPath );
+				try
 				{
-					Logging.Log.DebugFormat( "Forcing window mode by creating directory {0}.", magicWindowModeDirectoryPath );
-					try
-					{
-						Directory.CreateDirectory( magicWindowModeDirectoryPath );
-						Logging.Log.DebugFormat( "{0} created.", magicWindowModeDirectoryPath );
-					}
-					catch ( Exception ex )
-					{
-						if ( ex is System.IO.IOException || ex is System.UnauthorizedAccessException
-						  || ex is System.ArgumentException || ex is System.IO.PathTooLongException
-						  || ex is System.IO.DirectoryNotFoundException || ex is System.NotSupportedException )
-						{
-							error = new IOException( string.Format(
-								"Error while trying to create directory {0}: {1}",
-								magicWindowModeDirectoryPath, ex.Message ), ex );
-						}
-						else
-						{
-							throw;
-						}
-					}
+					Directory.CreateDirectory( magicWindowModeDirectoryPath );
+					Logging.Log.DebugFormat( "{0} created.", magicWindowModeDirectoryPath );
 				}
-				else
+				catch ( Exception ex )
 				{
-					Logging.Log.DebugFormat( "Forcing full-screen mode by deleting directory {0}.", magicWindowModeDirectoryPath );
-					try
+					if ( ex is System.IO.IOException || ex is System.UnauthorizedAccessException
+					  || ex is System.ArgumentException || ex is System.IO.PathTooLongException
+					  || ex is System.IO.DirectoryNotFoundException || ex is System.NotSupportedException )
 					{
-						Directory.Delete( magicWindowModeDirectoryPath, true );
-						Logging.Log.DebugFormat( "{0} removed.", magicWindowModeDirectoryPath );
-					}
-					catch ( DirectoryNotFoundException )
-					{
-						// It's ok if the directory doesn't exist
-						Logging.Log.DebugFormat( "{0} does not exist.", magicWindowModeDirectoryPath );
-					}
-					catch ( Exception ex )
-					{
-						if ( ex is System.IO.IOException || ex is System.UnauthorizedAccessException
-						  || ex is System.ArgumentException || ex is System.IO.PathTooLongException
-						  || ex is System.ArgumentException )
-						{
-							error = new IOException( string.Format(
-								"Error while trying to remove directory {0}: {1}",
-								magicWindowModeDirectoryPath, ex.Message ), ex );
-						}
-						else
-						{
-							throw;
-						}
-					}
-				}
-
-				if ( error != null )
-				{
-					CancelErrorEventArgs e = new CancelErrorEventArgs( error );
-					OnWindowModeFailed( e );
-					if ( e.Cancel )
-					{
-						return false; // false = not ok
+						error = new IOException( string.Format(
+							"Error while trying to create directory {0}: {1}",
+							magicWindowModeDirectoryPath, ex.Message ), ex );
 					}
 					else
 					{
-						return true; // true = ok
+						throw;
 					}
-				}
-				else
-				{
-					return true;
 				}
 			}
 			else
 			{
-				return true; // true = ok
+				Logging.Log.DebugFormat( "Forcing full-screen mode by deleting directory {0}.", magicWindowModeDirectoryPath );
+				try
+				{
+					Directory.Delete( magicWindowModeDirectoryPath, true );
+					Logging.Log.DebugFormat( "{0} removed.", magicWindowModeDirectoryPath );
+				}
+				catch ( DirectoryNotFoundException )
+				{
+					// It's ok if the directory doesn't exist
+					Logging.Log.DebugFormat( "{0} does not exist.", magicWindowModeDirectoryPath );
+				}
+				catch ( Exception ex )
+				{
+					if ( ex is System.IO.IOException || ex is System.UnauthorizedAccessException
+					  || ex is System.ArgumentException || ex is System.IO.PathTooLongException
+					  || ex is System.ArgumentException )
+					{
+						error = new IOException( string.Format(
+							"Error while trying to remove directory {0}: {1}",
+							magicWindowModeDirectoryPath, ex.Message ), ex );
+					}
+					else
+					{
+						throw;
+					}
+				}
+			}
+
+			if ( error != null )
+			{
+				CancelErrorEventArgs e = new CancelErrorEventArgs( error );
+				OnWindowModeFailed( e );
+				if ( e.Cancel )
+				{
+					return false; // false = not ok
+				}
+				else
+				{
+					return true; // true = ok
+				}
+			}
+			else
+			{
+				return true;
 			}
 		}
 
@@ -608,7 +621,7 @@ namespace Dfo.Controlling
 		[DllImport( "user32.dll", SetLastError = true )]
 		static extern IntPtr FindWindow( string lpClassName, string lpWindowName );
 
-		[DllImport( "user32.dll" )]
+		[DllImport( "user32.dll", SetLastError = true )]
 		[return: MarshalAs( UnmanagedType.Bool )]
 		static extern bool IsWindowVisible( IntPtr hWnd );
 
@@ -723,13 +736,51 @@ namespace Dfo.Controlling
 						canceled = true; // Treat a premature closing of the DFO process the same as a cancel request.
 					}
 				}
-				dfoMainWindowHandle = pollResults.First; // Try not to use this handle - what if the DFO window closes and then some other window gets the same handle value?
+
+				GameWindowHandle = pollResults.First;
 			}
 
 			if ( !canceled )
 			{
 				// Game is up.
 				State = LaunchState.GameInProgress;
+
+				if ( copiedParams.LaunchInWindowed &&
+					(copiedParams.WindowHeight.HasValue || copiedParams.WindowWidth.HasValue) )
+				{
+					const int defaultWidth = 640;
+					const int defaultHeight = 480;
+					const double defaultAspectRatio = ( ( (double)defaultWidth ) / ( (double)defaultHeight ) );
+
+					int width = 0;
+					int height = 0;
+
+					if ( !copiedParams.WindowHeight.HasValue )
+					{
+						width = copiedParams.WindowWidth.Value;
+
+						height = (int)( copiedParams.WindowWidth.Value * ( 1 / defaultAspectRatio ) );
+						height = Math.Max( 1, height );
+					}
+					else if ( !copiedParams.WindowWidth.HasValue )
+					{
+						height = copiedParams.WindowHeight.Value;
+
+						width = (int)( copiedParams.WindowHeight.Value * defaultAspectRatio );
+						width = Math.Max( 1, width );
+					}
+
+					try
+					{
+						ResizeDfoWindow( width, height );
+					}
+					catch ( Win32Exception ex )
+					{
+						Logging.Log.ErrorFormat( "Could not resize the game window to {0}x{1}: {2}",
+							width, height, ex.Message );
+						Logging.Log.Debug( "Exception details:", ex );
+					}
+				}
 
 				Logging.Log.DebugFormat( "Waiting for the main game window to not exist or to not be visible, or for a cancel signal." );
 				// Wait for DFO game window to be closed or a cancel notice
@@ -774,6 +825,8 @@ namespace Dfo.Controlling
 
 				canceled = pollResults.Second;
 			}
+
+			GameWindowHandle = IntPtr.Zero;
 
 			if ( !canceled )
 			{
@@ -930,23 +983,6 @@ namespace Dfo.Controlling
 			}
 		}
 
-		/// <summary>
-		/// Gets the window handle for the currently attached game or IntPtr.Zero if the game window does
-		/// not exist.
-		/// </summary>
-		/// <returns></returns>
-		/// <exception cref="System.InvalidOperationException">This object is not currently attached to
-		/// a game instance.</exception>
-		private IntPtr GetGameWindowHandle()
-		{
-			LaunchParams workingParams = WorkingParams;
-			if ( workingParams == null )
-			{
-				throw new InvalidOperationException( "Not currently attached to a game instance." );
-			}
-			return GetGameWindowHandle( workingParams.GameToLaunch );
-		}
-
 		private bool DfoWindowIsOpen( IntPtr dfoWindowHandle )
 		{
 			return IsWindowVisible( dfoWindowHandle );
@@ -1043,35 +1079,42 @@ namespace Dfo.Controlling
 
 
 		/// <summary>
-		/// 
+		/// Resizes the game window.
 		/// </summary>
-		/// <param name="x"></param>
-		/// <param name="y"></param>
-		/// <exception cref="System.ArgumentOutOfRangeException"><paramref name="x"/> or <paramref name="y"/>
+		/// <param name="width">Width, in pixels, to resize to.</param>
+		/// <param name="height">Height, in pixels, to resize to.</param>
+		/// <exception cref="System.ArgumentOutOfRangeException"><paramref name="width"/> or <paramref name="height"/>
 		/// is not a positive number.</exception>
 		/// <exception cref="System.InvalidOperationException">This object is not currently attached to a
 		/// game instance (State is not GameInProgress) or the game window does not exist.</exception>
 		/// <exception cref="System.ComponentModel.Win32Exception">The resize operation failed.</exception>
-		public void ResizeDfoWindow( int x, int y )
+		public void ResizeDfoWindow( int width, int height )
 		{
-			Logging.Log.DebugFormat( "Resizing game window to size ({0}, {1}).", x, y );
+			Logging.Log.DebugFormat( "Resizing game window to {0}x{1}.", width, height );
 
-			if ( x <= 0 )
+			if ( width <= 0 )
 			{
-				throw new ArgumentOutOfRangeException( "x", "Window width must be positive." );
+				throw new ArgumentOutOfRangeException( "width", "Window width must be positive." );
 			}
-			if ( y <= 0 )
+			if ( height <= 0 )
 			{
-				throw new ArgumentOutOfRangeException( "y", "Window height must be positive." );
+				throw new ArgumentOutOfRangeException( "height", "Window height must be positive." );
 			}
 
-			IntPtr gameWindowHandle = GetGameWindowHandle();
+			IntPtr gameWindowHandle = GameWindowHandle;
 			if ( gameWindowHandle == IntPtr.Zero )
 			{
-				throw new InvalidOperationException( "The game window does not exist." );
+				if ( WorkingParams == null )
+				{
+					throw new InvalidOperationException( "Not attached to a game instance." );
+				}
+				else
+				{
+					throw new InvalidOperationException( "The game window does not exist." );
+				}
 			}
 
-			ResizeWindow( gameWindowHandle, x, y );
+			ResizeWindow( gameWindowHandle, width, height );
 
 			Logging.Log.DebugFormat( "Game window resized." );
 		}

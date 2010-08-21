@@ -21,7 +21,9 @@ namespace Dfo.ControlPanel
 
 			AppDomain.CurrentDomain.UnhandledException += ( object sender, UnhandledExceptionEventArgs e ) =>
 				{
-					Logging.Log.FatalFormat( "{0} has crashed. :( Please file a bug report." );
+					Logging.Log.FatalFormat( "{0} has crashed. :( Please file a bug report.",
+						VersionInfo.AssemblyTitle );
+
 					if ( e.ExceptionObject is Exception )
 					{
 						Logging.Log.Debug( "Exception details: ", (Exception)e.ExceptionObject );
