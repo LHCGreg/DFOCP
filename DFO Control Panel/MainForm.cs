@@ -144,8 +144,6 @@ namespace Dfo.ControlPanel
 			m_launcher.Params.Password = Password;
 			m_launcher.Params.FilesToSwitch = GetFileSwitchers();
 			m_launcher.Params.Username = Username;
-			m_launcher.Params.WindowHeight = 240;
-			m_launcher.Params.WindowWidth = null;
 		}
 
 		// Left for designer support only

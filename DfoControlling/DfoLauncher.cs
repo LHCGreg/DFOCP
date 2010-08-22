@@ -618,13 +618,6 @@ namespace Dfo.Controlling
 
 		//}
 
-		[DllImport( "user32.dll", SetLastError = true )]
-		static extern IntPtr FindWindow( string lpClassName, string lpWindowName );
-
-		[DllImport( "user32.dll", SetLastError = true )]
-		[return: MarshalAs( UnmanagedType.Bool )]
-		static extern bool IsWindowVisible( IntPtr hWnd );
-
 		/// <summary>
 		/// Entry point for the monitor thread.
 		/// </summary>
@@ -976,8 +969,8 @@ namespace Dfo.Controlling
 			switch ( game )
 			{
 				case Game.DFO:
-					return FindWindow( "DFO", null );
-				//return FindWindow( null, "DFO" ); // DEBUG
+					return Interop.FindWindow( "DFO", null );
+				//return Interop.FindWindow( null, "DFO" ); // DEBUG
 				default:
 					throw new Exception( "Oops, missed a game type." );
 			}
@@ -985,7 +978,7 @@ namespace Dfo.Controlling
 
 		private bool DfoWindowIsOpen( IntPtr dfoWindowHandle )
 		{
-			return IsWindowVisible( dfoWindowHandle );
+			return Interop.IsWindowVisible( dfoWindowHandle );
 		}
 
 		/// <summary>
@@ -1051,33 +1044,6 @@ namespace Dfo.Controlling
 			}
 		}
 
-		[DllImport( "user32.dll", SetLastError = true )]
-		[return: MarshalAs( UnmanagedType.Bool )]
-		static extern bool SetWindowPos( IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy,
-			uint uFlags );
-
-		static readonly IntPtr HWND_TOPMOST = new IntPtr( -1 );
-		static readonly IntPtr HWND_NOTOPMOST = new IntPtr( -2 );
-		static readonly IntPtr HWND_TOP = new IntPtr( 0 );
-		static readonly IntPtr HWND_BOTTOM = new IntPtr( 1 );
-
-		const UInt32 SWP_NOSIZE = 0x0001;
-		const UInt32 SWP_NOMOVE = 0x0002;
-		const UInt32 SWP_NOZORDER = 0x0004;
-		const UInt32 SWP_NOREDRAW = 0x0008;
-		const UInt32 SWP_NOACTIVATE = 0x0010;
-		const UInt32 SWP_FRAMECHANGED = 0x0020;  /* The frame changed: send WM_NCCALCSIZE */
-		const UInt32 SWP_DRAWFRAME = 0x0020;
-		const UInt32 SWP_SHOWWINDOW = 0x0040;
-		const UInt32 SWP_HIDEWINDOW = 0x0080;
-		const UInt32 SWP_NOCOPYBITS = 0x0100;
-		const UInt32 SWP_NOREPOSITION = 0x0200;
-		const UInt32 SWP_NOOWNERZORDER = 0x0200;  /* Don't do owner Z ordering */
-		const UInt32 SWP_NOSENDCHANGING = 0x0400;  /* Don't send WM_WINDOWPOSCHANGING */
-		const UInt32 SWP_DEFERERASE = 0x2000;
-		const UInt32 SWP_ASYNCWINDOWPOS = 0x4000;
-
-
 		/// <summary>
 		/// Resizes the game window.
 		/// </summary>
@@ -1120,21 +1086,44 @@ namespace Dfo.Controlling
 		}
 
 		/// <summary>
-		/// Resizes the window with the given window handle to the given size. Arguments are not checked.
+		/// Resizes the window with the given window handle to the given size and centers it on the screen
+		/// that the window is mostly on.
 		/// </summary>
 		/// <param name="windowHandle"></param>
 		/// <param name="x"></param>
 		/// <param name="y"></param>
 		/// <exception cref="System.ComponentModel.Win32Exception">The resize operation failed.</exception>
-		private void ResizeWindow( IntPtr windowHandle, int x, int y )
+		private void ResizeWindow( IntPtr windowHandle, int width, int height )
 		{
-			// TODO: center window
-			bool success = SetWindowPos( windowHandle, IntPtr.Zero, 0, 0, x, y,
-				SWP_ASYNCWINDOWPOS | SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER );
+			System.Drawing.Rectangle centeredPosition = GetCenteredPosition( windowHandle, width, height );
+
+			bool success = Interop.SetWindowPos( windowHandle, IntPtr.Zero, centeredPosition.Left,
+				centeredPosition.Top, width, height,
+				Interop.SWP_ASYNCWINDOWPOS | Interop.SWP_NOACTIVATE | Interop.SWP_NOOWNERZORDER |
+				Interop.SWP_NOZORDER );
 			if ( !success )
 			{
 				throw new Win32Exception(); // Magically gets the Windows error message from the SetWindowPos call
 			}
+		}
+
+		private static System.Drawing.Rectangle GetCenteredPosition( IntPtr windowHandle, int futureWidth, int futureHeight )
+		{
+			System.Windows.Forms.Screen windowScreen = System.Windows.Forms.Screen.FromHandle( windowHandle );
+			if ( windowScreen.BitsPerPixel == 0 ) // means getting the screen from the handle failed
+			{
+				throw new Win32Exception( "Could not get the screen that the window is on." );
+			}
+
+			// Cap future width and height at the size of the screen, otherwise centering it could put the
+			// window off-screen
+			futureWidth = Math.Min( futureWidth, windowScreen.Bounds.Width );
+			futureHeight = Math.Min( futureHeight, windowScreen.Bounds.Height );
+
+			int x = ( 2 * windowScreen.Bounds.Left + windowScreen.Bounds.Width - futureWidth ) / 2;
+			int y = ( 2 * windowScreen.Bounds.Top + windowScreen.Bounds.Height - futureHeight ) / 2;
+
+			return new System.Drawing.Rectangle( x, y, futureWidth, futureHeight );
 		}
 
 		/// <summary>
