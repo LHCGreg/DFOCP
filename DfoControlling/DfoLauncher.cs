@@ -741,26 +741,23 @@ namespace Dfo.Controlling
 				if ( copiedParams.LaunchInWindowed &&
 					(copiedParams.WindowHeight.HasValue || copiedParams.WindowWidth.HasValue) )
 				{
-					const int defaultWidth = 640;
-					const int defaultHeight = 480;
-					const double defaultAspectRatio = ( ( (double)defaultWidth ) / ( (double)defaultHeight ) );
-
 					int width = 0;
 					int height = 0;
 
 					if ( !copiedParams.WindowHeight.HasValue )
 					{
 						width = copiedParams.WindowWidth.Value;
-
-						height = (int)( copiedParams.WindowWidth.Value * ( 1 / defaultAspectRatio ) );
-						height = Math.Max( 1, height );
+						height = GetHeightFromWidth( width );
 					}
 					else if ( !copiedParams.WindowWidth.HasValue )
 					{
 						height = copiedParams.WindowHeight.Value;
-
-						width = (int)( copiedParams.WindowHeight.Value * defaultAspectRatio );
-						width = Math.Max( 1, width );
+						width = GetWidthFromHeight( height );
+					}
+					else
+					{
+						width = copiedParams.WindowWidth.Value;
+						height = copiedParams.WindowHeight.Value;
 					}
 
 					try
@@ -1147,6 +1144,22 @@ namespace Dfo.Controlling
 			{
 				Logging.Log.DebugFormat( "Already disposed." );
 			}
+		}
+
+		// XXX: This is only for DFO
+		public static int DefaultGameWindowWidth { get { return 640; } }
+		public static int DefaultGameWindowHeight { get { return 480; } }
+
+		public static int GetHeightFromWidth( int width )
+		{
+			int height = (int)Math.Round( width * ( (double)DefaultGameWindowHeight / DefaultGameWindowWidth ) );
+			return Math.Max( height, 1 );
+		}
+
+		public static int GetWidthFromHeight( int height )
+		{
+			int width = (int)Math.Round( height * ( (double)DefaultGameWindowWidth / DefaultGameWindowHeight ) );
+			return Math.Max( width, 1 );
 		}
 
 		/// <summary>

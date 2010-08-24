@@ -104,6 +104,92 @@ namespace Dfo.ControlPanel
 		}
 
 		/// <summary>
+		/// Gets or sets the width to start the game window at if starting in windowed mode. Setting to a value
+		/// outside the allowed range has undefined behavior.
+		/// </summary>
+		private int? GameWindowStartingWidth
+		{
+			get
+			{
+				// Use value from width textbox if valid, otherwise use slider value
+				int widthFromTextbox;
+				if ( int.TryParse( ctlWindowWidth.Text, out widthFromTextbox ) )
+				{
+					if ( widthFromTextbox > ctlWindowSizeSlider.Maximum ||
+						widthFromTextbox < ctlWindowSizeSlider.Minimum )
+					{
+						return ctlWindowSizeSlider.Value;
+					}
+					else
+					{
+						return widthFromTextbox;
+					}
+				}
+				else
+				{
+					return ctlWindowSizeSlider.Value;
+				}
+			}
+			set
+			{
+				if ( value != null )
+				{
+					//int valueToSetTo = value.Value.Clamp( ctlWindowSizeSlider.Minimum, ctlWindowSizeSlider.Maximum );
+					//ctlWindowSizeSlider.Value = valueToSetTo;
+					ctlWindowWidth.Text = value.Value.ToString();
+				}
+				else
+				{
+					ctlWindowSizeSlider.Value = DfoLauncher.DefaultGameWindowWidth;
+				}
+			}
+		}
+
+		private int? GameWindowStartingHeight
+		{
+			get
+			{
+				// Use value from height textbox if valid, otherwise use slider value
+				int widthFromTextbox;
+				if ( int.TryParse( ctlWindowWidth.Text, out widthFromTextbox ) )
+				{
+					if ( widthFromTextbox > ctlWindowSizeSlider.Maximum ||
+						widthFromTextbox < ctlWindowSizeSlider.Minimum )
+					{
+						return DfoLauncher.GetHeightFromWidth( ctlWindowSizeSlider.Value );
+					}
+					else
+					{
+						//return widthFromTextbox;
+						int heightFromTextbox;
+						if ( int.TryParse( ctlWindowHeight.Text, out heightFromTextbox ) )
+						{
+							return heightFromTextbox;
+						}
+						else
+						{
+							return DfoLauncher.GetHeightFromWidth( ctlWindowSizeSlider.Value );
+						}
+					}
+				}
+				else
+				{
+					return DfoLauncher.GetHeightFromWidth( ctlWindowSizeSlider.Value );
+				}
+			}
+			set
+			{
+				if ( value != null )
+				{
+					ctlWindowHeight.Text = value.ToString();
+				}
+			}
+		}
+
+		private int? GameWindowWidth { get { return GameWindowStartingWidth; } set { GameWindowStartingWidth = value; } }
+		private int? GameWindowHeight { get { return GameWindowStartingHeight; } set { GameWindowStartingHeight = value; } }
+
+		/// <summary>
 		/// Autodetects the DFO directory and sets DfoDir.
 		/// </summary>
 		/// <exception cref="System.IO.IOException">The DFO directory could not be detected.</exception>
@@ -144,6 +230,13 @@ namespace Dfo.ControlPanel
 			m_launcher.Params.Password = Password;
 			m_launcher.Params.FilesToSwitch = GetFileSwitchers();
 			m_launcher.Params.Username = Username;
+			m_launcher.Params.WindowWidth = GameWindowStartingWidth;
+			m_launcher.Params.WindowHeight = GameWindowStartingHeight;
+
+			Logging.Log.DebugFormat( "GameWindowStartingWidth = {0}, textbox value = {1}, slider value = {2}",
+				m_launcher.Params.WindowWidth, ctlWindowWidth.Text, ctlWindowSizeSlider.Value );
+			Logging.Log.DebugFormat( "GameWindowStartingHeight = {0}, textbox value = {1}",
+				m_launcher.Params.WindowHeight, ctlWindowHeight.Text );
 		}
 
 		// Left for designer support only
@@ -185,6 +278,20 @@ namespace Dfo.ControlPanel
 		{
 			Logging.Log.Debug( "Loading main window." );
 
+			Rectangle primaryScreenSize = Screen.PrimaryScreen.Bounds;
+			Logging.Log.DebugFormat( "Primary screen size is {0}x{1}",
+				primaryScreenSize.Width, primaryScreenSize.Height );
+
+			int maxWidth = Math.Min( primaryScreenSize.Width, DfoLauncher.GetWidthFromHeight( primaryScreenSize.Height ) );
+			ctlWindowSizeSlider.Minimum = DfoLauncher.DefaultGameWindowWidth;
+			ctlWindowSizeSlider.Maximum = Math.Max( maxWidth, DfoLauncher.DefaultGameWindowWidth );
+
+			Logging.Log.DebugFormat( "Allowable game window width: {0}-{1}",
+				ctlWindowSizeSlider.Minimum, ctlWindowSizeSlider.Maximum );
+
+			// Initialize window size UI
+			ctlWindowSizeSlider_ValueChanged( ctlWindowSizeSlider, EventArgs.Empty );
+
 			// Bind switchable files to checkboxes
 			IDictionary<string, CheckBox> switchableFileCheckboxes = GetSwitchableCheckboxes();
 			foreach ( ISwitchableFile switchableFile in m_parsedArgs.Settings.SwitchableFiles.Values )
@@ -220,7 +327,7 @@ namespace Dfo.ControlPanel
 		private void FixSwitchableFilesIfNeeded()
 		{
 			Logging.Log.DebugFormat( "Checking all switchable files." );
-			
+
 			bool anyFailed = false;
 			bool anyFixed = false;
 			foreach ( IUiSwitchableFile switchableFile in SwitchableFiles.Values )
@@ -244,7 +351,7 @@ namespace Dfo.ControlPanel
 						"Error while trying to fix switchable files. {0} I guess you'll have to fix them yourself.",
 						ex.Message ),
 						"Couldn't fix switchable files" );
-					
+
 				}
 			}
 
@@ -368,6 +475,7 @@ namespace Dfo.ControlPanel
 			{
 				case LaunchState.None:
 					ctlStatusStrip.BeginInvoke( () => ctlStatusLabel.Text = m_stateNoneText );
+					ctlResizeButton.BeginInvoke( () => ctlResizeButton.Visible = false );
 					lock ( m_syncHandle )
 					{
 						if ( !m_closeWhenDone )
@@ -386,6 +494,7 @@ namespace Dfo.ControlPanel
 					break;
 				case LaunchState.GameInProgress:
 					ctlStatusStrip.BeginInvoke( () => ctlStatusLabel.Text = "Game in progress" );
+					ctlResizeButton.BeginInvoke( () => ctlResizeButton.Visible = true );
 					lock ( m_syncHandle )
 					{
 						m_closeWhenDone = true;
@@ -718,28 +827,160 @@ namespace Dfo.ControlPanel
 			return settings;
 		}
 
-		private void ctlResize_Click( object sender, EventArgs e )
+		private void ctlWindowSizeSlider_ValueChanged( object sender, EventArgs e )
 		{
-			int x;
-			int y;
-			if ( !int.TryParse( ctlResizeX.Text, out x ) )
+			if ( !m_widthBeingEdited && !m_heightBeingEdited )
 			{
-				return;
+				int newWidth = ctlWindowSizeSlider.Value;
+				int widthFromTextbox;
+				bool textboxHasInt = int.TryParse( ctlWindowWidth.Text, out widthFromTextbox );
+				if ( !textboxHasInt || widthFromTextbox != newWidth )
+				{
+					ctlWindowWidth.Text = newWidth.ToString();
+				}
+
+				int newHeight = DfoLauncher.GetHeightFromWidth( ctlWindowSizeSlider.Value );
+				int heightFromTextbox;
+				textboxHasInt = int.TryParse( ctlWindowHeight.Text, out heightFromTextbox );
+				if ( !textboxHasInt || heightFromTextbox != newHeight )
+				{
+					ctlWindowHeight.Text = newHeight.ToString();
+				}
 			}
-			if ( !int.TryParse( ctlResizeY.Text, out y ) )
+		}
+
+		private bool m_widthBeingEdited = false;
+		private void ctlWindowWidth_TextChanged( object sender, EventArgs e )
+		{
+			m_widthBeingEdited = true;
+			// Update the height textbox
+			int newWidth;
+			if ( int.TryParse( ctlWindowWidth.Text, out newWidth ) )
 			{
-				return;
+				//GameWindowStartingWidth = newWidth;
+				if ( !m_heightBeingEdited )
+				{
+					ctlWindowHeight.Text = DfoLauncher.GetHeightFromWidth( newWidth ).ToString();
+
+					// Update the slider
+					//newWidth = newWidth.Clamp( ctlWindowSizeSlider.Minimum, ctlWindowSizeSlider.Maximum );
+					ctlWindowSizeSlider.Value = newWidth.Clamp( ctlWindowSizeSlider.Minimum, ctlWindowSizeSlider.Maximum );
+				}
 			}
+
+			m_widthBeingEdited = false;
+		}
+
+		private void ctlWindowWidth_Leave( object sender, EventArgs e )
+		{
+			// Update the slider (and indirectly, the height textbox)
+			int newWidth;
+			if ( int.TryParse( ctlWindowWidth.Text, out newWidth ) )
+			{
+				newWidth = newWidth.Clamp( ctlWindowSizeSlider.Minimum, ctlWindowSizeSlider.Maximum );
+
+				ctlWindowSizeSlider.Value = newWidth;
+
+				// Set the text to a canonical text
+				ctlWindowWidth.Text = ctlWindowSizeSlider.Value.ToString();
+			}
+			else
+			{
+				// invalid input, reset text to the slider value
+				ctlWindowWidth.Text = ctlWindowSizeSlider.Value.ToString();
+			}
+		}
+
+		private bool m_heightBeingEdited = false;
+		private void ctlWindowHeight_TextChanged( object sender, EventArgs e )
+		{
+			m_heightBeingEdited = true;
+			// Update the width textbox
+			int newHeight;
+			if ( int.TryParse( ctlWindowHeight.Text, out newHeight ) )
+			{
+				//GameWindowStartingWidth = GetWidthFromHeight( newHeight );
+				if ( !m_widthBeingEdited )
+				{
+					int width;
+					bool widthSuccess = int.TryParse( ctlWindowWidth.Text, out width );
+					if ( !widthSuccess || DfoLauncher.GetHeightFromWidth( width ) != newHeight )
+					{
+						ctlWindowWidth.Text = DfoLauncher.GetWidthFromHeight( newHeight ).ToString();
+
+						// Update the slider
+						int newWidth;
+						if ( int.TryParse( ctlWindowWidth.Text, out newWidth ) )
+						{
+							newWidth = newWidth.Clamp( ctlWindowSizeSlider.Minimum, ctlWindowSizeSlider.Maximum );
+							ctlWindowSizeSlider.Value = newWidth;
+						}
+					}
+				}
+			}
+			m_heightBeingEdited = false;
+		}
+
+		private void ctlWindowHeight_Leave( object sender, EventArgs e )
+		{
+			// Update the slider (and indirectly, the width textbox)
+			int newHeight;
+			if ( int.TryParse( ctlWindowHeight.Text, out newHeight ) )
+			{
+				int width;
+				bool widthSuccess = int.TryParse( ctlWindowWidth.Text, out width );
+
+				int newWidth = 0;
+				if ( widthSuccess && DfoLauncher.GetHeightFromWidth( width ) == newHeight )
+				{
+					newWidth = width;
+				}
+				else
+				{
+					newWidth = DfoLauncher.GetWidthFromHeight( newHeight );
+				}
+
+				newWidth = newWidth.Clamp( ctlWindowSizeSlider.Minimum, ctlWindowSizeSlider.Maximum );
+
+				ctlWindowSizeSlider.Value = newWidth;
+
+				// Set the text to a canonical text for the width
+				ctlWindowHeight.Text = DfoLauncher.GetHeightFromWidth( ctlWindowSizeSlider.Value ).ToString();
+			}
+			else
+			{
+				// invalid input, reset text to the slider value
+				ctlWindowHeight.Text = DfoLauncher.GetHeightFromWidth( ctlWindowSizeSlider.Value ).ToString();
+			}
+		}
+
+		private void ctlResizeButton_Click( object sender, EventArgs e )
+		{
+			Logging.Log.DebugFormat( "Resizing game window while running to {0}x{1}",
+				GameWindowWidth, GameWindowHeight );
 
 			try
 			{
-				m_launcher.ResizeDfoWindow( x, y );
+				if ( GameWindowWidth.HasValue && GameWindowHeight.HasValue )
+				{
+					m_launcher.ResizeDfoWindow( GameWindowWidth.Value, GameWindowHeight.Value );
+					Logging.Log.DebugFormat( "Resized." );
+				}
+				else
+				{
+					Logging.Log.WarnFormat( "Width or height doesn't have a value. O_o" );
+				}
 			}
 			catch ( Exception ex )
 			{
-				if ( ex is ArgumentOutOfRangeException || ex is InvalidOperationException || ex is Win32Exception )
+				if ( ex is InvalidOperationException || ex is Win32Exception )
 				{
-					DisplayError( ex.Message, "Could not resize the game window" );
+					Logging.Log.WarnFormat( "Could not resize the game window: {0}", ex.Message );
+					Logging.Log.Debug( "Exception details:", ex );
+				}
+				else
+				{
+					throw;
 				}
 			}
 		}
