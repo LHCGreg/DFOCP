@@ -59,6 +59,8 @@ namespace Dfo.ControlPanel
 			if ( m_parsedArgs.Settings.ClosePopup != null ) m_launcher.Params.ClosePopup = m_parsedArgs.Settings.ClosePopup.Value;
 			if ( m_parsedArgs.Settings.DfoDir != null ) m_launcher.Params.GameDir = m_parsedArgs.Settings.DfoDir;
 			if ( m_parsedArgs.Settings.LaunchWindowed != null ) m_launcher.Params.LaunchInWindowed = m_parsedArgs.Settings.LaunchWindowed.Value;
+			if ( m_parsedArgs.Settings.GameWindowWidth != null ) m_launcher.Params.WindowWidth = m_parsedArgs.Settings.GameWindowWidth;
+			if ( m_parsedArgs.Settings.GameWindowHeight != null ) m_launcher.Params.WindowHeight = m_parsedArgs.Settings.GameWindowHeight;
 			if ( m_parsedArgs.Settings.Password != null ) m_launcher.Params.Password = m_parsedArgs.Settings.Password;
 			if ( m_parsedArgs.Settings.Username != null ) m_launcher.Params.Username = m_parsedArgs.Settings.Username;
 
