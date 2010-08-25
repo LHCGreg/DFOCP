@@ -388,6 +388,27 @@ namespace Dfo.ControlPanel
 			SettingsLoader.ApplySettingClass( m_parsedArgs.Settings.Password, m_savedSettings.Password, null,
 				"Password", ( string pass ) => Password = pass, "", SensitiveData.Passwords );
 
+			Func<int, string> validateWindowSize = ( int size ) =>
+			{
+				if ( size > 0 )
+				{
+					return null;
+				}
+				else
+				{
+					return string.Format( "{0} is not a positive integer.", size );
+				}
+			};
+
+			SettingsLoader.ApplySettingStruct( m_parsedArgs.Settings.GameWindowWidth, m_savedSettings.GameWindowWidth,
+				validateWindowSize, "Starting game window width", ( int width ) => GameWindowStartingWidth = width,
+				DfoLauncher.DefaultGameWindowWidth, SensitiveData.None );
+
+			SettingsLoader.ApplySettingStruct( m_parsedArgs.Settings.GameWindowHeight,
+				m_savedSettings.GameWindowHeight, validateWindowSize, "Starting game window height",
+				( int height ) => GameWindowStartingHeight = height,
+				DfoLauncher.DefaultGameWindowHeight, SensitiveData.None );
+
 			Func<string, string> validatePath = ( string dir ) =>
 			{
 				if ( Utilities.PathIsValid( dir ) )
@@ -823,6 +844,8 @@ namespace Dfo.ControlPanel
 			settings.Password = Password;
 			settings.RememberUsername = RememberMe;
 			settings.Username = Username;
+			settings.GameWindowWidth = GameWindowStartingWidth;
+			settings.GameWindowHeight = GameWindowStartingHeight;
 
 			return settings;
 		}

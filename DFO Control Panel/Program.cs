@@ -69,7 +69,7 @@ namespace Dfo.ControlPanel
 			catch ( OptionException ex )
 			{
 				EnsureConsoleExists();
-				Logging.Log.Fatal( ex.Message );
+				Logging.Log.FatalFormat("Improper value for {0}: {1}", ex.OptionName, ex.Message );
 				Logging.Log.FatalFormat( "Try {0} --help for more information.", CommandLineArgs.GetProgramName() );
 
 				return 1;

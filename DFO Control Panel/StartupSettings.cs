@@ -17,6 +17,8 @@ namespace Dfo.ControlPanel
 		public bool? ClosePopup { get; set; }
 		public bool? LaunchWindowed { get; set; }
 		public string DfoDir { get; set; }
+		public int? GameWindowWidth { get; set; }
+		public int? GameWindowHeight { get; set; }
 		public IDictionary<string, SwitchableFile> SwitchableFiles { get; set; }
 		public IDictionary<string, bool?> SwitchFile { get; set; } // options in StartupSettings must be nullable to indicate preference for the default
 		
