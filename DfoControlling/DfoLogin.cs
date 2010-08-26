@@ -59,9 +59,9 @@ namespace Dfo.Controlling
 			//
 			// On the other hand, given how complicated it is to properly quote arguments, maybe it is
 			// pretty sensible.
-			
+
 			Logging.Log.Debug( "Getting argument string to pass to DFO." );
-			
+
 			IList<string> dfoArgs = GetDfoArgs( username, password, timeoutInMs );
 			StringBuilder argString = new StringBuilder();
 			for ( int argIndex = 0; argIndex < dfoArgs.Count; argIndex++ )
@@ -139,7 +139,7 @@ namespace Dfo.Controlling
 					}
 				}
 
-				Logging.Log.DebugFormat( "Arguments to pass to DFO are: {0}", argString.ToString() );
+				Logging.Log.DebugFormat( "Arguments to pass to DFO are: {0}", argString.ToString().HideSensitiveData( SensitiveData.LoginCookies ) );
 			}
 
 			return args;
