@@ -45,9 +45,11 @@
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Management" />
     <Reference Include="System.Web" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
@@ -57,6 +59,7 @@
     <Compile Include="ErrorEventArgs.cs" />
     <Compile Include="Exceptions.cs" />
     <Compile Include="FileSwitcher.cs" />
+    <Compile Include="Interop.cs" />
     <Compile Include="LaunchParams.cs" />
     <Compile Include="Logging.cs" />
     <Compile Include="Pair.cs" />

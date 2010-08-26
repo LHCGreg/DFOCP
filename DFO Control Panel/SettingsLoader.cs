@@ -25,6 +25,10 @@ namespace Dfo.ControlPanel
 		// RememberMe - bool
 		// ClosePopup - bool
 		// LaunchWindowed - bool
+		// <GameWindowSize>
+		//   Width - int
+		//   Height - int
+		// </GameWindowSize>
 		//
 		// <switchable name="soundpack">
 		//   switch - bool
@@ -38,6 +42,9 @@ namespace Dfo.ControlPanel
 		private static readonly string s_rememberMe = "RememberMe";
 		private static readonly string s_closePopup = "ClosePopup";
 		private static readonly string s_launchWindowed = "LaunchWindowed";
+		private static readonly string s_gameWindowSize = "GameWindowSize";
+		private static readonly string s_gameWindowSize_Width = "Width";
+		private static readonly string s_gameWindowSize_Height = "Height";
 		private static readonly string s_switchSoundpacks = "SwitchSoundpacks";
 		private static readonly string s_switchableElement = "Switchable";
 		private static readonly string s_switchableNameAttr = "name";
@@ -142,6 +149,22 @@ namespace Dfo.ControlPanel
 
 					settings.SwitchFile[ switchableName ] = whetherToSwitch;
 				}
+
+				var windowSizeCollection = settingsRoot.Elements( s_gameWindowSize );
+				foreach ( XElement sizeElement in windowSizeCollection )
+				{
+					int? windowWidth = GetInt( sizeElement, s_gameWindowSize_Width );
+					if ( windowWidth != null )
+					{
+						settings.GameWindowWidth = windowWidth;
+					}
+
+					int? windowHeight = GetInt( sizeElement, s_gameWindowSize_Height );
+					if ( windowHeight != null )
+					{
+						settings.GameWindowHeight = windowHeight;
+					}
+				}
 			}
 
 			Logging.Log.Info( "Settings loaded." );
@@ -169,6 +192,28 @@ namespace Dfo.ControlPanel
 				else
 				{
 					Logging.Log.ErrorFormat( "Element '{0}' has value '{1}', expected boolean.", elementName, element.Value );
+					return null;
+				}
+			}
+		}
+
+		private static int? GetInt( XElement parent, string elementName )
+		{
+			XElement element = parent.Element( elementName );
+			if ( element == null )
+			{
+				return null;
+			}
+			else
+			{
+				int value;
+				if ( int.TryParse( element.Value, out value ) )
+				{
+					return value;
+				}
+				else
+				{
+					Logging.Log.ErrorFormat( "Element '{0}' has value '{1}', expected integer.", elementName, element.Value );
 					return null;
 				}
 			}
@@ -214,6 +259,15 @@ namespace Dfo.ControlPanel
 			}
 			AddElement( root, s_closePopup, GetBoolString( settings.ClosePopup ) );
 			AddElement( root, s_launchWindowed, GetBoolString( settings.LaunchWindowed ) );
+
+			if ( settings.GameWindowHeight.HasValue || settings.GameWindowWidth.HasValue )
+			{
+				XElement sizeElement = new XElement( s_gameWindowSize );
+				AddElement( sizeElement, s_gameWindowSize_Width, GetIntString( settings.GameWindowWidth ) );
+				AddElement( sizeElement, s_gameWindowSize_Height, GetIntString( settings.GameWindowHeight ) );
+				root.Add( sizeElement );
+			}
+
 			foreach ( string switchableName in settings.SwitchFile.Keys )
 			{
 				XElement switchableElement = new XElement( s_switchableElement );
@@ -264,6 +318,18 @@ namespace Dfo.ControlPanel
 				{
 					return "0";
 				}
+			}
+			else
+			{
+				return null;
+			}
+		}
+
+		private static string GetIntString( int? intValue )
+		{
+			if ( intValue.HasValue )
+			{
+				return intValue.ToString();
 			}
 			else
 			{

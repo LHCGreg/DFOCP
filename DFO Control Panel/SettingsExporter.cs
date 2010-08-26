@@ -95,6 +95,14 @@ namespace Dfo.ControlPanel
 				if ( settings.LaunchWindowed.Value )
 				{
 					args.Append( " -windowed" );
+					if ( settings.GameWindowWidth.HasValue )
+					{
+						args.AppendFormat( " --width={0}", settings.GameWindowWidth.Value.ToString() );
+					}
+					if ( settings.GameWindowHeight.HasValue )
+					{
+						args.AppendFormat( " --height={0}", settings.GameWindowHeight.Value.ToString() );
+					}
 				}
 				else
 				{

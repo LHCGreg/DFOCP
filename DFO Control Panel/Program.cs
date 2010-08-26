@@ -23,6 +23,7 @@ namespace Dfo.ControlPanel
 				{
 					Logging.Log.FatalFormat( "{0} has crashed. :( Please file a bug report.",
 						VersionInfo.AssemblyTitle );
+
 					if ( e.ExceptionObject is Exception )
 					{
 						Logging.Log.Debug( "Exception details: ", (Exception)e.ExceptionObject );
@@ -68,7 +69,7 @@ namespace Dfo.ControlPanel
 			catch ( OptionException ex )
 			{
 				EnsureConsoleExists();
-				Logging.Log.Fatal( ex.Message );
+				Logging.Log.FatalFormat("Improper value for {0}: {1}", ex.OptionName, ex.Message );
 				Logging.Log.FatalFormat( "Try {0} --help for more information.", CommandLineArgs.GetProgramName() );
 
 				return 1;

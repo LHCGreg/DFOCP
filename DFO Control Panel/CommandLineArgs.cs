@@ -33,6 +33,26 @@ namespace Dfo.ControlPanel
 				{ "closepopup", "Close the popup when the game is done. This is the default.", argExistence => Settings.ClosePopup = (argExistence != null) },
 				{ "noclosepopup", "Don't close the popup when the game is done.", argExistence => Settings.ClosePopup = !(argExistence != null) },
 				{ "window|windowed", "Launch the game in windowed mode.", argExistence => Settings.LaunchWindowed = (argExistence != null) },
+				{ "width=", "Width in pixels to start the game window with.", argValue =>
+					{
+					int intValue = ParseInt(argValue, "width");
+					if(intValue <= 0)
+					{
+						throw new OptionException("Width must be a positive number.", "width");
+					}
+					Settings.GameWindowWidth = intValue;
+					}
+				},
+				{ "height=", "Height in pixels to start the game window with.", argValue =>
+					{
+						int intValue = ParseInt(argValue, "height");
+						if(intValue <= 0)
+						{
+							throw new OptionException("Height must be a positive number.", "height");
+						}
+						Settings.GameWindowHeight = intValue;
+					}
+				},
 				{ "full", "Don't launch the game in windowed mode. This is the default.", argExistence => Settings.LaunchWindowed = !(argExistence != null) },
 				{ "dfodir=", "Directory where DFO is. Defaults to the autodetected DFO directory.",
 					argValue => { ThrowIfPathNotValid(argValue, "dfodir"); Settings.DfoDir = argValue; } },
@@ -119,6 +139,19 @@ namespace Dfo.ControlPanel
 			}
 		}
 
+		private int ParseInt( string num, string optionName )
+		{
+			int result;
+			if ( int.TryParse( num, out result ) )
+			{
+				return result;
+			}
+			else
+			{
+				throw new OptionException( string.Format( "{0} is not an integer.", num ), optionName );
+			}
+		}
+
 		/// <summary>
 		/// 
 		/// </summary>
@@ -141,6 +174,17 @@ namespace Dfo.ControlPanel
 			OptionSet optionSet = GetOptionSet();
 
 			optionSet.Parse( args );
+
+			// Set width or height if the user only explicitly set one. This prevents width from being
+			// specified on command-line and height being specified in saved settings
+			if ( Settings.GameWindowWidth != null && Settings.GameWindowHeight == null )
+			{
+				Settings.GameWindowHeight = DfoLauncher.GetHeightFromWidth( Settings.GameWindowWidth.Value );
+			}
+			else if ( Settings.GameWindowWidth == null && Settings.GameWindowHeight != null )
+			{
+				Settings.GameWindowWidth = DfoLauncher.GetWidthFromHeight( Settings.GameWindowHeight.Value );
+			}
 		}
 
 		public override string ToString()
@@ -158,12 +202,14 @@ namespace Dfo.ControlPanel
 				Settings.Password.HideSensitiveData( SensitiveData.Passwords ) ) );
 			builder.AppendLine( string.Format( "Close popup = {0}", Settings.ClosePopup ) );
 			builder.AppendLine( string.Format( "Launch windowed = {0}", Settings.LaunchWindowed ) );
+			builder.AppendLine( string.Format( "Game window starting width = {0}", Settings.GameWindowWidth ) );
+			builder.AppendLine( string.Format( "Game window starting height = {0}", Settings.GameWindowHeight ) );
 			builder.AppendLine( string.Format( "DFO dir = {0}", Settings.DfoDir ) );
 
 			foreach ( ISwitchableFile switchableFile in Settings.SwitchableFiles.Values )
 			{
 				builder.AppendLine( string.Format( "Switch {0} = {1}",
-					switchableFile.NormalFile, Settings.SwitchFile[switchableFile.Name] ) );
+					switchableFile.NormalFile, Settings.SwitchFile[ switchableFile.Name ] ) );
 				builder.AppendLine( string.Format( "Custom {0} file = {1}",
 					switchableFile.NormalFile, switchableFile.CustomFile ) );
 				builder.AppendLine( string.Format( "Temp {0} file = {1}",

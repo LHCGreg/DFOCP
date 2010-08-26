@@ -54,7 +54,12 @@
 			this.ctlRememberMe = new System.Windows.Forms.CheckBox();
 			this.ctlLoginInfoBox = new System.Windows.Forms.GroupBox();
 			this.ctlOptionsBox = new System.Windows.Forms.GroupBox();
+			this.ctlResizeButton = new System.Windows.Forms.Button();
+			this.lblWindowSizeX = new System.Windows.Forms.Label();
 			this.ctlSwitchAudioXml = new System.Windows.Forms.CheckBox();
+			this.ctlWindowHeight = new System.Windows.Forms.TextBox();
+			this.ctlWindowWidth = new System.Windows.Forms.TextBox();
+			this.ctlWindowSizeSlider = new System.Windows.Forms.TrackBar();
 			this.ctlStatusStrip = new System.Windows.Forms.StatusStrip();
 			this.ctlStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
 			this.ctlProgressBar = new System.Windows.Forms.ToolStripProgressBar();
@@ -67,6 +72,7 @@
 			this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.ctlLoginInfoBox.SuspendLayout();
 			this.ctlOptionsBox.SuspendLayout();
+			( (System.ComponentModel.ISupportInitialize)( this.ctlWindowSizeSlider ) ).BeginInit();
 			this.ctlStatusStrip.SuspendLayout();
 			this.ctlMenuStrip.SuspendLayout();
 			this.SuspendLayout();
@@ -77,7 +83,7 @@
 						| System.Windows.Forms.AnchorStyles.Right ) ) );
 			this.ctlUsername.Location = new System.Drawing.Point( 94, 30 );
 			this.ctlUsername.Name = "ctlUsername";
-			this.ctlUsername.Size = new System.Drawing.Size( 198, 20 );
+			this.ctlUsername.Size = new System.Drawing.Size( 167, 20 );
 			this.ctlUsername.TabIndex = 0;
 			this.ctlUsername.TextChanged += new System.EventHandler( this.ctlUsername_TextChanged );
 			// 
@@ -87,7 +93,7 @@
 						| System.Windows.Forms.AnchorStyles.Right ) ) );
 			this.ctlPassword.Location = new System.Drawing.Point( 94, 56 );
 			this.ctlPassword.Name = "ctlPassword";
-			this.ctlPassword.Size = new System.Drawing.Size( 198, 20 );
+			this.ctlPassword.Size = new System.Drawing.Size( 167, 20 );
 			this.ctlPassword.TabIndex = 1;
 			this.ctlPassword.UseSystemPasswordChar = true;
 			this.ctlPassword.TextChanged += new System.EventHandler( this.ctlPassword_TextChanged );
@@ -117,10 +123,10 @@
 			// ctlLaunch
 			// 
 			this.ctlLaunch.Anchor = System.Windows.Forms.AnchorStyles.Top;
-			this.ctlLaunch.Location = new System.Drawing.Point( 126, 188 );
+			this.ctlLaunch.Location = new System.Drawing.Point( 167, 216 );
 			this.ctlLaunch.Name = "ctlLaunch";
 			this.ctlLaunch.Size = new System.Drawing.Size( 240, 55 );
-			this.ctlLaunch.TabIndex = 4;
+			this.ctlLaunch.TabIndex = 0;
 			this.ctlLaunch.Text = "Start DFO";
 			this.ctlLaunch.UseVisualStyleBackColor = true;
 			this.ctlLaunch.Click += new System.EventHandler( this.ctlLaunch_Click );
@@ -135,7 +141,7 @@
 			this.ctlClosePopup.Location = new System.Drawing.Point( 6, 19 );
 			this.ctlClosePopup.Name = "ctlClosePopup";
 			this.ctlClosePopup.Size = new System.Drawing.Size( 91, 17 );
-			this.ctlClosePopup.TabIndex = 3;
+			this.ctlClosePopup.TabIndex = 0;
 			this.ctlClosePopup.Text = "Close popup?";
 			this.ctlClosePopup.UseVisualStyleBackColor = true;
 			// 
@@ -147,7 +153,7 @@
 			this.ctlLaunchWindowed.Location = new System.Drawing.Point( 6, 42 );
 			this.ctlLaunchWindowed.Name = "ctlLaunchWindowed";
 			this.ctlLaunchWindowed.Size = new System.Drawing.Size( 105, 17 );
-			this.ctlLaunchWindowed.TabIndex = 4;
+			this.ctlLaunchWindowed.TabIndex = 1;
 			this.ctlLaunchWindowed.Text = "Start windowed?";
 			this.ctlLaunchWindowed.UseVisualStyleBackColor = true;
 			// 
@@ -156,10 +162,10 @@
 			this.ctlSwitchSoundpacks.Anchor = ( (System.Windows.Forms.AnchorStyles)( ( ( System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left )
 						| System.Windows.Forms.AnchorStyles.Right ) ) );
 			this.ctlSwitchSoundpacks.AutoSize = true;
-			this.ctlSwitchSoundpacks.Location = new System.Drawing.Point( 6, 65 );
+			this.ctlSwitchSoundpacks.Location = new System.Drawing.Point( 6, 101 );
 			this.ctlSwitchSoundpacks.Name = "ctlSwitchSoundpacks";
 			this.ctlSwitchSoundpacks.Size = new System.Drawing.Size( 125, 17 );
-			this.ctlSwitchSoundpacks.TabIndex = 5;
+			this.ctlSwitchSoundpacks.TabIndex = 6;
 			this.ctlSwitchSoundpacks.Text = "Switch soundpacks?";
 			this.ctlSwitchSoundpacks.UseVisualStyleBackColor = true;
 			// 
@@ -186,7 +192,7 @@
 			this.ctlLoginInfoBox.Controls.Add( this.lblPassword );
 			this.ctlLoginInfoBox.Location = new System.Drawing.Point( 15, 45 );
 			this.ctlLoginInfoBox.Name = "ctlLoginInfoBox";
-			this.ctlLoginInfoBox.Size = new System.Drawing.Size( 320, 118 );
+			this.ctlLoginInfoBox.Size = new System.Drawing.Size( 289, 118 );
 			this.ctlLoginInfoBox.TabIndex = 10;
 			this.ctlLoginInfoBox.TabStop = false;
 			this.ctlLoginInfoBox.Text = "Login Information";
@@ -194,44 +200,104 @@
 			// ctlOptionsBox
 			// 
 			this.ctlOptionsBox.Anchor = ( (System.Windows.Forms.AnchorStyles)( ( System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right ) ) );
+			this.ctlOptionsBox.Controls.Add( this.ctlResizeButton );
+			this.ctlOptionsBox.Controls.Add( this.lblWindowSizeX );
 			this.ctlOptionsBox.Controls.Add( this.ctlSwitchAudioXml );
 			this.ctlOptionsBox.Controls.Add( this.ctlClosePopup );
+			this.ctlOptionsBox.Controls.Add( this.ctlWindowHeight );
 			this.ctlOptionsBox.Controls.Add( this.ctlSwitchSoundpacks );
 			this.ctlOptionsBox.Controls.Add( this.ctlLaunchWindowed );
-			this.ctlOptionsBox.Location = new System.Drawing.Point( 341, 45 );
+			this.ctlOptionsBox.Controls.Add( this.ctlWindowWidth );
+			this.ctlOptionsBox.Controls.Add( this.ctlWindowSizeSlider );
+			this.ctlOptionsBox.Location = new System.Drawing.Point( 310, 45 );
 			this.ctlOptionsBox.Name = "ctlOptionsBox";
-			this.ctlOptionsBox.Size = new System.Drawing.Size( 139, 118 );
+			this.ctlOptionsBox.Size = new System.Drawing.Size( 269, 150 );
 			this.ctlOptionsBox.TabIndex = 11;
 			this.ctlOptionsBox.TabStop = false;
 			this.ctlOptionsBox.Text = "Options";
+			// 
+			// ctlResizeButton
+			// 
+			this.ctlResizeButton.Location = new System.Drawing.Point( 208, 54 );
+			this.ctlResizeButton.Name = "ctlResizeButton";
+			this.ctlResizeButton.Size = new System.Drawing.Size( 53, 28 );
+			this.ctlResizeButton.TabIndex = 5;
+			this.ctlResizeButton.Text = "Resize";
+			this.ctlResizeButton.UseVisualStyleBackColor = true;
+			this.ctlResizeButton.Visible = false;
+			this.ctlResizeButton.Click += new System.EventHandler( this.ctlResizeButton_Click );
+			// 
+			// lblWindowSizeX
+			// 
+			this.lblWindowSizeX.AutoSize = true;
+			this.lblWindowSizeX.Location = new System.Drawing.Point( 148, 63 );
+			this.lblWindowSizeX.Name = "lblWindowSizeX";
+			this.lblWindowSizeX.Size = new System.Drawing.Size( 12, 13 );
+			this.lblWindowSizeX.TabIndex = 22;
+			this.lblWindowSizeX.Text = "x";
 			// 
 			// ctlSwitchAudioXml
 			// 
 			this.ctlSwitchAudioXml.Anchor = ( (System.Windows.Forms.AnchorStyles)( ( ( System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left )
 						| System.Windows.Forms.AnchorStyles.Right ) ) );
 			this.ctlSwitchAudioXml.AutoSize = true;
-			this.ctlSwitchAudioXml.Location = new System.Drawing.Point( 6, 88 );
+			this.ctlSwitchAudioXml.Location = new System.Drawing.Point( 6, 124 );
 			this.ctlSwitchAudioXml.Name = "ctlSwitchAudioXml";
 			this.ctlSwitchAudioXml.Size = new System.Drawing.Size( 111, 17 );
-			this.ctlSwitchAudioXml.TabIndex = 6;
+			this.ctlSwitchAudioXml.TabIndex = 7;
 			this.ctlSwitchAudioXml.Text = "Switch audio.xml?";
 			this.ctlSwitchAudioXml.UseVisualStyleBackColor = true;
+			// 
+			// ctlWindowHeight
+			// 
+			this.ctlWindowHeight.Location = new System.Drawing.Point( 163, 59 );
+			this.ctlWindowHeight.Name = "ctlWindowHeight";
+			this.ctlWindowHeight.Size = new System.Drawing.Size( 39, 20 );
+			this.ctlWindowHeight.TabIndex = 4;
+			this.ctlWindowHeight.Text = "480";
+			this.ctlWindowHeight.TextChanged += new System.EventHandler( this.ctlWindowHeight_TextChanged );
+			this.ctlWindowHeight.Leave += new System.EventHandler( this.ctlWindowHeight_Leave );
+			// 
+			// ctlWindowWidth
+			// 
+			this.ctlWindowWidth.Location = new System.Drawing.Point( 108, 59 );
+			this.ctlWindowWidth.Name = "ctlWindowWidth";
+			this.ctlWindowWidth.Size = new System.Drawing.Size( 39, 20 );
+			this.ctlWindowWidth.TabIndex = 3;
+			this.ctlWindowWidth.Text = "640";
+			this.ctlWindowWidth.TextChanged += new System.EventHandler( this.ctlWindowWidth_TextChanged );
+			this.ctlWindowWidth.Leave += new System.EventHandler( this.ctlWindowWidth_Leave );
+			// 
+			// ctlWindowSizeSlider
+			// 
+			this.ctlWindowSizeSlider.LargeChange = 100;
+			this.ctlWindowSizeSlider.Location = new System.Drawing.Point( 21, 59 );
+			this.ctlWindowSizeSlider.Maximum = 1280;
+			this.ctlWindowSizeSlider.Minimum = 640;
+			this.ctlWindowSizeSlider.Name = "ctlWindowSizeSlider";
+			this.ctlWindowSizeSlider.Size = new System.Drawing.Size( 90, 45 );
+			this.ctlWindowSizeSlider.SmallChange = 20;
+			this.ctlWindowSizeSlider.TabIndex = 2;
+			this.ctlWindowSizeSlider.TickFrequency = 0;
+			this.ctlWindowSizeSlider.TickStyle = System.Windows.Forms.TickStyle.None;
+			this.ctlWindowSizeSlider.Value = 640;
+			this.ctlWindowSizeSlider.ValueChanged += new System.EventHandler( this.ctlWindowSizeSlider_ValueChanged );
 			// 
 			// ctlStatusStrip
 			// 
 			this.ctlStatusStrip.Items.AddRange( new System.Windows.Forms.ToolStripItem[] {
             this.ctlStatusLabel,
             this.ctlProgressBar} );
-			this.ctlStatusStrip.Location = new System.Drawing.Point( 0, 287 );
+			this.ctlStatusStrip.Location = new System.Drawing.Point( 0, 346 );
 			this.ctlStatusStrip.Name = "ctlStatusStrip";
-			this.ctlStatusStrip.Size = new System.Drawing.Size( 497, 22 );
+			this.ctlStatusStrip.Size = new System.Drawing.Size( 591, 22 );
 			this.ctlStatusStrip.SizingGrip = false;
 			this.ctlStatusStrip.TabIndex = 12;
 			// 
 			// ctlStatusLabel
 			// 
 			this.ctlStatusLabel.Name = "ctlStatusLabel";
-			this.ctlStatusLabel.Size = new System.Drawing.Size( 482, 17 );
+			this.ctlStatusLabel.Size = new System.Drawing.Size( 576, 17 );
 			this.ctlStatusLabel.Spring = true;
 			this.ctlStatusLabel.Text = "Ready";
 			this.ctlStatusLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -251,7 +317,7 @@
             this.helpToolStripMenuItem} );
 			this.ctlMenuStrip.Location = new System.Drawing.Point( 0, 0 );
 			this.ctlMenuStrip.Name = "ctlMenuStrip";
-			this.ctlMenuStrip.Size = new System.Drawing.Size( 497, 24 );
+			this.ctlMenuStrip.Size = new System.Drawing.Size( 591, 24 );
 			this.ctlMenuStrip.TabIndex = 13;
 			// 
 			// fileToolStripMenuItem
@@ -307,7 +373,7 @@
 			this.AcceptButton = this.ctlLaunch;
 			this.AutoScaleDimensions = new System.Drawing.SizeF( 6F, 13F );
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size( 497, 309 );
+			this.ClientSize = new System.Drawing.Size( 591, 368 );
 			this.Controls.Add( this.ctlStatusStrip );
 			this.Controls.Add( this.ctlMenuStrip );
 			this.Controls.Add( this.ctlOptionsBox );
@@ -323,6 +389,7 @@
 			this.ctlLoginInfoBox.PerformLayout();
 			this.ctlOptionsBox.ResumeLayout( false );
 			this.ctlOptionsBox.PerformLayout();
+			( (System.ComponentModel.ISupportInitialize)( this.ctlWindowSizeSlider ) ).EndInit();
 			this.ctlStatusStrip.ResumeLayout( false );
 			this.ctlStatusStrip.PerformLayout();
 			this.ctlMenuStrip.ResumeLayout( false );
@@ -356,6 +423,11 @@
 		private System.Windows.Forms.ToolStripMenuItem exportToolStripMenuItem;
 		private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
 		private System.Windows.Forms.CheckBox ctlSwitchAudioXml;
+		private System.Windows.Forms.TrackBar ctlWindowSizeSlider;
+		private System.Windows.Forms.TextBox ctlWindowHeight;
+		private System.Windows.Forms.TextBox ctlWindowWidth;
+		private System.Windows.Forms.Label lblWindowSizeX;
+		private System.Windows.Forms.Button ctlResizeButton;
 	}
 }
 
