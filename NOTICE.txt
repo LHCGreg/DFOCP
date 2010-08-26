@@ -4,4 +4,6 @@ DFO Control Panel uses the NDesk.Options library for command-line argument parsi
 
 DFO Control Panel uses the log4net library for logging. log4net is copyright The Apache Software Foundation (http://www.apache.org/) and is licensed under the Apache License 2.0 (LICENSE.txt).
 
+DFO Control Panel uses the Common.Logging library. Common.Logging is copyright by the Common.Logging developers and is licensed under the Apache License 2.0 (LICENSE.txt).
+
 Dfo Control Panel uses the Json.NET library. Json.NET is copyright James Newton-King and is licensed under the MIT/X11 license (json_LICENSE.txt).
