@@ -1,8 +1,7 @@
-Resizing DFO window
 Bug: DFOCP thinks the game has ended when the game patches. DFOCP assumes that DFO.exe should be running after the DFOLauncher.exe ends, but LauncherUpdator.exe might be running instead.
 More user-friendly error messages
 Option for killing news popups?
-Cancel button?
+Remove command-line version and instead use the GUI with an -autorun switch or something?
 Option to leave program open after game is done (GUI only, makes no sense with command-line)?
 Stop as soon as game is up if not closing popup or switching soundpacks?
 DnF, Arad Senki support
