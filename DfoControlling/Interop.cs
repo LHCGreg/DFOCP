@@ -17,7 +17,7 @@ namespace Dfo.Controlling
 
 		[DllImport( "user32.dll", SetLastError = true )]
 		[return: MarshalAs( UnmanagedType.Bool )]
-		static extern bool GetWindowRect( IntPtr hWnd, out RECT lpRect );
+		public static extern bool GetWindowRect( IntPtr hWnd, out RECT lpRect );
 
 		[StructLayout( LayoutKind.Sequential )]
 		public struct RECT
