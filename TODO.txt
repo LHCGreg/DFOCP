@@ -1,3 +1,6 @@
+Request to be run as admin on systems with UAC.
+UI issue: Window size slider is enabled even when the "start windowed" checkbox is not checked.
+Make window size UI better for people with multiple monitors, maybe use maximum size of any monitor as the maximum size allowed.
 Bug: DFOCP thinks the game has ended when the game patches. DFOCP assumes that DFO.exe should be running after the DFOLauncher.exe ends, but LauncherUpdator.exe might be running instead.
 More user-friendly error messages
 Option for killing news popups?
