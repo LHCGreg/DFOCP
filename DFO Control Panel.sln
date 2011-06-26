@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual C# Express 2008
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C# Express 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DfoControlling", "DfoControlling\DfoControlling.csproj", "{E4D06429-E4DF-486B-96F3-8279D1FAC78D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DFO Control Panel", "DFO Control Panel\DFO Control Panel.csproj", "{57AA5B17-E020-46CE-944D-5B154032571E}"

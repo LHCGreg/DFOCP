@@ -16,7 +16,7 @@ namespace Dfo.Controlling
 	/// </summary>
 	public static class DfoLogin
 	{
-		private static string DefaultLoginUrl { get { return "http://passport.nexon.net/Login.aspx?nexonTheme=DungeonFighter"; } }
+        private static string DefaultLoginUrl { get { return "http://www.nexon.net/api/v001/account/login?returnURL=http%3A//dungeonfighter.nexon.net/"; } }
 		private static string DefaultGeolocationUrl { get { return "http://dungeonfighter.nexon.net/modules/geoloc.aspx"; } }
 		private static string DefaultIni { get { return "http://download2.nexon.net/Game/DFO/ngm/DFOLauncher/version.ini"; } }
 		private static string DefaultUserAgent { get { return "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.3) Gecko/20090824 Firefox/3.5.3 (.NET CLR 3.5.30729)"; } }
@@ -25,10 +25,8 @@ namespace Dfo.Controlling
 		/// The default timeout in milliseonds when waiting for a server response.
 		/// </summary>
 		public static int DefaultTimeoutInMillis { get { return 10000; } } // 10 seconds
-		private static string DefaultUsernameField { get { return "txtId"; } }
-		private static string DefaultPasswordField { get { return "txtPassword"; } }
-		private static string DefaultButtonField { get { return "btnLogin"; } }
-		private static string FallbackViewstate { get { return "/wEPDwUKMTY2MTY3MjU1M2Rk"; } }
+        private static string DefaultUsernameField { get { return "userID"; } }
+        private static string DefaultPasswordField { get { return "password"; } }
 
 		/// <summary>
 		/// Returns one or more command-line arguments you can pass to DFOLauncher.exe to start the game
@@ -230,44 +228,23 @@ namespace Dfo.Controlling
 			loginPostRequest.ReadWriteTimeout = timeoutInMs; // Dunno if this is relevant
 			loginPostRequest.KeepAlive = false; // We don't need to bother keeping the connection alive
 			loginPostRequest.CookieContainer = new CookieContainer(); // Necessary for the HttpWebResponse object to contain cookies set in the response. Otherwise we'd have to manually parse the set-cookie headers
+            loginPostRequest.AllowAutoRedirect = false; // Necessary!
 
 			StringBuilder postData = new StringBuilder(); // Used for building up the login form data
 
-			string viewstate; // ASP.NET doesn't like it when you don't give it a viewstate
-			try
-			{
-				viewstate = GetViewstate( loginUrl, timeoutInMs ); // Getting a fresh viewstate may be more likely to succeed. Using a hardcoded viewstate would probably work, but the time taken for an extra connection is not a concern here.
-			}
-			catch ( DfoAuthenticationException )
-			{
-				Logging.Log.WarnFormat( "Could not get a viewstate from {0}. Trying a fallback viewstate '{1}'.",
-					loginUrl, FallbackViewstate );
-				viewstate = FallbackViewstate;
-			}
-
-			postData.Append( "__VIEWSTATE=" ).Append( viewstate ).Append( "&" );
 			postData.Append( DefaultUsernameField ).Append( "=" ).Append( HttpUtility.UrlEncode( username ) ).Append( "&" );
-			postData.Append( DefaultPasswordField ).Append( "=" ).Append( HttpUtility.UrlEncode( password ) ).Append( "&" );
-			postData.Append( DefaultButtonField ).Append( "=" ).Append( "&" );
-			postData.Append( "__EVENTTARGET=&__EVENTARGUMENT=" );
+			postData.Append( DefaultPasswordField ).Append( "=" ).Append( HttpUtility.UrlEncode( password ) );
 
 			Logging.Log.DebugFormat( "POST data is '{0}'",
 				postData.ToString().HideSensitiveData( SensitiveData.Usernames | SensitiveData.Passwords ) );
 
-			// Not sure if MemoryStreams and StreamWriters need to be Disposed() of, but they do implement IDisposable even if it's only because of a parent class
-			using ( MemoryStream postBytes = new MemoryStream() ) // Now we need to convert the post data string to raw bytes, because we need to set the content-length to the number of bytes, not number of chars.
-			using ( StreamWriter postBytesWriter = new StreamWriter( postBytes, Encoding.UTF8 ) ) // I *think* UTF-8 is the right encoding to use here
-			{
-				postBytesWriter.Write( postData.ToString() );
-				postBytesWriter.Flush();
-
-				loginPostRequest.ContentLength = postBytes.Length;
-				using ( Stream postDataStream = loginPostRequest.GetRequestStream() )
-				{
-					postDataStream.Write( postBytes.ToArray(), 0, (int)postBytes.Length );
-					postDataStream.Flush();
-				}
-			}
+            byte[] buffer = Encoding.UTF8.GetBytes(postData.ToString());
+            loginPostRequest.ContentLength = buffer.Length;
+            using(Stream requestStream = loginPostRequest.GetRequestStream())
+            {
+                requestStream.Write(buffer, 0, buffer.Length);
+                requestStream.Flush();
+            }
 
 			Logging.Log.DebugFormat( "Request written." );
 
