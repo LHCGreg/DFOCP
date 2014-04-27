@@ -7,7 +7,7 @@ namespace Dfo.ControlPanel
 {
 	public static class VersionInfo
 	{
-		public const string Revision = "$revision$";
+		public const string Revision = "0";
 
 		public static string AssemblyTitle
 		{

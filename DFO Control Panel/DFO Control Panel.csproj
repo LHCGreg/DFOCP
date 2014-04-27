@@ -141,7 +141,6 @@
     <Compile Include="StartupSettings.cs" />
     <Compile Include="Properties\VersionInfo.cs" />
     <Compile Include="SwitchableFile.cs" />
-    <None Include="Properties\VersionInfo.template.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="AboutLogo.png" />
@@ -167,7 +166,4 @@
   <Target Name="AfterBuild">
   </Target>
   -->
-  <PropertyGroup>
-    <PreBuildEvent>"$(ProjectDir)../Tools/UpdateSvnInfo.py" "$(ProjectDir)/" "$(ProjectDir)Properties/VersionInfo.template.cs" "$(ProjectDir)Properties/VersionInfo.cs"</PreBuildEvent>
-  </PropertyGroup>
 </Project>

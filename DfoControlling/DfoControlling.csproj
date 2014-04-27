@@ -71,7 +71,6 @@
     <Compile Include="Properties\VersionInfo.cs" />
     <Compile Include="SwitchedFile.cs" />
     <Compile Include="Utilities.cs" />
-    <None Include="Properties\VersionInfo.template.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -81,7 +80,4 @@
   <Target Name="AfterBuild">
   </Target>
   -->
-  <PropertyGroup>
-    <PreBuildEvent>"$(ProjectDir)../Tools/UpdateSvnInfo.py" "$(ProjectDir)/" "$(ProjectDir)Properties/VersionInfo.template.cs" "$(ProjectDir)Properties/VersionInfo.cs"</PreBuildEvent>
-  </PropertyGroup>
 </Project>

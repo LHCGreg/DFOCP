@@ -12,7 +12,7 @@ namespace Dfo.Controlling
 		/// <summary>
 		/// The SVN revision number.
 		/// </summary>
-		public const string Revision = "$revision$";
+		public const string Revision = "0";
 	}
 }
 
