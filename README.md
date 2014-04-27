@@ -1,0 +1,3 @@
+DFO Control Panel is an application I wrote in 2010 to allow starting the MMO game Dungeon Fighter Online from your desktop instead of having to log in to the game's website and click a button. It also includes some extra features like switching the game's sounds with a user's custom sounds when starting the game and switching them back when exiting the game. It was hosted on Google Code at http://code.google.com/p/dfocp/. It had quite a large following among DFO players, with over 7500 downloads of the most-used version and and over 15000 total downloads.
+
+Nexon stopped hosting DFO so DFOCP no longer has a purpose. The code is kept here to preserve it because Google seems to be phasing out Google Code.
